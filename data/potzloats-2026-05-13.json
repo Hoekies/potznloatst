@@ -1,0 +1,241 @@
+{
+  "exportedAt": "2026-05-13T12:37:51.931Z",
+  "app": "Pot z,n Loatst",
+  "data": {
+    "weekend": {
+      "name": "Op z'n Loatst",
+      "appName": "Potzloats!"
+    },
+    "participants": [
+      {
+        "id": "067c9738-a8c1-489f-96ad-6ae064a63555",
+        "name": "Judith",
+        "color": "#999779"
+      },
+      {
+        "id": "3a24a9af-c513-4114-889a-0d0841db4d34",
+        "name": "Trudy",
+        "color": "#999779"
+      },
+      {
+        "id": "fadcd3f7-21e4-40d2-8588-3f7b148aa1cc",
+        "name": "John",
+        "color": "#999779"
+      },
+      {
+        "id": "5f9d39c4-b3f4-44cf-af36-d9a9392f30ab",
+        "name": "Gerben",
+        "color": "#999779"
+      },
+      {
+        "id": "3d204c86-5d71-4c34-a89d-1697e6bb52fb",
+        "name": "Willemien",
+        "color": "#999779"
+      },
+      {
+        "id": "dadcaffb-856f-4a44-9d34-2f3d235ecb71",
+        "name": "Agnes",
+        "color": "#999779"
+      },
+      {
+        "id": "ed831ecd-8029-4562-8aba-e19a74c7aabc",
+        "name": "Susan",
+        "color": "#999779"
+      },
+      {
+        "id": "04ee0758-6b2b-4a84-97eb-98c0bf71fe3f",
+        "name": "Johan",
+        "color": "#999779"
+      },
+      {
+        "id": "5156a8db-0f98-4b3c-a90a-94f29f6e272d",
+        "name": "Ronald",
+        "color": "#999779"
+      },
+      {
+        "id": "ea02ee90-eb23-45be-a45e-3924077435a2",
+        "name": "Ramon",
+        "color": "#fe0195"
+      },
+      {
+        "id": "79a040d6-89e1-462d-ab4b-82954f2f6c4e",
+        "name": "Dennis",
+        "color": "#999779"
+      },
+      {
+        "id": "f756a4d1-8842-45b5-8552-6db9ef7eb731",
+        "name": "Anthony",
+        "color": "#999779"
+      },
+      {
+        "id": "766769c5-5991-493a-80c0-5b653ef53a61",
+        "name": "Sasja",
+        "color": "#999779"
+      },
+      {
+        "id": "e1d1dec4-59e3-4a41-9e2c-659a251397a9",
+        "name": "Franca",
+        "color": "#9a7979"
+      },
+      {
+        "id": "8304b0fb-830f-4d69-8b77-f721218e4e1b",
+        "name": "Rene",
+        "color": "#999779"
+      }
+    ],
+    "contributions": [
+      {
+        "id": "dd1cf009-8fe8-4471-abc4-bc2f42152026",
+        "participantId": "067c9738-a8c1-489f-96ad-6ae064a63555",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "5ef93212-ecda-442c-8728-ba966a4e008a",
+        "participantId": "3a24a9af-c513-4114-889a-0d0841db4d34",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "80ab2583-582e-40a8-981a-f97caa24ad01",
+        "participantId": "fadcd3f7-21e4-40d2-8588-3f7b148aa1cc",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "a3a3ce24-e19e-46f4-a562-48c13a736195",
+        "participantId": "5f9d39c4-b3f4-44cf-af36-d9a9392f30ab",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "e331edaf-3e8f-4d7e-9147-b022e6754468",
+        "participantId": "3d204c86-5d71-4c34-a89d-1697e6bb52fb",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "d5442b33-7bd7-4d33-a0ce-ccb9346a2374",
+        "participantId": "dadcaffb-856f-4a44-9d34-2f3d235ecb71",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "ff87ede5-8112-4388-8d32-3c6d27ee6643",
+        "participantId": "ed831ecd-8029-4562-8aba-e19a74c7aabc",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "cc143643-fec9-4a16-b856-af9f2d437364",
+        "participantId": "04ee0758-6b2b-4a84-97eb-98c0bf71fe3f",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "a5986921-6f2a-4d38-8397-95b9d3c8e58d",
+        "participantId": "5156a8db-0f98-4b3c-a90a-94f29f6e272d",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "5373af7f-6e86-4331-8ecb-3b7aedb701a5",
+        "participantId": "ea02ee90-eb23-45be-a45e-3924077435a2",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "2cd82c30-7038-43be-9d7f-61e66c7b22a8",
+        "participantId": "79a040d6-89e1-462d-ab4b-82954f2f6c4e",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "702ebb75-ac72-4380-b162-6c50236197da",
+        "participantId": "f756a4d1-8842-45b5-8552-6db9ef7eb731",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "3829a5a1-f461-4e8f-a38b-90f5224b0e8c",
+        "participantId": "766769c5-5991-493a-80c0-5b653ef53a61",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "643943cd-bf5b-433b-8a90-aadf723f6bd3",
+        "participantId": "e1d1dec4-59e3-4a41-9e2c-659a251397a9",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      },
+      {
+        "id": "fdc60301-ff7c-474f-a3cd-1bfe5195d760",
+        "participantId": "8304b0fb-830f-4d69-8b77-f721218e4e1b",
+        "amount": 275,
+        "type": "initial",
+        "note": "Startinleg",
+        "date": "2026-05-12"
+      }
+    ],
+    "expenses": [
+      {
+        "id": "4a38ef6a-38f0-417e-a1b3-ac7991821541",
+        "description": "Accomodatie Gaffeltje",
+        "amount": 1125,
+        "category": "accommodatie",
+        "date": "2026-10-01",
+        "note": "",
+        "receiptImage": "",
+        "ocrStatus": "manual"
+      },
+      {
+        "id": "d8c22b82-558c-4371-8d6e-44d75f04d860",
+        "description": "Schrobbeler",
+        "amount": 415,
+        "category": "activiteit",
+        "date": "2026-05-06",
+        "note": "Zaterdag 07-11-2026 tijd 11:00 - 14:00",
+        "receiptImage": "",
+        "ocrStatus": "manual"
+      },
+      {
+        "id": "8ff9d9a3-a887-4673-ae07-ca01749ac25d",
+        "description": "'t Gaffeltje",
+        "amount": 375,
+        "category": "accommodatie",
+        "date": "2026-01-17",
+        "note": "aanbetaling",
+        "receiptImage": "",
+        "ocrStatus": "manual"
+      }
+    ]
+  }
+}

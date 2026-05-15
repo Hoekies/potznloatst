@@ -1,0 +1,19 @@
+{
+  "name": "Pot z,n Loatst",
+  "short_name": "Pot z,n Loatst",
+  "description": "Offline budgetbeheer voor het vriendenweekend Op z'n Loatst.",
+  "lang": "nl-NL",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F5F7FA",
+  "theme_color": "#0F2537",
+  "icons": [
+    {
+      "src": "./assets/icons/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
