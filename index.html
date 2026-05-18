@@ -1682,7 +1682,7 @@ textarea:focus {
                       <span>Importeren</span>
                     </button>
                     <button id="sync-cloud" class="menu-action" type="button">
-                      <span>Naar cloud pushen</span>
+                      <span>Nu synchroniseren</span>
                     </button>
                     <button id="reset-demo" class="menu-action menu-action--danger" type="button">
                       <span>Wissen</span>
@@ -1886,7 +1886,7 @@ textarea:focus {
             <div class="profile-modal__header">
               <div>
                 <h3 id="profile-title">Profiel</h3>
-                <p>Bewaar een naam en profielfoto lokaal. Zodra Supabase is gekoppeld kan dit naar een profiel-tabel mee.</p>
+                <p>Je naam en avatar worden lokaal bewaard en, zodra Supabase is ingesteld, ook met je account gesynchroniseerd.</p>
               </div>
               <button id="close-profile" class="ghost-button" type="button">Sluiten</button>
             </div>
@@ -1919,6 +1919,39 @@ textarea:focus {
             </form>
           </div>
         </div>
+        <div id="auth-modal" class="profile-modal" hidden>
+          <div class="profile-modal__backdrop" data-close-auth="true"></div>
+          <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title">
+            <div class="profile-modal__header">
+              <div>
+                <h3 id="auth-title">Inloggen of account maken</h3>
+                <p>Log in met e-mail en wachtwoord om je weekendpot online op te slaan en op meerdere apparaten terug te zien.</p>
+              </div>
+              <button id="close-auth" class="ghost-button" type="button">Sluiten</button>
+            </div>
+            <form id="auth-form" class="stack-form" autocomplete="on">
+              <div class="field-row">
+                <label>
+                  E-mail
+                  <input id="auth-email" name="email" type="email" maxlength="120" placeholder="jij@voorbeeld.nl" autocomplete="email" required />
+                </label>
+                <label>
+                  Wachtwoord
+                  <input id="auth-password" name="password" type="password" minlength="6" placeholder="Minimaal 6 tekens" autocomplete="current-password" required />
+                </label>
+              </div>
+              <label>
+                Naam voor je profiel
+                <input id="auth-display-name" name="displayName" type="text" maxlength="80" placeholder="Bijv. Rene" autocomplete="name" />
+              </label>
+              <p id="auth-status" class="field-help">Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.</p>
+              <div class="button-row">
+                <button id="auth-sign-in" class="secondary-button" type="submit">Inloggen</button>
+                <button id="auth-sign-up" class="primary-button" type="button">Account maken</button>
+              </div>
+            </form>
+          </div>
+        </div>
         <footer class="site-footer">
           <div class="site-footer__brand">
             <strong id="weekend-name" class="weekend-logo-wrap">
@@ -1939,6 +1972,9 @@ textarea:focus {
         <img id="receipt-modal-image" alt="Vergrote bon" />
       </div>
     </div>
+    <script src="./supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="./app.js"></script>
   </body>
   </html>

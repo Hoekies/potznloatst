@@ -1,8 +1,9 @@
-const CACHE_NAME = "potzloats-cache-v45";
+const CACHE_NAME = "potzloats-cache-v46";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./app.js",
+  "./supabase-config.js",
   "./manifest.webmanifest",
   "./assets/icons/favicon.png",
   "./assets/branding/opznloatst.png",
@@ -34,6 +35,28 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") {
+    return;
+  }
+
+  const requestUrl = new URL(request.url);
+  if (requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  const isNavigation = request.mode === "navigate";
+
+  if (isNavigation) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
     return;
   }
 

@@ -1898,6 +1898,1119 @@ function normalizeEstimate(item, participantCount) {
   };
 }
 
+const primaryStorageKey = "potzloats-state-v5";
+const migrationStorageKey = "potzloats-supabase-migrations-v1";
+const authStatusFallback = "Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.";
+
+let supabaseClientInstance = null;
+let authModalBound = false;
+let authStateListenerBound = false;
+let cloudHydrating = false;
+let cloudSyncPromise = null;
+let cloudSyncQueued = false;
+let lastReceiptOcrText = "";
+
+function normalizeState(rawState) {
+  const nextState = rawState && typeof rawState === "object" ? rawState : {};
+  const participants = Array.isArray(nextState.participants) ? nextState.participants : [];
+  const contributions = Array.isArray(nextState.contributions) ? nextState.contributions : [];
+  const expenses = Array.isArray(nextState.expenses) ? nextState.expenses : [];
+  const estimates = Array.isArray(nextState.estimates) ? nextState.estimates : [];
+
+  return {
+    weekend: {
+      name: nextState.weekend?.name || "Op z'n Loatst",
+      appName: nextState.weekend?.appName || "Pot z,n Loatst",
+    },
+    auth: {
+      loggedIn: Boolean(nextState.auth?.loggedIn),
+      provider: sanitizeText(nextState.auth?.provider || "local", 40) || "local",
+      email: sanitizeText(nextState.auth?.email || "", 120),
+      userId: sanitizeText(nextState.auth?.userId || "", 80),
+      lastSyncedAt: sanitizeText(nextState.auth?.lastSyncedAt || "", 80),
+    },
+    profile: {
+      name: sanitizeText(nextState.profile?.name || "", 80),
+      avatarUrl: sanitizeImageValue(nextState.profile?.avatarUrl || ""),
+    },
+    participants: participants.map((participant, index) => ({
+      id: participant.id || createId(),
+      name: sanitizeText(participant.name) || `Deelnemer ${index + 1}`,
+      color: participant.color || fallbackColor(index),
+    })),
+    contributions: contributions
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        id: item.id || createId(),
+        participantId: item.type === "topup" ? "" : sanitizeText(item.participantId || "", 80),
+        amount: sanitizeAmount(item.amount),
+        type: item.type === "topup" ? "topup" : "initial",
+        note: sanitizeText(item.note),
+        date: sanitizeDate(item.date),
+      })),
+    expenses: expenses
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({
+        id: item.id || createId(),
+        description: sanitizeText(item.description) || "Uitgave",
+        amount: sanitizeAmount(item.amount),
+        category: categoryLabels[item.category] ? item.category : "overig",
+        paidBy: sanitizeText(item.paidBy),
+        date: sanitizeDate(item.date),
+        note: sanitizeText(item.note),
+        receiptImage: sanitizeImageValue(item.receiptImage),
+        receiptPath: sanitizeText(item.receiptPath || "", 240),
+        ocrStatus: sanitizeText(item.ocrStatus || "manual", 40) || "manual",
+      })),
+    estimates: estimates
+      .filter((item) => item && typeof item === "object")
+      .map((item) => normalizeEstimate(item, participants.length)),
+  };
+}
+
+function createEmptyState() {
+  return normalizeState({
+    weekend: {
+      name: "Op z'n Loatst",
+      appName: "Pot z,n Loatst",
+    },
+    auth: {
+      loggedIn: false,
+      provider: "local",
+      email: "",
+      userId: "",
+      lastSyncedAt: "",
+    },
+    profile: {
+      name: "",
+      avatarUrl: "",
+    },
+    participants: [],
+    contributions: [],
+    expenses: [],
+    estimates: [],
+  });
+}
+
+function loadState() {
+  const savedState = readFromStorage(primaryStorageKey) || readFromStorage(storageKey);
+  if (!savedState) {
+    return normalizeState(cloneData(demoState));
+  }
+
+  try {
+    return normalizeState(JSON.parse(savedState));
+  } catch (error) {
+    return normalizeState(cloneData(demoState));
+  }
+}
+
+function persistAndRender() {
+  writeToStorage(primaryStorageKey, JSON.stringify(state));
+  writeToStorage(storageKey, JSON.stringify(state));
+  render();
+  if (!cloudHydrating) {
+    queueCloudSync("local-change");
+  }
+}
+
+function getSupabaseConfig() {
+  const config = globalThis.POTZLOATS_CONFIG || {};
+  return {
+    supabaseUrl: sanitizeText(config.supabaseUrl || "", 240),
+    supabaseAnonKey: sanitizeText(config.supabaseAnonKey || "", 2048),
+    mediaBucket: sanitizeText(config.mediaBucket || "potzloats-media", 120) || "potzloats-media",
+  };
+}
+
+function isSupabaseConfigured() {
+  const config = getSupabaseConfig();
+  return Boolean(config.supabaseUrl && config.supabaseAnonKey && globalThis.supabase?.createClient);
+}
+
+function getSupabaseClient() {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  if (!supabaseClientInstance) {
+    const config = getSupabaseConfig();
+    supabaseClientInstance = globalThis.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    });
+  }
+
+  return supabaseClientInstance;
+}
+
+function hasMeaningfulState(candidateState) {
+  return Boolean(
+    candidateState?.participants?.length ||
+    candidateState?.contributions?.length ||
+    candidateState?.expenses?.length ||
+    candidateState?.estimates?.length ||
+    candidateState?.profile?.name ||
+    candidateState?.profile?.avatarUrl
+  );
+}
+
+function getMigrationMap() {
+  try {
+    const raw = readFromStorage(migrationStorageKey);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function markMigrationDone(userId) {
+  const map = getMigrationMap();
+  map[userId] = new Date().toISOString();
+  writeToStorage(migrationStorageKey, JSON.stringify(map));
+}
+
+function wasMigrationDone(userId) {
+  return Boolean(getMigrationMap()[userId]);
+}
+
+function renderAccountUi() {
+  if (!accountName || !accountStatus || !accountAvatar) {
+    return;
+  }
+
+  const profileName = getProfileName();
+  const avatarSource = getProfileAvatarSource();
+  const fallback = profileName.charAt(0).toUpperCase() || "P";
+  const cloudReady = isSupabaseConfigured();
+  const lastSyncText = state.auth?.lastSyncedAt
+    ? ` · laatste sync ${dateFormatter.format(new Date(state.auth.lastSyncedAt))}`
+    : "";
+  const statusText = state.auth?.loggedIn
+    ? `Ingelogd${state.auth.email ? ` als ${state.auth.email}` : ""}${lastSyncText}`
+    : cloudReady
+      ? "Lokale modus, cloud staat klaar"
+      : "Lokale modus, Supabase nog niet ingesteld";
+
+  accountName.textContent = profileName;
+  accountStatus.textContent = statusText;
+  accountAvatar.innerHTML = avatarMarkup(avatarSource, fallback);
+
+  if (accountToggleButton) {
+    const label = state.auth?.loggedIn ? "Uitloggen" : "Inloggen";
+    const labelNode = accountToggleButton.querySelector("span");
+    if (labelNode) {
+      labelNode.textContent = label;
+    }
+  }
+
+  if (syncCloudButton) {
+    const syncNode = syncCloudButton.querySelector("span");
+    if (syncNode) {
+      syncNode.textContent = state.auth?.loggedIn
+        ? "Nu synchroniseren"
+        : cloudReady
+          ? "Cloud instellen"
+          : "Supabase koppelen";
+    }
+  }
+
+  if (profilePreviewAvatar) {
+    profilePreviewAvatar.innerHTML = avatarMarkup(avatarSource, fallback);
+  }
+  if (profilePreviewName) {
+    profilePreviewName.textContent = profileName;
+  }
+  if (profilePreviewState) {
+    profilePreviewState.textContent = state.auth?.loggedIn
+      ? "Ingelogd profiel, wijzigingen worden ook met je account gesynchroniseerd"
+      : cloudReady
+        ? "Nog niet ingelogd, maar online sync staat klaar"
+        : "Nog niet ingelogd, lokale modus blijft beschikbaar";
+  }
+
+  const authStatus = document.querySelector("#auth-status");
+  if (authStatus && authStatus.textContent.trim() === authStatusFallback) {
+    authStatus.textContent = cloudReady
+      ? "Log in om je deelnemers, inleg, uitgaven en bonnetjes online te bewaren."
+      : authStatusFallback;
+  }
+}
+
+function openAuthModal(prefillEmail = "") {
+  const authModal = document.querySelector("#auth-modal");
+  const emailInput = document.querySelector("#auth-email");
+  const passwordInput = document.querySelector("#auth-password");
+  const displayNameInput = document.querySelector("#auth-display-name");
+  const statusNode = document.querySelector("#auth-status");
+  if (!authModal || !emailInput || !passwordInput || !displayNameInput || !statusNode) {
+    return;
+  }
+
+  emailInput.value = prefillEmail || state.auth?.email || "";
+  passwordInput.value = "";
+  displayNameInput.value = state.profile?.name || "";
+  statusNode.textContent = isSupabaseConfigured()
+    ? "Log in om je deelnemers, inleg, uitgaven en bonnetjes online te bewaren."
+    : authStatusFallback;
+  authModal.hidden = false;
+}
+
+function closeAuthModal() {
+  const authModal = document.querySelector("#auth-modal");
+  if (authModal) {
+    authModal.hidden = true;
+  }
+}
+
+function setAuthStatus(message, isError = false) {
+  const statusNode = document.querySelector("#auth-status");
+  if (!statusNode) {
+    return;
+  }
+  statusNode.textContent = message;
+  statusNode.style.color = isError ? "#8C3C2A" : "";
+}
+
+async function submitAuth(mode) {
+  const client = getSupabaseClient();
+  if (!client) {
+    setAuthStatus("Vul eerst `supabase-config.js` in met je Supabase URL en anon key.", true);
+    return;
+  }
+
+  const emailInput = document.querySelector("#auth-email");
+  const passwordInput = document.querySelector("#auth-password");
+  const displayNameInput = document.querySelector("#auth-display-name");
+  const email = sanitizeText(emailInput?.value || "", 120);
+  const password = String(passwordInput?.value || "");
+  const displayName = sanitizeText(displayNameInput?.value || state.profile?.name || "", 80);
+
+  if (!email || password.length < 6) {
+    setAuthStatus("Vul een geldig e-mailadres en een wachtwoord van minimaal 6 tekens in.", true);
+    return;
+  }
+
+  setAuthStatus(mode === "signup" ? "Account wordt aangemaakt..." : "Inloggen...");
+
+  try {
+    if (mode === "signup") {
+      const { data, error } = await client.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            display_name: displayName,
+          },
+        },
+      });
+      if (error) {
+        throw error;
+      }
+
+      if (displayName) {
+        state.profile.name = displayName;
+      }
+
+      if (data?.session?.user) {
+        await saveProfileToCloud(data.session.user);
+        setAuthStatus("Account aangemaakt. Je bent ingelogd en je data wordt nu gesynchroniseerd.");
+        closeAuthModal();
+      } else {
+        setAuthStatus("Account aangemaakt. Bevestig je e-mail en log daarna in.");
+      }
+      renderAccountUi();
+      return;
+    }
+
+    const { data, error } = await client.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      throw error;
+    }
+
+    if (displayName) {
+      state.profile.name = displayName;
+    }
+    if (data?.user) {
+      await saveProfileToCloud(data.user);
+    }
+    setAuthStatus("Ingelogd. Je gegevens worden geladen.");
+    closeAuthModal();
+  } catch (error) {
+    setAuthStatus(error?.message || "Inloggen is mislukt.", true);
+  }
+}
+
+function bindAuthModal() {
+  if (authModalBound) {
+    return;
+  }
+  authModalBound = true;
+
+  const authForm = document.querySelector("#auth-form");
+  const authSignUpButton = document.querySelector("#auth-sign-up");
+  const closeAuthButton = document.querySelector("#close-auth");
+  const authModal = document.querySelector("#auth-modal");
+
+  authForm?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await submitAuth("signin");
+  });
+
+  authSignUpButton?.addEventListener("click", async () => {
+    await submitAuth("signup");
+  });
+
+  closeAuthButton?.addEventListener("click", closeAuthModal);
+  authModal?.addEventListener("click", (event) => {
+    if (event.target?.dataset?.closeAuth === "true") {
+      closeAuthModal();
+    }
+  });
+}
+
+async function getCurrentSessionUser() {
+  const client = getSupabaseClient();
+  if (!client) {
+    return null;
+  }
+
+  const { data, error } = await client.auth.getUser();
+  if (error) {
+    console.warn("Gebruiker ophalen uit Supabase mislukte:", error);
+    return null;
+  }
+
+  return data?.user || null;
+}
+
+async function toggleLocalLoginState() {
+  const client = getSupabaseClient();
+
+  if (state.auth?.loggedIn) {
+    if (client) {
+      await client.auth.signOut();
+    }
+    state.auth.loggedIn = false;
+    state.auth.provider = "local";
+    state.auth.email = "";
+    state.auth.userId = "";
+    state.auth.lastSyncedAt = "";
+    persistAndRender();
+    return;
+  }
+
+  if (!client) {
+    window.alert("Supabase is nog niet ingesteld. Vul eerst `supabase-config.js` in om in te kunnen loggen.");
+    return;
+  }
+
+  openAuthModal();
+}
+
+async function handleCloudSync() {
+  if (!isSupabaseConfigured()) {
+    openAuthModal();
+    window.alert("Vul eerst `supabase-config.js` in met je Supabase URL en anon key. Daarna werkt online sync meteen.");
+    return;
+  }
+
+  const user = await getCurrentSessionUser();
+  if (!user) {
+    openAuthModal();
+    return;
+  }
+
+  try {
+    await syncStateToCloud("manual");
+    window.alert("De weekendpot is gesynchroniseerd met Supabase.");
+  } catch (error) {
+    console.warn("Handmatige cloud-sync mislukte:", error);
+    window.alert("Cloud-sync is mislukt. Controleer of je SQL-setup en bucket in Supabase klaarstaan.");
+  }
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  state.profile.name = sanitizeText(profileNameInput.value, 80);
+  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput.value);
+
+  if (profileAvatarFileInput.files?.[0]) {
+    state.profile.avatarUrl = await fileToDataUrl(profileAvatarFileInput.files[0]);
+  }
+
+  persistAndRender();
+  const user = await getCurrentSessionUser();
+  if (user) {
+    await saveProfileToCloud(user);
+  }
+  closeProfileModal();
+}
+
+async function saveProfileToCloud(user) {
+  const client = getSupabaseClient();
+  if (!client || !user) {
+    return;
+  }
+
+  const payload = {
+    id: user.id,
+    email: user.email || "",
+    display_name: state.profile?.name || "",
+    avatar_url: state.profile?.avatarUrl || "",
+  };
+
+  const { error } = await client.from("profiles").upsert(payload, { onConflict: "id" });
+  if (error) {
+    console.warn("Profiel opslaan in Supabase mislukte:", error);
+  }
+}
+
+async function buildCloudStateForUser(user) {
+  const client = getSupabaseClient();
+  if (!client || !user) {
+    return createEmptyState();
+  }
+
+  const [profileResult, participantsResult, contributionsResult, expensesResult] = await Promise.all([
+    client.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
+    client.from("deelnemers").select("id, naam, kleur").eq("user_id", user.id).order("created_at", { ascending: true }),
+    client.from("extra_inleg").select("id, participant_id, bedrag, type, omschrijving, datum").eq("user_id", user.id).order("datum", { ascending: false }),
+    client.from("uitgaven").select("id, omschrijving, bedrag, categorie, betaald_door, datum, notitie, bon_path, is_gecontroleerd, is_raming").eq("user_id", user.id).order("datum", { ascending: false }),
+  ]);
+
+  if (participantsResult.error || contributionsResult.error || expensesResult.error) {
+    throw new Error("Clouddata ophalen is mislukt.");
+  }
+
+  const participants = (participantsResult.data || []).map((item, index) => ({
+    id: item.id,
+    name: sanitizeText(item.naam) || `Deelnemer ${index + 1}`,
+    color: item.kleur || fallbackColor(index),
+  }));
+
+  const contributions = (contributionsResult.data || []).map((item) => ({
+    id: item.id,
+    participantId: sanitizeText(item.participant_id || "", 80),
+    amount: sanitizeAmount(item.bedrag),
+    type: item.type === "initial" ? "initial" : "topup",
+    note: sanitizeText(item.omschrijving),
+    date: sanitizeDate(String(item.datum || "").slice(0, 10)),
+  }));
+
+  const expenseRows = expensesResult.data || [];
+  const expenseRecords = [];
+  const estimateRecords = [];
+
+  for (const item of expenseRows) {
+    const baseRecord = {
+      id: item.id,
+      description: sanitizeText(item.omschrijving) || (item.is_raming ? "Raming" : "Uitgave"),
+      amount: sanitizeAmount(item.bedrag),
+      category: categoryLabels[item.categorie] ? item.categorie : "overig",
+      paidBy: sanitizeText(item.betaald_door),
+      date: sanitizeDate(String(item.datum || "").slice(0, 10)),
+      note: sanitizeText(item.notitie),
+      receiptPath: sanitizeText(item.bon_path || "", 240),
+      receiptImage: "",
+      ocrStatus: item.is_gecontroleerd ? "reviewed" : "manual",
+    };
+
+    if (baseRecord.receiptPath) {
+      baseRecord.receiptImage = await getSignedReceiptUrl(baseRecord.receiptPath);
+    }
+
+    if (item.is_raming) {
+      estimateRecords.push(normalizeEstimate(baseRecord, participants.length));
+    } else {
+      expenseRecords.push(baseRecord);
+    }
+  }
+
+  return normalizeState({
+    weekend: state.weekend,
+    auth: {
+      loggedIn: true,
+      provider: "supabase",
+      email: user.email || "",
+      userId: user.id,
+      lastSyncedAt: new Date().toISOString(),
+    },
+    profile: {
+      name: sanitizeText(profileResult.data?.display_name || state.profile?.name || "", 80),
+      avatarUrl: sanitizeImageValue(profileResult.data?.avatar_url || state.profile?.avatarUrl || ""),
+    },
+    participants,
+    contributions,
+    expenses: expenseRecords,
+    estimates: estimateRecords,
+  });
+}
+
+function isCloudStateEmpty(cloudState) {
+  return !hasMeaningfulState({
+    participants: cloudState.participants,
+    contributions: cloudState.contributions,
+    expenses: cloudState.expenses,
+    estimates: cloudState.estimates,
+    profile: cloudState.profile,
+  });
+}
+
+function applyCloudState(cloudState, user) {
+  cloudHydrating = true;
+  state = normalizeState({
+    ...cloudState,
+    auth: {
+      loggedIn: true,
+      provider: "supabase",
+      email: user.email || "",
+      userId: user.id,
+      lastSyncedAt: new Date().toISOString(),
+    },
+  });
+  writeToStorage(primaryStorageKey, JSON.stringify(state));
+  writeToStorage(storageKey, JSON.stringify(state));
+  render();
+  cloudHydrating = false;
+}
+
+async function getSignedReceiptUrl(path) {
+  const client = getSupabaseClient();
+  if (!client || !path) {
+    return "";
+  }
+
+  const { data, error } = await client.storage
+    .from(getSupabaseConfig().mediaBucket)
+    .createSignedUrl(path, 60 * 60);
+
+  if (error) {
+    console.warn("Signed URL voor bon ophalen mislukte:", error);
+    return "";
+  }
+
+  return data?.signedUrl || "";
+}
+
+async function ensureReceiptUploaded(expense, userId) {
+  const client = getSupabaseClient();
+  if (!client || !expense) {
+    return expense;
+  }
+
+  if (!expense.receiptImage && !expense.receiptPath) {
+    return expense;
+  }
+
+  if (!/^data:image\//.test(expense.receiptImage || "")) {
+    if (expense.receiptPath && !expense.receiptImage) {
+      return {
+        ...expense,
+        receiptImage: await getSignedReceiptUrl(expense.receiptPath),
+      };
+    }
+    return expense;
+  }
+
+  const blob = await fetch(expense.receiptImage).then((response) => response.blob());
+  const extension = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
+  const path = `receipts/${userId}/${expense.id}.${extension}`;
+
+  const { error } = await client.storage
+    .from(getSupabaseConfig().mediaBucket)
+    .upload(path, blob, {
+      upsert: true,
+      contentType: blob.type || "image/jpeg",
+    });
+
+  if (error) {
+    console.warn("Bon uploaden naar Supabase mislukte:", error);
+    return expense;
+  }
+
+  return {
+    ...expense,
+    receiptPath: path,
+    receiptImage: await getSignedReceiptUrl(path),
+    ocrStatus: "reviewed",
+  };
+}
+
+async function fetchExistingReceiptPaths(userId) {
+  const client = getSupabaseClient();
+  if (!client || !userId) {
+    return [];
+  }
+
+  const { data, error } = await client
+    .from("uitgaven")
+    .select("bon_path")
+    .eq("user_id", userId)
+    .neq("bon_path", "");
+
+  if (error) {
+    console.warn("Bestaande bonpaden ophalen mislukte:", error);
+    return [];
+  }
+
+  return (data || []).map((item) => sanitizeText(item.bon_path || "", 240)).filter(Boolean);
+}
+
+async function syncStateToCloud(reason = "auto") {
+  const client = getSupabaseClient();
+  const user = await getCurrentSessionUser();
+  if (!client || !user || cloudHydrating) {
+    return;
+  }
+
+  const normalized = normalizeState(state);
+  const uploadedExpenses = [];
+  for (const expense of normalized.expenses) {
+    uploadedExpenses.push(await ensureReceiptUploaded(expense, user.id));
+  }
+
+  normalized.expenses = uploadedExpenses;
+  state.expenses = uploadedExpenses;
+
+  await saveProfileToCloud(user);
+
+  const currentPaths = await fetchExistingReceiptPaths(user.id);
+  const desiredPaths = new Set(uploadedExpenses.map((item) => item.receiptPath).filter(Boolean));
+  const orphanPaths = currentPaths.filter((path) => !desiredPaths.has(path));
+
+  const contributionsRows = normalized.contributions.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    participant_id: item.type === "initial" ? item.participantId || null : null,
+    omschrijving: item.note || "",
+    bedrag: item.amount,
+    type: item.type,
+    is_raming: false,
+    datum: `${item.date}T12:00:00.000Z`,
+  }));
+
+  const participantRows = normalized.participants.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    naam: item.name,
+    kleur: item.color,
+  }));
+
+  const expenseRows = normalized.expenses.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    participant_id: null,
+    omschrijving: item.description,
+    bedrag: item.amount,
+    categorie: item.category,
+    betaald_door: item.paidBy || "",
+    is_raming: false,
+    is_gecontroleerd: item.ocrStatus === "reviewed",
+    datum: `${item.date}T12:00:00.000Z`,
+    notitie: item.note || "",
+    bon_path: item.receiptPath || "",
+  }));
+
+  const estimateRows = normalized.estimates.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    participant_id: null,
+    omschrijving: item.description,
+    bedrag: item.amount,
+    categorie: item.category,
+    betaald_door: item.paidBy || "",
+    is_raming: true,
+    is_gecontroleerd: false,
+    datum: `${item.date}T12:00:00.000Z`,
+    notitie: item.note || "",
+    bon_path: "",
+  }));
+
+  const { error: deleteContributionsError } = await client.from("extra_inleg").delete().eq("user_id", user.id);
+  if (deleteContributionsError) {
+    throw deleteContributionsError;
+  }
+
+  const { error: deleteExpensesError } = await client.from("uitgaven").delete().eq("user_id", user.id);
+  if (deleteExpensesError) {
+    throw deleteExpensesError;
+  }
+
+  const { error: deleteParticipantsError } = await client.from("deelnemers").delete().eq("user_id", user.id);
+  if (deleteParticipantsError) {
+    throw deleteParticipantsError;
+  }
+
+  if (participantRows.length) {
+    const { error } = await client.from("deelnemers").insert(participantRows);
+    if (error) throw error;
+  }
+
+  if (contributionsRows.length) {
+    const { error } = await client.from("extra_inleg").insert(contributionsRows);
+    if (error) throw error;
+  }
+
+  if (expenseRows.length || estimateRows.length) {
+    const { error } = await client.from("uitgaven").insert([...expenseRows, ...estimateRows]);
+    if (error) throw error;
+  }
+
+  if (orphanPaths.length) {
+    await client.storage.from(getSupabaseConfig().mediaBucket).remove(orphanPaths);
+  }
+
+  state.auth.loggedIn = true;
+  state.auth.provider = "supabase";
+  state.auth.email = user.email || "";
+  state.auth.userId = user.id;
+  state.auth.lastSyncedAt = new Date().toISOString();
+  writeToStorage(primaryStorageKey, JSON.stringify(state));
+  writeToStorage(storageKey, JSON.stringify(state));
+  render();
+  if (reason === "manual") {
+    console.info("Cloud-sync voltooid.");
+  }
+}
+
+function queueCloudSync(reason = "auto") {
+  if (!state.auth?.loggedIn || cloudHydrating || !isSupabaseConfigured()) {
+    return;
+  }
+
+  if (cloudSyncPromise) {
+    cloudSyncQueued = true;
+    return;
+  }
+
+  cloudSyncPromise = syncStateToCloud(reason)
+    .catch((error) => {
+      console.warn("Cloud-sync mislukte:", error);
+    })
+    .finally(() => {
+      cloudSyncPromise = null;
+      if (cloudSyncQueued) {
+        cloudSyncQueued = false;
+        queueCloudSync("queued");
+      }
+    });
+}
+
+async function hydrateFromSupabaseSession(user) {
+  const cloudState = await buildCloudStateForUser(user);
+  if (isCloudStateEmpty(cloudState) && hasMeaningfulState(state) && !wasMigrationDone(user.id)) {
+    await syncStateToCloud("initial-migration");
+    markMigrationDone(user.id);
+    applyCloudState(await buildCloudStateForUser(user), user);
+    return;
+  }
+
+  applyCloudState(cloudState, user);
+}
+
+async function bootstrapCloudFeatures() {
+  bindAuthModal();
+  renderAccountUi();
+
+  const client = getSupabaseClient();
+  if (!client) {
+    return;
+  }
+
+  if (!authStateListenerBound) {
+    authStateListenerBound = true;
+    client.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await hydrateFromSupabaseSession(session.user);
+      } else {
+        state.auth.loggedIn = false;
+        state.auth.provider = "local";
+        state.auth.email = "";
+        state.auth.userId = "";
+        state.auth.lastSyncedAt = "";
+        writeToStorage(primaryStorageKey, JSON.stringify(state));
+        writeToStorage(storageKey, JSON.stringify(state));
+        render();
+      }
+    });
+  }
+
+  const user = await getCurrentSessionUser();
+  if (user) {
+    await hydrateFromSupabaseSession(user);
+  }
+}
+
+async function exportStateToFile() {
+  const payload = {
+    version: 2,
+    exportedAt: new Date().toISOString(),
+    app: "Pot z,n Loatst",
+    data: state,
+  };
+  const fileName = `potzloats-${todayIso()}.json`;
+  const json = JSON.stringify(payload, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+
+  if (typeof File === "function" && navigator.share && navigator.canShare) {
+    try {
+      const shareFile = new File([blob], fileName, { type: "application/json" });
+      if (navigator.canShare({ files: [shareFile] })) {
+        await navigator.share({
+          files: [shareFile],
+          title: "Pot z,n Loatst export",
+          text: "Bewaar of deel je potbestand.",
+        });
+        return;
+      }
+    } catch (error) {
+      console.warn("Delen van exportbestand mislukt, probeer downloadfallback.", error);
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !navigator.share) {
+    window.open(url, "_blank", "noopener");
+  }
+}
+
+async function importStateFromFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  try {
+    const text = await readFileAsText(file);
+    const parsed = JSON.parse(text);
+    const nextValue = parsed && typeof parsed === "object" ? parsed.data || parsed : null;
+    if (!nextValue || typeof nextValue !== "object" || Array.isArray(nextValue)) {
+      throw new Error("Ongeldig bestand");
+    }
+    state = normalizeState(nextValue);
+    resetUiState();
+    persistAndRender();
+  } catch (error) {
+    window.alert("Kon dit bestand niet inlezen als Pot z,n Loatst-data.");
+  } finally {
+    importStateFileInput.value = "";
+  }
+}
+
+function removeRecord(kind, id) {
+  if (kind === "contribution" || kind === "topup") {
+    state.contributions = state.contributions.filter((item) => item.id !== id);
+  } else if (kind === "estimate") {
+    state.estimates = state.estimates.filter((item) => item.id !== id);
+  } else {
+    state.expenses = state.expenses.filter((item) => item.id !== id);
+  }
+
+  if (editingRecord?.id === id && editingRecord?.kind === kind) {
+    editingRecord = null;
+  }
+}
+
+async function requestReceiptAnalysis(payload) {
+  const file = expenseReceiptInput.files?.[0] || null;
+  const requestPayload = {
+    ...payload,
+    file,
+    fileName: payload?.fileName || file?.name || "",
+    notesHint: payload?.notesHint || [expenseDescriptionInput.value, expenseNoteInput.value].filter(Boolean).join(" "),
+  };
+
+  if (file && globalThis.Tesseract) {
+    try {
+      setReceiptProgress("Bon scannen...");
+      const ocrText = await recognizeReceiptText(file);
+      lastReceiptOcrText = ocrText;
+      return buildReceiptSuggestionFromText(ocrText, requestPayload, "ocr");
+    } catch (error) {
+      console.warn("OCR met Tesseract mislukte, lokale fallback wordt gebruikt.", error);
+    }
+  }
+
+  return analyzeReceiptLocally(requestPayload, false);
+}
+
+async function recognizeReceiptText(file) {
+  const result = await globalThis.Tesseract.recognize(file, "eng", {
+    logger: (message) => {
+      if (message?.status) {
+        const progress = typeof message.progress === "number" ? ` (${Math.round(message.progress * 100)}%)` : "";
+        setReceiptProgress(`${capitalize(message.status)}${progress}`);
+      }
+    },
+  });
+
+  return String(result?.data?.text || "");
+}
+
+function setReceiptProgress(message) {
+  if (ocrStatus) {
+    ocrStatus.textContent = message;
+  }
+}
+
+function buildReceiptSuggestionFromText(text, payload, source = "ocr") {
+  const normalizedText = String(text || "").replace(/\u00a0/g, " ").trim();
+  const amount = parseAmountFromText(normalizedText);
+  const firstLine = normalizedText
+    .split(/\r?\n/)
+    .map((line) => sanitizeText(line, 80))
+    .find((line) => line && !/\d{2}[:.]\d{2}/.test(line));
+
+  return {
+    amount,
+    date: parseDateFromText(normalizedText) || todayIso(),
+    description: firstLine || prettifyReceiptName(payload.fileName || ""),
+    category: inferCategory(`${normalizedText} ${payload.notesHint || ""}`),
+    confidence: amount ? 0.78 : 0.28,
+    ocrStatus: amount ? "suggested" : "manual_required",
+    message: amount
+      ? source === "ocr"
+        ? "OCR heeft een suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen' of 'totaal'."
+        : "Lokale suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen' of 'totaal'."
+      : "Ik kon geen betrouwbaar bedrag lezen. Tik op het bonvoorbeeld om te vergroten en vul het bedrag handmatig in.",
+  };
+}
+
+function analyzeReceiptLocally(payload, serverFailed) {
+  const combined = [payload.fileName || "", payload.notesHint || "", lastReceiptOcrText || ""].filter(Boolean).join(" ");
+  const amount = parseAmountFromText(combined);
+
+  return {
+    amount,
+    date: parseDateFromText(combined) || todayIso(),
+    description: prettifyReceiptName(payload.fileName || ""),
+    category: inferCategory(combined),
+    confidence: amount ? 0.44 : 0.16,
+    ocrStatus: amount ? "suggested" : "manual_required",
+    message: amount
+      ? serverFailed
+        ? "Serveranalyse was niet beschikbaar, dus ik heb lokaal een voorzichtige suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen'."
+        : "Lokale suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen' of 'totaal'."
+      : "Ik kon geen betrouwbaar bedrag herkennen. Tik op het bonvoorbeeld om het te vergroten en vul het juiste bedrag handmatig in.",
+  };
+}
+
+function parseAmountFromText(text) {
+  const prioritized = extractKeywordAmount(text);
+  if (prioritized !== null) {
+    return prioritized;
+  }
+
+  const normalized = String(text || "")
+    .toLowerCase()
+    .replace(/(\d)[,](\d{2})\b/g, "$1.$2")
+    .replace(/[^0-9.\n ]/g, " ");
+  const matches = normalized.match(/\d+(?:\.\d{1,2})?/g) || [];
+  const values = matches
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0 && value < 10000);
+
+  if (!values.length) {
+    return null;
+  }
+
+  const decimalValues = matches
+    .filter((value) => /\.\d{1,2}$/.test(value))
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0 && value < 10000);
+
+  if (decimalValues.length) {
+    return decimalValues.sort((a, b) => b - a)[0];
+  }
+
+  return values.sort((a, b) => b - a)[0];
+}
+
+function extractKeywordAmount(text) {
+  const normalized = String(text || "")
+    .toLowerCase()
+    .replace(/(\d)[,](\d{2})\b/g, "$1.$2")
+    .replace(/\s+/g, " ");
+
+  const patterns = [
+    /te betalen[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /totaal(?:bedrag)?[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /total(?: amount)?[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /amount due[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /te voldoen[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /saldo[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /sum[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /netto[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
+    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}(?:eur|euro|€)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match) {
+      const amount = Number(match[1]);
+      if (Number.isFinite(amount) && amount > 0 && amount < 10000) {
+        return amount;
+      }
+    }
+  }
+
+  return null;
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator) || location.protocol === "file:") {
+    return;
+  }
+
+  window.addEventListener("load", async () => {
+    try {
+      await navigator.serviceWorker.register("./sw.js");
+    } catch (error) {
+      console.warn("Service worker registreren mislukt:", error);
+    }
+  });
+}
+
+function capitalize(value) {
+  const text = String(value || "");
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
+}
+
+function resetExpenseComposer() {
+  expenseForm.reset();
+  expenseKindInput.value = "expense";
+  estimatePricingModeInput.value = "total";
+  expenseDateInput.value = todayIso();
+  pendingReceiptImage = "";
+  lastReceiptOcrText = "";
+  receiptReview.hidden = true;
+  renderExpenseComposerState();
+}
+
+expenseReceiptInput?.addEventListener("change", () => {
+  lastReceiptOcrText = "";
+});
+
+bootstrapCloudFeatures();
+
 function getEstimateAmount(record) {
   if (record?.pricingMode === "per_person") {
     const participantCount = Math.max(1, Number(record.participantCountSnapshot) || 1);
