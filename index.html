@@ -1830,32 +1830,19 @@ textarea:focus {
       </main>
         <div id="profile-modal" class="profile-modal" hidden>
           <div class="profile-modal__backdrop" data-close-profile="true"></div>
-          <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title">
-            <div class="profile-modal__header">
-              <div>
-                <h3 id="profile-title">Profiel</h3>
-                <p>Je naam en avatar worden lokaal bewaard en, zodra Supabase is ingesteld, ook met je account gesynchroniseerd.</p>
+          <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="profile-title" style="max-height:90dvh;overflow-y:auto;">
+            <div class="profile-modal__header" style="position:sticky;top:0;background:#fff;z-index:1;padding-bottom:12px;margin-bottom:4px;">
+              <div class="profile-preview">
+                <div id="profile-preview-avatar" class="profile-preview__avatar" aria-hidden="true">P</div>
+                <strong id="profile-preview-name">Profiel</strong>
               </div>
               <button id="close-profile" class="ghost-button" type="button">Sluiten</button>
             </div>
-            <div class="profile-preview">
-              <div id="profile-preview-avatar" class="profile-preview__avatar" aria-hidden="true">P</div>
-              <div>
-                <strong id="profile-preview-name">Lokaal profiel</strong>
-                <p id="profile-preview-state">Nog niet ingelogd, wel klaar voor later accountkoppeling</p>
-              </div>
-            </div>
             <form id="profile-form" class="stack-form">
-              <div class="field-row">
-                <label>
-                  Naam
-                  <input id="profile-name" name="profileName" type="text" maxlength="80" placeholder="Bijv. Rene" />
-                </label>
-                <label>
-                  Avatar URL
-                  <input id="profile-avatar-url" name="avatarUrl" type="url" placeholder="https://..." />
-                </label>
-              </div>
+              <label>
+                Naam
+                <input id="profile-name" name="profileName" type="text" maxlength="80" placeholder="Bijv. Rene" />
+              </label>
               <label>
                 Profielfoto kiezen
                 <input id="profile-avatar-file" name="avatarFile" type="file" accept="image/*" />
@@ -1872,7 +1859,7 @@ textarea:focus {
               </div>
               <div class="button-row">
                 <button class="secondary-button" type="button" id="profile-reset-avatar">Avatar wissen</button>
-                <button class="primary-button" type="submit">Profiel opslaan</button>
+                <button class="primary-button" type="submit">Opslaan</button>
               </div>
             </form>
           </div>

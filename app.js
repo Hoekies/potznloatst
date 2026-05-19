@@ -583,8 +583,9 @@ profileModal?.addEventListener("click", (event) => {
   }
 });
 profileResetAvatarButton?.addEventListener("click", () => {
-  profileAvatarUrlInput.value = "";
-  profileAvatarFileInput.value = "";
+  if (profileAvatarUrlInput) profileAvatarUrlInput.value = "";
+  if (profileAvatarFileInput) profileAvatarFileInput.value = "";
+  resetCropper();
   state.profile.avatarUrl = "";
   renderAccountUi();
 });
@@ -883,9 +884,9 @@ function renderAccountUi() {
 function openProfileModal() {
   if (!profileModal) return;
   closeMenuPanel();
-  profileNameInput.value = state.profile?.name || "";
-  profileAvatarUrlInput.value = state.profile?.avatarUrl || "";
-  profileAvatarFileInput.value = "";
+  if (profileNameInput) profileNameInput.value = state.profile?.name || "";
+  if (profileAvatarUrlInput) profileAvatarUrlInput.value = state.profile?.avatarUrl || "";
+  if (profileAvatarFileInput) profileAvatarFileInput.value = "";
   renderAccountUi();
   profileModal.hidden = false;
 }
@@ -973,7 +974,7 @@ async function getCroppedAvatarBlob() {
 async function saveProfile(event) {
   event.preventDefault();
   state.profile.name = sanitizeText(profileNameInput.value, 80);
-  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput.value);
+  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput?.value || "");
 
   if (profileAvatarFileInput.files?.[0]) {
     const blob = await getCroppedAvatarBlob();
@@ -2442,16 +2443,14 @@ async function getCurrentSessionUser() {
 
 async function toggleLocalLoginState() {
   if (state.auth?.loggedIn) {
-    try {
-      const client = getSupabaseClient();
-      if (client) await client.auth.signOut();
-    } catch (e) {
-      console.warn("Uitloggen mislukt:", e);
-    }
     state = createEmptyState();
     writeToStorage(primaryStorageKey, JSON.stringify(state));
     writeToStorage(storageKey, JSON.stringify(state));
     render();
+    try {
+      const client = getSupabaseClient();
+      if (client) client.auth.signOut().catch(() => {});
+    } catch (_) {}
     return;
   }
 
@@ -2488,7 +2487,7 @@ async function handleCloudSync() {
 async function saveProfile(event) {
   event.preventDefault();
   state.profile.name = sanitizeText(profileNameInput.value, 80);
-  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput.value);
+  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput?.value || "");
 
   if (profileAvatarFileInput.files?.[0]) {
     const blob = await getCroppedAvatarBlob();
