@@ -2380,12 +2380,6 @@ async function submitAuth(mode) {
       throw error;
     }
 
-    if (displayName) {
-      state.profile.name = displayName;
-    }
-    if (data?.user) {
-      await saveProfileToCloud(data.user);
-    }
     setAuthStatus("Ingelogd. Je gegevens worden geladen.");
     closeAuthModal();
   } catch (error) {
