@@ -1,4 +1,14 @@
 const storageKey = "potzloats-state-v4";
+const primaryStorageKey = "potzloats-state-v5";
+const migrationStorageKey = "potzloats-supabase-migrations-v1";
+const authStatusFallback = "Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.";
+let supabaseClientInstance = null;
+let authModalBound = false;
+let authStateListenerBound = false;
+let cloudHydrating = false;
+let cloudSyncPromise = null;
+let cloudSyncQueued = false;
+let lastReceiptOcrText = "";
 
 const currencyFormatter = new Intl.NumberFormat("nl-NL", {
   style: "currency",
@@ -165,6 +175,8 @@ const menuPanel = document.querySelector(".menu-panel");
 const menuPanelTrigger = document.querySelector(".menu-panel__trigger");
 const menuPanelContent = document.querySelector(".menu-panel__content");
 const accountToggleButton = document.querySelector("#account-toggle");
+const accountDropdown = document.querySelector("#account-dropdown");
+const accountLoginButton = document.querySelector("#account-login");
 const accountToggleHint = document.querySelector("#account-toggle-hint");
 const openProfileButton = document.querySelector("#open-profile");
 const syncCloudButton = document.querySelector("#sync-cloud");
@@ -184,7 +196,10 @@ menuBackdrop.hidden = true;
 document.body.appendChild(menuBackdrop);
 if (menuPanelContent) {
   menuPanelContent.hidden = true;
-  document.body.appendChild(menuPanelContent);
+  menuBackdrop.appendChild(menuPanelContent);
+  menuPanelContent.addEventListener("click", (event) => {
+    event.stopPropagation();
+  });
 }
 
 expenseDateInput.value = todayIso();
@@ -204,9 +219,18 @@ tabButtons.forEach((button) => {
 menuPanelTrigger?.addEventListener("click", toggleMenuPanel);
 window.addEventListener("resize", positionMenuPanel);
 window.addEventListener("scroll", positionMenuPanel, { passive: true });
-menuBackdrop.addEventListener("click", closeMenuPanel);
+menuBackdrop.addEventListener("click", (event) => {
+  if (event.target === menuBackdrop) {
+    closeMenuPanel();
+  }
+});
 document.addEventListener("click", (event) => {
-  if (!menuPanel?.classList.contains("is-open")) {
+  if (accountDropdown && !accountDropdown.hidden) {
+    if (!accountToggleButton?.contains(event.target) && !accountDropdown.contains(event.target)) {
+      closeAccountDropdown();
+    }
+  }
+  if (!menuPanel?.classList?.contains("is-open")) {
     return;
   }
   if (menuPanel?.contains(event.target) || menuPanelContent?.contains(event.target)) {
@@ -508,7 +532,7 @@ timeline.addEventListener("click", (event) => {
   element.addEventListener("change", renderTimeline);
 });
 
-resetDemoButton.addEventListener("click", () => {
+resetDemoButton?.addEventListener("click", () => {
   state = createEmptyState();
   resetUiState();
   persistAndRender();
@@ -538,10 +562,11 @@ receiptModal.addEventListener("click", (event) => {
   }
 });
 
-exportStateButton.addEventListener("click", exportStateToFile);
-importStateButton.addEventListener("click", () => importStateFileInput.click());
-importStateFileInput.addEventListener("change", importStateFromFile);
-accountToggleButton?.addEventListener("click", toggleLocalLoginState);
+exportStateButton?.addEventListener("click", exportStateToFile);
+importStateButton?.addEventListener("click", () => importStateFileInput?.click());
+importStateFileInput?.addEventListener("change", importStateFromFile);
+accountToggleButton?.addEventListener("click", toggleAccountDropdown);
+accountLoginButton?.addEventListener("click", () => { closeAccountDropdown(); toggleLocalLoginState(); });
 openProfileButton?.addEventListener("click", openProfileModal);
 closeProfileButton?.addEventListener("click", closeProfileModal);
 profileModal?.addEventListener("click", (event) => {
@@ -561,6 +586,7 @@ profileAvatarFileInput?.addEventListener("change", renderAccountUi);
 profileForm?.addEventListener("submit", saveProfile);
 syncCloudButton?.addEventListener("click", handleCloudSync);
 render();
+
 
 function loadState() {
   const savedState = readFromStorage(storageKey);
@@ -669,6 +695,19 @@ function render() {
   positionMenuPanel();
 }
 
+function toggleAccountDropdown() {
+  if (!accountDropdown) return;
+  const next = accountDropdown.hidden;
+  accountDropdown.hidden = !next;
+  accountToggleButton?.setAttribute("aria-expanded", next ? "true" : "false");
+}
+
+function closeAccountDropdown() {
+  if (!accountDropdown) return;
+  accountDropdown.hidden = true;
+  accountToggleButton?.setAttribute("aria-expanded", "false");
+}
+
 function positionMenuPanel() {
   if (!menuPanelContent || !menuPanelTrigger || !menuPanel?.classList.contains("is-open")) {
     if (menuPanelContent) {
@@ -678,15 +717,8 @@ function positionMenuPanel() {
     return;
   }
 
-  const triggerRect = menuPanelTrigger.getBoundingClientRect();
-  const panelWidth = Math.min(340, Math.max(260, window.innerWidth - 32));
-  const left = Math.max(16, Math.min(triggerRect.right - panelWidth, window.innerWidth - panelWidth - 16));
-
   menuBackdrop.hidden = false;
   menuPanelContent.hidden = false;
-  menuPanelContent.style.top = `${Math.round(triggerRect.bottom + 14)}px`;
-  menuPanelContent.style.left = `${Math.round(left)}px`;
-  menuPanelContent.style.right = "auto";
 }
 
 function toggleMenuPanel() {
@@ -789,6 +821,7 @@ function renderAccountUi() {
 
 function openProfileModal() {
   if (!profileModal) return;
+  closeMenuPanel();
   profileNameInput.value = state.profile?.name || "";
   profileAvatarUrlInput.value = state.profile?.avatarUrl || "";
   profileAvatarFileInput.value = "";
@@ -1549,7 +1582,7 @@ async function importStateFromFile(event) {
   } catch (error) {
     window.alert("Kon dit bestand niet inlezen als Pot z,n Loatst-data.");
   } finally {
-    importStateFileInput.value = "";
+    if (importStateFileInput) importStateFileInput.value = "";
   }
 }
 
@@ -1898,18 +1931,6 @@ function normalizeEstimate(item, participantCount) {
   };
 }
 
-const primaryStorageKey = "potzloats-state-v5";
-const migrationStorageKey = "potzloats-supabase-migrations-v1";
-const authStatusFallback = "Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.";
-
-let supabaseClientInstance = null;
-let authModalBound = false;
-let authStateListenerBound = false;
-let cloudHydrating = false;
-let cloudSyncPromise = null;
-let cloudSyncQueued = false;
-let lastReceiptOcrText = "";
-
 function normalizeState(rawState) {
   const nextState = rawState && typeof rawState === "object" ? rawState : {};
   const participants = Array.isArray(nextState.participants) ? nextState.participants : [];
@@ -2100,12 +2121,8 @@ function renderAccountUi() {
   accountStatus.textContent = statusText;
   accountAvatar.innerHTML = avatarMarkup(avatarSource, fallback);
 
-  if (accountToggleButton) {
-    const label = state.auth?.loggedIn ? "Uitloggen" : "Inloggen";
-    const labelNode = accountToggleButton.querySelector("span");
-    if (labelNode) {
-      labelNode.textContent = label;
-    }
+  if (accountLoginButton) {
+    accountLoginButton.textContent = state.auth?.loggedIn ? "Uitloggen" : "Inloggen";
   }
 
   if (syncCloudButton) {
@@ -2151,6 +2168,7 @@ function openAuthModal(prefillEmail = "") {
     return;
   }
 
+  closeMenuPanel();
   emailInput.value = prefillEmail || state.auth?.email || "";
   passwordInput.value = "";
   displayNameInput.value = state.profile?.name || "";
@@ -2811,7 +2829,7 @@ async function importStateFromFile(event) {
   } catch (error) {
     window.alert("Kon dit bestand niet inlezen als Pot z,n Loatst-data.");
   } finally {
-    importStateFileInput.value = "";
+    if (importStateFileInput) importStateFileInput.value = "";
   }
 }
 
