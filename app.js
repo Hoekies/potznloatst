@@ -754,6 +754,7 @@ function renderLoginGate() {
   const loggedIn = !!state.auth?.loggedIn;
   if (loginWall) loginWall.hidden = loggedIn;
   if (tabBar) tabBar.hidden = !loggedIn;
+  if (summaryCards) summaryCards.hidden = !loggedIn;
   if (!loggedIn) tabPanels.forEach(p => { p.hidden = true; });
 }
 
@@ -2294,20 +2295,15 @@ function openAuthModal(prefillEmail = "") {
   const authModal = document.querySelector("#auth-modal");
   const emailInput = document.querySelector("#auth-email");
   const passwordInput = document.querySelector("#auth-password");
-  const displayNameInput = document.querySelector("#auth-display-name");
-  const statusNode = document.querySelector("#auth-status");
-  if (!authModal || !emailInput || !passwordInput || !displayNameInput || !statusNode) {
-    return;
-  }
+  if (!authModal || !emailInput || !passwordInput) return;
 
   closeMenuPanel();
   emailInput.value = prefillEmail || state.auth?.email || "";
   passwordInput.value = "";
-  displayNameInput.value = state.profile?.name || "";
-  statusNode.textContent = isSupabaseConfigured()
-    ? "Log in om je deelnemers, inleg, uitgaven en bonnetjes online te bewaren."
-    : authStatusFallback;
+  const statusNode = document.querySelector("#auth-status");
+  if (statusNode) { statusNode.textContent = ""; statusNode.hidden = true; }
   authModal.hidden = false;
+  bindAuthModal();
 }
 
 function closeAuthModal() {
@@ -2319,10 +2315,9 @@ function closeAuthModal() {
 
 function setAuthStatus(message, isError = false) {
   const statusNode = document.querySelector("#auth-status");
-  if (!statusNode) {
-    return;
-  }
+  if (!statusNode) return;
   statusNode.textContent = message;
+  statusNode.hidden = !message;
   statusNode.style.color = isError ? "#8C3C2A" : "";
 }
 
@@ -2338,7 +2333,7 @@ async function submitAuth(mode) {
   const displayNameInput = document.querySelector("#auth-display-name");
   const email = sanitizeText(emailInput?.value || "", 120);
   const password = String(passwordInput?.value || "");
-  const displayName = sanitizeText(displayNameInput?.value || state.profile?.name || "", 80);
+  const displayName = sanitizeText(state.profile?.name || "", 80);
 
   if (!email || password.length < 6) {
     setAuthStatus("Vul een geldig e-mailadres en een wachtwoord van minimaal 6 tekens in.", true);
@@ -2399,15 +2394,15 @@ async function submitAuth(mode) {
 }
 
 function bindAuthModal() {
-  if (authModalBound) {
-    return;
-  }
+  if (authModalBound) return;
   authModalBound = true;
 
   const authForm = document.querySelector("#auth-form");
   const authSignUpButton = document.querySelector("#auth-sign-up");
   const closeAuthButton = document.querySelector("#close-auth");
   const authModal = document.querySelector("#auth-modal");
+  const pwToggle = document.querySelector("#auth-password-toggle");
+  const pwInput = document.querySelector("#auth-password");
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -2418,11 +2413,17 @@ function bindAuthModal() {
     await submitAuth("signup");
   });
 
+  pwToggle?.addEventListener("click", () => {
+    if (!pwInput) return;
+    const show = pwInput.type === "password";
+    pwInput.type = show ? "text" : "password";
+    pwToggle.textContent = show ? "\u{1F648}" : "\u{1F441}";
+    pwToggle.setAttribute("aria-label", show ? "Wachtwoord verbergen" : "Wachtwoord tonen");
+  });
+
   closeAuthButton?.addEventListener("click", closeAuthModal);
   authModal?.addEventListener("click", (event) => {
-    if (event.target?.dataset?.closeAuth === "true") {
-      closeAuthModal();
-    }
+    if (event.target?.dataset?.closeAuth === "true") closeAuthModal();
   });
 }
 
@@ -2449,7 +2450,7 @@ async function toggleLocalLoginState() {
     render();
     try {
       const client = getSupabaseClient();
-      if (client) client.auth.signOut().catch(() => {});
+      if (client) await client.auth.signOut();
     } catch (_) {}
     return;
   }
@@ -2875,18 +2876,18 @@ async function bootstrapCloudFeatures() {
 
   if (!authStateListenerBound) {
     authStateListenerBound = true;
-    client.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
+    client.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session?.user) {
+        if (state.auth?.loggedIn) {
+          state = createEmptyState();
+          writeToStorage(primaryStorageKey, JSON.stringify(state));
+          writeToStorage(storageKey, JSON.stringify(state));
+          render();
+        }
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
         await hydrateFromSupabaseSession(session.user);
-      } else {
-        state.auth.loggedIn = false;
-        state.auth.provider = "local";
-        state.auth.email = "";
-        state.auth.userId = "";
-        state.auth.lastSyncedAt = "";
-        writeToStorage(primaryStorageKey, JSON.stringify(state));
-        writeToStorage(storageKey, JSON.stringify(state));
-        render();
       }
     });
   }
