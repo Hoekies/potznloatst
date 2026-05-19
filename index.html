@@ -495,21 +495,28 @@ h3 {
 
 .tab-bar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 8px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  padding: 6px;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(17, 45, 69, 0.07), rgba(14, 116, 144, 0.08));
   border: 1px solid rgba(15, 37, 55, 0.08);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tab-button {
+  flex: 1 1 0;
+  min-width: 0;
   border: 0;
   border-radius: 999px;
-  padding: 12px 18px;
+  padding: 10px 12px;
   background: transparent;
   color: var(--muted);
   font-weight: 800;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -1567,6 +1574,7 @@ textarea:focus {
                 </button>
                 <div id="account-dropdown" class="account-menu__dropdown" hidden>
                   <button id="account-login" class="account-menu__item" type="button">Inloggen</button>
+                  <button id="open-profile" class="account-menu__item" type="button">Profiel &amp; foto</button>
                   <button id="export-state" class="account-menu__item" type="button">Exporteren</button>
                   <button id="import-state" class="account-menu__item" type="button">Importeren</button>
                   <input id="import-state-file" type="file" accept=".json" hidden>

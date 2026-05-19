@@ -567,7 +567,7 @@ importStateButton?.addEventListener("click", () => importStateFileInput?.click()
 importStateFileInput?.addEventListener("change", importStateFromFile);
 accountToggleButton?.addEventListener("click", toggleAccountDropdown);
 accountLoginButton?.addEventListener("click", () => { closeAccountDropdown(); toggleLocalLoginState(); });
-openProfileButton?.addEventListener("click", openProfileModal);
+openProfileButton?.addEventListener("click", () => { closeAccountDropdown(); openProfileModal(); });
 closeProfileButton?.addEventListener("click", closeProfileModal);
 profileModal?.addEventListener("click", (event) => {
   if (event.target?.dataset?.closeProfile === "true") {
