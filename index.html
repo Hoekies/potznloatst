@@ -176,6 +176,60 @@ textarea {
   background: #F4F8FB;
 }
 
+.login-wall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  gap: 12px;
+  text-align: center;
+}
+.login-wall p { margin: 0; }
+.login-wall__title { font-weight: 700; font-size: 1rem; color: #0F2537; }
+.login-wall__text { font-size: 0.875rem; color: #5B7182; }
+
+.avatar-crop-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0 8px;
+}
+.avatar-crop-stage {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: grab;
+  background: rgba(15, 37, 55, 0.07);
+  touch-action: none;
+  box-shadow: 0 0 0 3px rgba(14, 116, 144, 0.35), 0 4px 14px rgba(15, 37, 55, 0.1);
+}
+.avatar-crop-stage:active { cursor: grabbing; }
+.avatar-crop-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  user-select: none;
+  pointer-events: none;
+  will-change: transform;
+}
+.avatar-crop-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #5B7182;
+}
+.avatar-crop-zoom-row input[type="range"] {
+  width: 120px;
+  accent-color: #0E7490;
+  cursor: pointer;
+}
+
 .profile-modal {
   position: fixed;
   inset: 0;
@@ -1586,6 +1640,11 @@ textarea:focus {
       </header>
       <main class="layout">
         <section class="panel panel--tabs" aria-label="Werkbladen">
+          <div id="login-wall" class="login-wall" hidden>
+            <p class="login-wall__title">Log in om de weekendpot te bekijken</p>
+            <p class="login-wall__text">Je deelnemers, inleg en uitgaven worden veilig bewaard in je account.</p>
+            <button id="login-wall-btn" class="primary-button" type="button">Inloggen</button>
+          </div>
           <div class="panel__header panel__header--tabs">
             <div class="tab-bar" role="tablist" aria-label="Onderdelen van de pot">
               <button class="tab-button is-active" type="button" role="tab" data-tab-target="uitgaven">Uitgaven</button>
@@ -1798,9 +1857,19 @@ textarea:focus {
                 </label>
               </div>
               <label>
-                Profielfoto uploaden
+                Profielfoto kiezen
                 <input id="profile-avatar-file" name="avatarFile" type="file" accept="image/*" />
               </label>
+              <div id="avatar-crop-wrap" class="avatar-crop-wrap" hidden>
+                <div id="avatar-crop-stage" class="avatar-crop-stage">
+                  <img id="avatar-crop-img" class="avatar-crop-img" alt="" draggable="false" />
+                </div>
+                <div class="avatar-crop-zoom-row">
+                  <span>&#x1F50D;</span>
+                  <input type="range" id="avatar-crop-zoom" min="100" max="300" step="1" value="100" />
+                </div>
+                <button type="button" id="avatar-crop-reset" class="ghost-button">Foto verwijderen</button>
+              </div>
               <div class="button-row">
                 <button class="secondary-button" type="button" id="profile-reset-avatar">Avatar wissen</button>
                 <button class="primary-button" type="submit">Profiel opslaan</button>
