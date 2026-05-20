@@ -2102,6 +2102,14 @@ async function getCurrentSessionUser() {
     return null;
   }
 
+  // getSession() leest alleen uit localStorage en gooit nooit een
+  // AuthSessionMissingError als er geen sessie is - veel rustiger dan
+  // getUser() voor de niet-ingelogd flow.
+  const { data: sessionData } = await client.auth.getSession();
+  if (!sessionData?.session) {
+    return null;
+  }
+
   const { data, error } = await client.auth.getUser();
   if (error) {
     console.warn("Gebruiker ophalen uit Supabase mislukte:", error);
