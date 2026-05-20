@@ -2058,6 +2058,38 @@ function bindAuthModal() {
     pwToggle.setAttribute("aria-label", show ? "Wachtwoord verbergen" : "Wachtwoord tonen");
   });
 
+  const forgotButton = document.querySelector("#auth-forgot");
+  forgotButton?.addEventListener("click", async () => {
+    const emailInput = document.querySelector("#auth-email");
+    const email = sanitizeText(emailInput?.value || "", 120);
+    if (!email) {
+      setAuthStatus("Vul eerst je e-mailadres in.", true);
+      emailInput?.focus();
+      return;
+    }
+    const client = getSupabaseClient();
+    if (!client) {
+      setAuthStatus("Supabase is niet ingesteld.", true);
+      return;
+    }
+    setAuthStatus("Reset-mail wordt verstuurd...");
+    try {
+      const resetPromise = client.auth.resetPasswordForEmail(email, {
+        redirectTo: "https://potznloatst.vercel.app",
+      });
+      const { error } = await Promise.race([
+        resetPromise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Versturen duurt te lang. Probeer opnieuw.")), 15000)
+        ),
+      ]);
+      if (error) throw error;
+      setAuthStatus("E-mail verstuurd. Check je inbox (en de spamfolder) voor de reset-link.");
+    } catch (error) {
+      setAuthStatus(error?.message || "Versturen is mislukt.", true);
+    }
+  });
+
   closeAuthButton?.addEventListener("click", closeAuthModal);
   authModal?.addEventListener("click", (event) => {
     if (event.target?.dataset?.closeAuth === "true") closeAuthModal();

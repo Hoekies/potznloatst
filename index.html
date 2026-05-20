@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0A1B36" />
-    <title>Pot z,n Loatst | Op z'n Loatst</title>
+    <title>Pot z'n Loatst | Op z'n Loatst</title>
     <link rel="icon" type="image/png" href="./assets/icons/favicon.png" />
     <link rel="apple-touch-icon" href="./assets/icons/favicon.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -195,6 +195,19 @@ textarea {
   transition: background 0.15s;
 }
 .close-btn:hover { background: var(--gold-soft); transform: none; }
+
+.link-button {
+  background: none;
+  border: none;
+  padding: 6px 0 0;
+  margin: 0;
+  color: var(--olive);
+  font-size: 0.9rem;
+  text-decoration: underline;
+  cursor: pointer;
+  align-self: flex-start;
+}
+.link-button:hover { color: var(--olive-dark); }
 
 .account-menu__item {
   display: block;
@@ -1926,6 +1939,7 @@ textarea:focus {
                 <button id="auth-sign-in" class="secondary-button" type="submit">Inloggen</button>
                 <button id="auth-sign-up" class="primary-button" type="button">Nieuw account</button>
               </div>
+              <button type="button" id="auth-forgot" class="link-button">Wachtwoord vergeten?</button>
             </form>
           </div>
         </div>
