@@ -1,4 +1,4 @@
-const storageKey = "potzloats-state-v4";
+﻿const storageKey = "potzloats-state-v4";
 const primaryStorageKey = "potzloats-state-v5";
 const migrationStorageKey = "potzloats-supabase-migrations-v1";
 const authStatusFallback = "Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.";
@@ -77,9 +77,9 @@ const demoState = {
     avatarUrl: "",
   },
   participants: [
-    { id: createId(), name: "Rene", color: "#102A3A" },
-    { id: createId(), name: "Sven", color: "#7A8446" },
-    { id: createId(), name: "Joep", color: "#B86B45" },
+    { id: createId(), name: "Rene", color: "#0A1B36" },
+    { id: createId(), name: "Sven", color: "#2563EB" },
+    { id: createId(), name: "Joep", color: "#7C3AED" },
   ],
   contributions: [],
   expenses: [],
@@ -279,7 +279,7 @@ participantForm.addEventListener("submit", (event) => {
   });
 
   participantForm.reset();
-  participantColorInput.value = "#7A8446";
+  participantColorInput.value = "#2563EB";
   persistAndRender();
 });
 
@@ -640,101 +640,6 @@ document.querySelector("#avatar-crop-reset")?.addEventListener("click", () => {
 render();
 
 
-function loadState() {
-  const savedState = readFromStorage(storageKey);
-  if (!savedState) {
-    return normalizeState(cloneData(demoState));
-  }
-
-  try {
-    return normalizeState(JSON.parse(savedState));
-  } catch (error) {
-    return normalizeState(cloneData(demoState));
-  }
-}
-
-function normalizeState(rawState) {
-  const nextState = rawState && typeof rawState === "object" ? rawState : {};
-  const participants = Array.isArray(nextState.participants) ? nextState.participants : [];
-  const contributions = Array.isArray(nextState.contributions) ? nextState.contributions : [];
-  const expenses = Array.isArray(nextState.expenses) ? nextState.expenses : [];
-  const estimates = Array.isArray(nextState.estimates) ? nextState.estimates : [];
-
-  return {
-    weekend: {
-      name: nextState.weekend?.name || "Op z'n Loatst",
-      appName: nextState.weekend?.appName || "Pot z,n Loatst",
-    },
-    auth: {
-      loggedIn: Boolean(nextState.auth?.loggedIn),
-      provider: sanitizeText(nextState.auth?.provider || "local", 40) || "local",
-      email: sanitizeText(nextState.auth?.email || "", 120),
-    },
-    profile: {
-      name: sanitizeText(nextState.profile?.name || "", 80),
-      avatarUrl: sanitizeImageValue(nextState.profile?.avatarUrl || ""),
-    },
-    participants: participants.map((participant, index) => ({
-      id: participant.id || createId(),
-      name: sanitizeText(participant.name) || `Deelnemer ${index + 1}`,
-      color: participant.color || fallbackColor(index),
-    })),
-    contributions: contributions
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        id: item.id || createId(),
-        participantId: item.type === "topup" ? "" : item.participantId || "",
-        amount: sanitizeAmount(item.amount),
-        type: item.type === "topup" ? "topup" : "initial",
-        note: sanitizeText(item.note),
-        date: sanitizeDate(item.date),
-      })),
-    expenses: expenses
-      .filter((item) => item && typeof item === "object")
-      .map((item) => ({
-        id: item.id || createId(),
-        description: sanitizeText(item.description) || "Uitgave",
-        amount: sanitizeAmount(item.amount),
-        category: categoryLabels[item.category] ? item.category : "overig",
-        paidBy: sanitizeText(item.paidBy),
-        date: sanitizeDate(item.date),
-        note: sanitizeText(item.note),
-        receiptImage: sanitizeImageValue(item.receiptImage),
-        ocrStatus: item.ocrStatus || "manual",
-      })),
-    estimates: estimates
-      .filter((item) => item && typeof item === "object")
-      .map((item) => normalizeEstimate(item, participants.length)),
-  };
-}
-
-function createEmptyState() {
-  return normalizeState({
-    weekend: {
-      name: "Op z'n Loatst",
-      appName: "Pot z,n Loatst",
-    },
-    auth: {
-      loggedIn: false,
-      provider: "local",
-      email: "",
-    },
-    profile: {
-      name: "",
-      avatarUrl: "",
-    },
-    participants: [],
-    contributions: [],
-    expenses: [],
-    estimates: [],
-  });
-}
-
-function persistAndRender() {
-  writeToStorage(storageKey, JSON.stringify(state));
-  render();
-}
-
 function render() {
   renderLoginGate();
   renderTabs();
@@ -844,44 +749,6 @@ function avatarMarkup(source, fallback) {
   return escapeHtml(fallback);
 }
 
-function renderAccountUi() {
-  if (!accountName || !accountStatus || !accountAvatar) {
-    return;
-  }
-
-  const profileName = getProfileName();
-  const avatarSource = getProfileAvatarSource();
-  const fallback = profileName.charAt(0).toUpperCase() || "P";
-  const statusText = state.auth?.loggedIn
-    ? `Ingelogd${state.auth.email ? ` als ${state.auth.email}` : ""}`
-    : "Nog niet ingelogd";
-
-  accountName.textContent = profileName;
-  accountStatus.textContent = statusText;
-  accountAvatar.innerHTML = avatarMarkup(avatarSource, fallback);
-
-  if (accountToggleButton) {
-    accountToggleButton.querySelector("span").textContent = state.auth?.loggedIn ? "Uitloggen" : "Inloggen";
-  }
-  if (accountToggleHint) {
-    accountToggleHint.textContent = state.auth?.loggedIn
-      ? "Je profiel blijft lokaal klaarstaan voor latere cloud-sync"
-      : "Gebruik later Supabase of werk lokaal verder";
-  }
-
-  if (profilePreviewAvatar) {
-    profilePreviewAvatar.innerHTML = avatarMarkup(avatarSource, fallback);
-  }
-  if (profilePreviewName) {
-    profilePreviewName.textContent = profileName;
-  }
-  if (profilePreviewState) {
-    profilePreviewState.textContent = state.auth?.loggedIn
-      ? "Ingelogd profiel, klaar om later met de cloud te synchroniseren"
-      : "Nog niet ingelogd, wel klaar voor later accountkoppeling";
-  }
-}
-
 function openProfileModal() {
   if (!profileModal) return;
   closeMenuPanel();
@@ -970,31 +837,6 @@ async function getCroppedAvatarBlob() {
     0, 0, OUT, OUT
   );
   return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.9));
-}
-
-async function saveProfile(event) {
-  event.preventDefault();
-  state.profile.name = sanitizeText(profileNameInput.value, 80);
-  state.profile.avatarUrl = sanitizeImageValue(profileAvatarUrlInput?.value || "");
-
-  if (profileAvatarFileInput.files?.[0]) {
-    const blob = await getCroppedAvatarBlob();
-    state.profile.avatarUrl = await fileToDataUrl(blob || profileAvatarFileInput.files[0]);
-  }
-
-  persistAndRender();
-  closeProfileModal();
-}
-
-function toggleLocalLoginState() {
-  state.auth.loggedIn = !state.auth.loggedIn;
-  state.auth.provider = state.auth.loggedIn ? "local" : "local";
-  state.auth.email = state.auth.loggedIn ? "lokaal-profiel@potzloats.app" : "";
-  persistAndRender();
-}
-
-function handleCloudSync() {
-  window.alert("Cloud-sync staat klaar voor een Supabase-koppeling, maar heeft nog een Supabase URL en anon key nodig.");
 }
 
 function renderTabs() {
@@ -1166,7 +1008,7 @@ function renderTopups() {
 
       return `
           <article class="management-card" data-topup-card="${topup.id}">
-            <div class="management-card__logo money-logo" aria-hidden="true">€</div>
+            <div class="management-card__logo money-logo" aria-hidden="true">â‚¬</div>
             <div class="management-card__meta">
               ${
                 isEditing
@@ -1333,7 +1175,7 @@ function renderTimeline() {
 
       return `
         <article class="timeline-card ${entry.kind === "estimate" ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
-          <div class="timeline-card__badge ${entry.kind === "expense" || entry.kind === "estimate" ? "" : "participant-logo"}" style="background:${entry.kind === "expense" || entry.kind === "estimate" ? categoryColor(entry.category) : participant?.color || "#102A3A"}">${entry.kind === "expense" || entry.kind === "estimate" ? badgeText : "<span></span>"}</div>
+          <div class="timeline-card__badge ${entry.kind === "expense" || entry.kind === "estimate" ? "" : "participant-logo"}" style="background:${entry.kind === "expense" || entry.kind === "estimate" ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${entry.kind === "expense" || entry.kind === "estimate" ? badgeText : "<span></span>"}</div>
           <div class="timeline-card__main">
             <strong>${escapeHtml(entry.title)}</strong>
             <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
@@ -1514,103 +1356,6 @@ function showReceiptReview(message, status) {
   receiptReview.hidden = false;
 }
 
-async function requestReceiptAnalysis(payload) {
-  if (location.protocol !== "file:") {
-    try {
-      const response = await fetch("/api/receipt/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-      if (!response.ok) {
-        throw new Error(result.error || "Bonanalyse mislukt.");
-      }
-      return result;
-    } catch (error) {
-      return analyzeReceiptLocally(payload, true);
-    }
-  }
-
-  return analyzeReceiptLocally(payload, false);
-}
-
-function analyzeReceiptLocally(payload, serverFailed) {
-  const combined = `${payload.fileName || ""} ${payload.notesHint || ""}`.trim();
-  const amount = parseAmountFromText(combined);
-
-  return {
-    amount,
-    date: parseDateFromText(combined) || todayIso(),
-    description: prettifyReceiptName(payload.fileName || ""),
-    category: inferCategory(combined),
-    confidence: amount ? 0.44 : 0.16,
-    ocrStatus: amount ? "suggested" : "manual_required",
-    message: amount
-      ? serverFailed
-        ? "Serveranalyse was niet beschikbaar, dus ik heb lokaal een voorzichtige suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen'."
-        : "Lokale suggestie gemaakt. Controleer vooral het bedrag bij 'te betalen' of 'totaal'."
-      : "Ik kon geen betrouwbaar bedrag herkennen. Vergroot de bon en vul het juiste bedrag handmatig in.",
-  };
-}
-
-function parseAmountFromText(text) {
-  const prioritized = extractKeywordAmount(text);
-  if (prioritized !== null) {
-    return prioritized;
-  }
-
-  const withoutDate = text.replace(/(20\d{2})[-_ ]?(0[1-9]|1[0-2])[-_ ]?([0-2]\d|3[01])/g, " ");
-  const normalized = withoutDate.replace(/,/g, ".").replace(/[^0-9.]/g, " ");
-  const matches = normalized.match(/\d+(?:\.\d{1,2})?/g) || [];
-  const values = matches
-    .map((value) => Number(value))
-    .filter((value) => Number.isFinite(value) && value > 0 && value < 10000);
-
-  if (!values.length) {
-    return null;
-  }
-
-  const decimalMatches = matches.filter((value) => value.includes(".")).map((value) => Number(value));
-  if (decimalMatches.length) {
-    return decimalMatches.sort((a, b) => a - b)[0];
-  }
-
-  return values.sort((a, b) => a - b)[0];
-}
-
-function extractKeywordAmount(text) {
-  const normalized = text.toLowerCase().replace(/,/g, ".");
-  const patterns = [
-    /te betalen[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /totaal[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /total[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /amount due[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /netto[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}netto/,
-    /euro[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}euro/,
-    /eur[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}eur/,
-    /€[^0-9]{0,12}(\d+(?:\.\d{1,2})?)/,
-    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}€/,
-  ];
-
-  for (const pattern of patterns) {
-    const match = normalized.match(pattern);
-    if (match) {
-      const amount = Number(match[1]);
-      if (Number.isFinite(amount) && amount > 0 && amount < 10000) {
-        return amount;
-      }
-    }
-  }
-
-  return null;
-}
-
 function parseDateFromText(text) {
   const match = text.match(/(20\d{2})[-_ ]?(0[1-9]|1[0-2])[-_ ]?([0-2]\d|3[01])/);
   if (!match) {
@@ -1654,71 +1399,6 @@ function closeReceiptModal() {
   receiptModalImage.src = "";
 }
 
-async function exportStateToFile() {
-  const payload = {
-    exportedAt: new Date().toISOString(),
-    app: "Pot z,n Loatst",
-    data: state,
-  };
-  const fileName = `potzloats-${todayIso()}.json`;
-  const json = JSON.stringify(payload, null, 2);
-  const blob = new Blob([json], { type: "application/json" });
-
-  if (typeof File === "function" && navigator.share && navigator.canShare) {
-    try {
-      const shareFile = new File([blob], fileName, { type: "application/json" });
-      if (navigator.canShare({ files: [shareFile] })) {
-        await navigator.share({
-          files: [shareFile],
-          title: "Pot z,n Loatst export",
-          text: "Bewaar of deel je potbestand.",
-        });
-        return;
-      }
-    } catch (error) {
-      console.warn("Delen van exportbestand mislukt, probeer downloadfallback.", error);
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  link.rel = "noopener";
-  document.body.append(link);
-  link.click();
-  link.remove();
-
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-  if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !navigator.share) {
-    window.open(url, "_blank", "noopener");
-  }
-}
-
-async function importStateFromFile(event) {
-  const file = event.target.files?.[0];
-  if (!file) {
-    return;
-  }
-
-  try {
-    const text = await readFileAsText(file);
-    const parsed = JSON.parse(text);
-    const nextValue = parsed && typeof parsed === "object" ? parsed.data || parsed : null;
-    if (!nextValue || typeof nextValue !== "object" || Array.isArray(nextValue)) {
-      throw new Error("Ongeldig bestand");
-    }
-    state = normalizeState(nextValue);
-    resetUiState();
-    persistAndRender();
-  } catch (error) {
-    window.alert("Kon dit bestand niet inlezen als Pot z,n Loatst-data.");
-  } finally {
-    if (importStateFileInput) importStateFileInput.value = "";
-  }
-}
-
 function resetUiState() {
   pendingReceiptImage = "";
   editingParticipantId = null;
@@ -1727,16 +1407,6 @@ function resetUiState() {
   activeTab = "uitgaven";
   closeReceiptModal();
   resetExpenseComposer();
-}
-
-function resetExpenseComposer() {
-  expenseForm.reset();
-  expenseKindInput.value = "expense";
-  estimatePricingModeInput.value = "total";
-  expenseDateInput.value = todayIso();
-  pendingReceiptImage = "";
-  receiptReview.hidden = true;
-  renderExpenseComposerState();
 }
 
 function getSortedParticipants() {
@@ -1823,7 +1493,7 @@ function renderTimelineEditCard(entry, participant) {
   if (entry.kind === "contribution" || entry.kind === "topup") {
     return `
       <article class="timeline-card timeline-card--editing" data-timeline-card="${entry.id}">
-        <div class="timeline-card__badge ${entry.kind === "topup" ? "" : "participant-logo"}" style="background:${entry.kind === "topup" ? "#7A8446" : participant?.color || "#102A3A"}">${entry.kind === "topup" ? "€" : "<span></span>"}</div>
+        <div class="timeline-card__badge ${entry.kind === "topup" ? "" : "participant-logo"}" style="background:${entry.kind === "topup" ? "#2563EB" : participant?.color || "#0A1B36"}">${entry.kind === "topup" ? "â‚¬" : "<span></span>"}</div>
         <div class="timeline-card__main">
           <div class="inline-edit-grid">
             <label>
@@ -1885,20 +1555,6 @@ function saveTimelineEdits(kind, id, row) {
   saveExpenseEdits(id, kind, row);
 }
 
-function removeRecord(kind, id) {
-  if (kind === "contribution" || kind === "topup") {
-    state.contributions = state.contributions.filter((item) => item.id !== id);
-  } else if (kind === "estimate") {
-    state.estimates = state.estimates.filter((item) => item.id !== id);
-  } else {
-    state.expenses = state.expenses.filter((item) => item.id !== id);
-  }
-
-  if (editingRecord?.id === id && editingRecord?.kind === kind) {
-    editingRecord = null;
-  }
-}
-
 function convertEstimateToExpense(id) {
   const estimate = state.estimates.find((item) => item.id === id);
   if (!estimate) return;
@@ -1921,7 +1577,7 @@ function convertEstimateToExpense(id) {
 }
 
 function participantLogo(participant, className) {
-  const color = participant?.color || "#102A3A";
+  const color = participant?.color || "#0A1B36";
   const label = participant?.name ? `Logo van ${participant.name}` : "Deelnemerlogo";
   return `
     <div class="${className} participant-logo" style="background:${color}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">
@@ -1943,18 +1599,18 @@ function escapeHtml(value) {
 }
 
 function fallbackColor(index) {
-  return ["#102A3A", "#7A8446", "#D6A63A", "#B86B45", "#3F4932"][index % 5];
+  return ["#0A1B36", "#2563EB", "#06B6D4", "#7C3AED", "#1E3A8A"][index % 5];
 }
 
 function categoryColor(category) {
   return {
-    accommodatie: "#102A3A",
-    eten: "#B86B45",
-    drinken: "#D6A63A",
-    activiteit: "#7A8446",
-    vervoer: "#3F4932",
-    overig: "#7A8446",
-  }[category] || "#7A8446";
+    accommodatie: "#0A1B36",
+    eten: "#7C3AED",
+    drinken: "#06B6D4",
+    activiteit: "#2563EB",
+    vervoer: "#1E3A8A",
+    overig: "#2563EB",
+  }[category] || "#2563EB";
 }
 
 function todayIso() {
@@ -1980,20 +1636,6 @@ function readFileAsText(file) {
     reader.onload = () => resolve(String(reader.result || ""));
     reader.onerror = () => reject(new Error("Kon dit bestand niet lezen."));
     reader.readAsText(file);
-  });
-}
-
-function registerServiceWorker() {
-  if (!("serviceWorker" in navigator) || location.protocol === "file:") {
-    return;
-  }
-
-  window.addEventListener("load", async () => {
-    try {
-      await navigator.serviceWorker.register("./sw.js");
-    } catch (error) {
-      console.warn("Service worker registreren mislukt:", error);
-    }
   });
 }
 
@@ -2242,7 +1884,7 @@ function renderAccountUi() {
   const fallback = profileName.charAt(0).toUpperCase() || "P";
   const cloudReady = isSupabaseConfigured();
   const lastSyncText = state.auth?.lastSyncedAt
-    ? ` · laatste sync ${dateFormatter.format(new Date(state.auth.lastSyncedAt))}`
+    ? ` Â· laatste sync ${dateFormatter.format(new Date(state.auth.lastSyncedAt))}`
     : "";
   const statusText = state.auth?.loggedIn
     ? `Ingelogd${state.auth.email ? ` als ${state.auth.email}` : ""}${lastSyncText}`
@@ -2318,7 +1960,7 @@ function setAuthStatus(message, isError = false) {
   if (!statusNode) return;
   statusNode.textContent = message;
   statusNode.hidden = !message;
-  statusNode.style.color = isError ? "#8C3C2A" : "";
+  statusNode.style.color = isError ? "#DC2626" : "";
 }
 
 async function submitAuth(mode) {
@@ -3132,7 +2774,7 @@ function extractKeywordAmount(text) {
     /saldo[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
     /sum[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
     /netto[^0-9]{0,16}(\d+(?:\.\d{1,2})?)/,
-    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}(?:eur|euro|€)/,
+    /(\d+(?:\.\d{1,2})?)[^a-z0-9]{0,12}(?:eur|euro|â‚¬)/,
   ];
 
   for (const pattern of patterns) {
@@ -3224,7 +2866,7 @@ function renderExpenseComposerState() {
     expenseAmountInput.value = participantCount ? String(sanitizeAmount(perPersonAmount * participantCount)) : "";
     if (estimateCalculation) {
       estimateCalculation.textContent = participantCount
-        ? `${currencyFormatter.format(perPersonAmount)} p.p. × ${participantCount} deelnemers = ${currencyFormatter.format(perPersonAmount * participantCount)}`
+        ? `${currencyFormatter.format(perPersonAmount)} p.p. Ã— ${participantCount} deelnemers = ${currencyFormatter.format(perPersonAmount * participantCount)}`
         : "Voeg eerst deelnemers toe om per persoon te berekenen.";
     }
   } else {

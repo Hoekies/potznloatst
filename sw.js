@@ -1,4 +1,4 @@
-const CACHE_NAME = "potzloats-cache-v59";
+﻿const CACHE_NAME = "potzloats-cache-v60";
 const APP_ASSETS = [
   "./",
   "./index.html",
@@ -80,6 +80,7 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
+
 
 
 
