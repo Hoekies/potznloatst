@@ -1,4 +1,4 @@
-const CACHE_NAME = "potzloats-cache-v58";
+const CACHE_NAME = "potzloats-cache-v59";
 const APP_ASSETS = [
   "./",
   "./index.html",

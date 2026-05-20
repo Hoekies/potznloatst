@@ -2443,10 +2443,39 @@ async function toggleLocalLoginState() {
     writeToStorage(primaryStorageKey, JSON.stringify(state));
     writeToStorage(storageKey, JSON.stringify(state));
     render();
+
+    // Sign out locally with a short timeout so a slow network never wedges
+    // the supabase-js auth lock. scope:'local' skips the server call which
+    // is the operation most likely to hang and hold the lock.
+    const oldClient = supabaseClientInstance;
+    if (oldClient) {
+      try {
+        await Promise.race([
+          oldClient.auth.signOut({ scope: "local" }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("signOut timeout")), 3000)),
+        ]);
+      } catch (_) {}
+    }
+
+    // Hard reset: discard the GoTrueClient and rebuild from scratch. This
+    // guarantees no stuck Web Lock, refresh-token timer, or stale session
+    // carries over into the next sign-in attempt.
+    supabaseClientInstance = null;
+    authStateListenerBound = false;
+
+    // Defensive: clear any residual supabase auth keys in localStorage
+    // (session JWT, refresh token, PKCE code verifier, etc.)
     try {
-      const client = getSupabaseClient();
-      if (client) await client.auth.signOut();
+      const toRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("sb-")) toRemove.push(key);
+      }
+      toRemove.forEach((k) => localStorage.removeItem(k));
     } catch (_) {}
+
+    // Re-create the client and rebind the auth-state listener
+    await bootstrapCloudFeatures();
     return;
   }
 
