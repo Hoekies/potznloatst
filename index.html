@@ -175,6 +175,25 @@ textarea {
 }
 .eye-toggle:hover { color: #0F2537; }
 
+.close-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.9);
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s;
+}
+.close-btn:hover { background: var(--gold-soft); transform: none; }
+
 .account-menu__item {
   display: block;
   width: 100%;
@@ -1661,8 +1680,6 @@ textarea:focus {
       <main class="layout">
         <section class="panel panel--tabs" aria-label="Werkbladen">
           <div id="login-wall" class="login-wall" hidden>
-            <p class="login-wall__title">Log in om de weekendpot te bekijken</p>
-            <p class="login-wall__text">Je deelnemers, inleg en uitgaven worden veilig bewaard in je account.</p>
             <button id="login-wall-btn" class="primary-button" type="button">Inloggen</button>
           </div>
           <div class="panel__header panel__header--tabs">
@@ -1775,7 +1792,6 @@ textarea:focus {
                       <option value="estimate">Raming</option>
                     </select>
                   </label>
-                  <p id="expense-kind-copy" class="field-help">Kies een definitieve uitgave of zet eerst een raming klaar.</p>
                   <div class="field-row">
                     <label>
                       Omschrijving
@@ -1856,7 +1872,7 @@ textarea:focus {
                 <div id="profile-preview-avatar" class="profile-preview__avatar" aria-hidden="true">P</div>
                 <strong id="profile-preview-name">Profiel</strong>
               </div>
-              <button id="close-profile" class="ghost-button" type="button">Sluiten</button>
+              <button id="close-profile" class="close-btn" type="button" aria-label="Sluiten">&#x2715;</button>
             </div>
             <form id="profile-form" class="stack-form">
               <label>
@@ -1889,7 +1905,7 @@ textarea:focus {
           <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title" style="max-height:90dvh;overflow-y:auto;">
             <div class="profile-modal__header">
               <h3 id="auth-title">Inloggen</h3>
-              <button id="close-auth" class="ghost-button" type="button">Sluiten</button>
+              <button id="close-auth" class="close-btn" type="button" aria-label="Sluiten">&#x2715;</button>
             </div>
             <form id="auth-form" class="stack-form" autocomplete="on">
               <label>
