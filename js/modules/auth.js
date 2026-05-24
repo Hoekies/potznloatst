@@ -158,11 +158,22 @@ export async function submitAuth() {
   const slowTimer = setTimeout(() => setAuthStatus("Even geduld, verbinding wordt opgestart…"), 5000);
 
   try {
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    let timeoutId;
+    const loginPromise = client.auth.signInWithPassword({ email, password });
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("timeout")), 30000);
+    });
+    let data, error;
+    try {
+      ({ data, error } = await Promise.race([loginPromise, timeoutPromise]));
+    } finally {
+      // Ruim de timeout altijd op zodat hij niet achteraf nog fires
+      clearTimeout(timeoutId);
+    }
     clearTimeout(slowTimer);
     if (error) throw error;
 
-    // Sluit modal direct — ongeacht wat er hierna misgaat
+    // Sluit modal DIRECT na succesvolle auth — vóór hydration die seconden kan duren
     closeAuthModal();
 
     state.auth = {
@@ -184,9 +195,11 @@ export async function submitAuth() {
   } catch (error) {
     clearTimeout(slowTimer);
     const msg = error?.message || "";
-    const friendly = msg.includes("Invalid login") || msg.includes("invalid_grant")
-      ? "Gebruikersnaam of wachtwoord klopt niet."
-      : msg || "Inloggen is mislukt.";
+    const friendly = msg === "timeout"
+      ? "Verbinding duurt te lang. Probeer het opnieuw."
+      : msg.includes("Invalid login") || msg.includes("invalid_grant")
+        ? "Gebruikersnaam of wachtwoord klopt niet."
+        : msg || "Inloggen is mislukt.";
     setAuthStatus(friendly, true);
   }
 }
