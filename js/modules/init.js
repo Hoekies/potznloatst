@@ -80,8 +80,6 @@ function getDomBundle() {
 function renderAll() {
   render(getDomBundle());
   renderAccountUiNow();
-  // Koppel login-overlay knop na elke render (overlay wordt dynamisch aangemaakt)
-  document.querySelector("#login-overlay-btn")?.addEventListener("click", () => openAuthModal());
 }
 
 function renderAccountUiNow() {
@@ -627,6 +625,9 @@ function setupEventListeners() {
   dom.syncCloudButton?.addEventListener("click", () => handleCloudSync(() => openAuthModal(), showToast));
 
   document.querySelector("#login-wall-btn")?.addEventListener("click", () => openAuthModal());
+  document.body.addEventListener("click", (e) => {
+    if (e.target?.id === "login-overlay-btn") openAuthModal();
+  });
 
   dom.cropStage?.addEventListener("pointerdown", (e) => {
     dom.cropStage.setPointerCapture(e.pointerId);

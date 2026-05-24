@@ -162,6 +162,14 @@ export async function submitAuth() {
     const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
     if (error) throw error;
 
+    state.auth = {
+      ...state.auth,
+      loggedIn: true,
+      provider: "supabase",
+      email: loginNaarEmail(gebruikersnaam),
+      userId: data.user?.id || "",
+    };
+    persistAndRender();
     closeAuthModal();
     await upsertGebruiker(client, data.user, gebruikersnaam);
   } catch (error) {
