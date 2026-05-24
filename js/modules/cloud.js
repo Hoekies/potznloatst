@@ -455,7 +455,12 @@ export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onP
         return;
       }
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
-        await hydrateFromSupabaseSession(session.user);
+        try {
+          await hydrateFromSupabaseSession(session.user);
+        } catch (err) {
+          console.warn("Hydration mislukt, gebruik lokale staat:", err);
+          applyCloudState(createEmptyState(), session.user);
+        }
       }
     });
   }

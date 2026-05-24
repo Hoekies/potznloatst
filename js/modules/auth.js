@@ -162,9 +162,8 @@ export async function submitAuth() {
     const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
     if (error) throw error;
 
-    await upsertGebruiker(client, data.user, gebruikersnaam);
-    setAuthStatus("Ingelogd. Je gegevens worden geladen.");
     closeAuthModal();
+    await upsertGebruiker(client, data.user, gebruikersnaam);
   } catch (error) {
     const msg = error?.message || "";
     const friendly = msg.includes("Invalid login") ? "Gebruikersnaam of wachtwoord klopt niet." : msg || "Inloggen is mislukt.";
