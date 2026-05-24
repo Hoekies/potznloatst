@@ -24,6 +24,7 @@ import {
   clampCropOffset, applyCropTransform, resetCropper,
   getProfileName, getProfileAvatarSource, cropState,
   setRenderAccountUiFn, setAuthRenderFn, openPasswordResetModal,
+  openAdminGebruikersModal,
 } from './auth.js';
 import {
   bootstrapCloudFeatures, handleCloudSync, queueCloudSync, setRenderFn as setCloudRenderFn,
@@ -594,6 +595,10 @@ function setupEventListeners() {
   dom.openProfileButton?.addEventListener("click", () => {
     closeAccountDropdown();
     openProfileModal(dom);
+  });
+  document.querySelector("#open-admin-gebruikers")?.addEventListener("click", () => {
+    closeAccountDropdown();
+    openAdminGebruikersModal();
   });
   dom.closeProfileButton?.addEventListener("click", () => closeProfileModal(dom));
   dom.profileModal?.addEventListener("click", (event) => {

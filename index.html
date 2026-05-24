@@ -36,6 +36,7 @@
                 <div id="account-dropdown" class="account-menu__dropdown" hidden>
                   <button id="account-login" class="account-menu__item" type="button">Inloggen</button>
                   <button id="open-profile" class="account-menu__item" type="button">Profiel</button>
+                  <button id="open-admin-gebruikers" class="account-menu__item" type="button" hidden>Gebruikers beheren</button>
                   <button id="export-state" class="account-menu__item" type="button">Exporteren</button>
                   <button id="import-state" class="account-menu__item" type="button">Importeren</button>
                   <input id="import-state-file" type="file" accept=".json" hidden>
@@ -297,8 +298,8 @@
             </div>
             <form id="auth-form" class="stack-form" autocomplete="on">
               <label>
-                E-mail
-                <input id="auth-email" name="email" type="email" maxlength="120" placeholder="jij@voorbeeld.nl" autocomplete="email" required />
+                Gebruikersnaam
+                <input id="auth-username" name="username" type="text" maxlength="80" placeholder="Bijv. admin" autocomplete="username" required />
               </label>
               <label>
                 Wachtwoord
@@ -308,11 +309,33 @@
                 </div>
               </label>
               <p id="auth-status" class="field-help" hidden></p>
-              <div class="button-row">
-                <button id="auth-sign-in" class="secondary-button" type="submit">Inloggen</button>
-                <button id="auth-sign-up" class="primary-button" type="button">Nieuw account</button>
+              <button id="auth-sign-in" class="primary-button" type="submit">Inloggen</button>
+            </form>
+          </div>
+        </div>
+        <div id="admin-gebruikers-modal" class="profile-modal" hidden>
+          <div class="profile-modal__backdrop" data-close-admin-gebruikers="true"></div>
+          <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="admin-gebruikers-title" style="max-height:90dvh;overflow-y:auto;">
+            <div class="profile-modal__header" style="position:sticky;top:0;background:#fff;z-index:1;padding-bottom:12px;">
+              <h3 id="admin-gebruikers-title">Gebruikers beheren</h3>
+              <button id="close-admin-gebruikers" class="close-btn" type="button" aria-label="Sluiten">&#x2715;</button>
+            </div>
+            <div id="admin-gebruikers-list" style="margin-bottom:20px;"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;" />
+            <h4 style="margin-bottom:12px;font-size:0.95rem;">Nieuwe gebruiker aanmaken</h4>
+            <form id="admin-gebruiker-form" class="stack-form" autocomplete="off">
+              <div class="field-row">
+                <label>
+                  Gebruikersnaam
+                  <input id="admin-gebruiker-naam" type="text" maxlength="40" placeholder="Bijv. rene" required />
+                </label>
+                <label>
+                  Wachtwoord
+                  <input id="admin-gebruiker-ww" type="password" minlength="6" placeholder="Min. 6 tekens" required />
+                </label>
               </div>
-              <button type="button" id="auth-forgot" class="link-button">Wachtwoord vergeten?</button>
+              <p id="admin-gebruiker-status" class="field-help" hidden></p>
+              <button class="primary-button" type="submit">Aanmaken</button>
             </form>
           </div>
         </div>

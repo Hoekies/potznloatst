@@ -6,6 +6,18 @@ import {
   getSupabaseClient, isSupabaseConfigured, getCurrentSessionUser, saveProfileToCloud,
 } from './cloud.js';
 
+export function loginNaarEmail(gebruikersnaam) {
+  return `${gebruikersnaam.toLowerCase().trim()}@potznloatst.local`;
+}
+
+export function emailNaarLogin(email) {
+  return String(email || "").replace(/@potznloatst\.local$/, "");
+}
+
+export function isAdmin(user) {
+  return user?.email === "admin@potznloatst.local";
+}
+
 let authModalBound = false;
 let passwordResetModalBound = false;
 let profileAvatarPreviewUrl = "";
@@ -93,15 +105,15 @@ function bindPasswordResetModal() {
   });
 }
 
-export function openAuthModal(prefillEmail = "") {
+export function openAuthModal(prefillUsername = "") {
   const authModal = document.querySelector("#auth-modal");
-  const emailInput = document.querySelector("#auth-email");
+  const usernameInput = document.querySelector("#auth-username");
   const passwordInput = document.querySelector("#auth-password");
-  if (!authModal || !emailInput || !passwordInput) return;
+  if (!authModal || !usernameInput || !passwordInput) return;
 
   const statusNode = document.querySelector("#auth-status");
   if (statusNode) { statusNode.textContent = ""; statusNode.hidden = true; }
-  emailInput.value = prefillEmail || state.auth?.email || "";
+  usernameInput.value = prefillUsername || emailNaarLogin(state.auth?.email || "");
   passwordInput.value = "";
   authModal.hidden = false;
   bindAuthModal();
@@ -122,70 +134,53 @@ export function setAuthStatus(message, isError = false) {
   statusNode.style.color = isError ? "#DC2626" : "";
 }
 
-export async function submitAuth(mode) {
+export async function submitAuth() {
   const client = getSupabaseClient();
   if (!client) {
-    setAuthStatus("Vul eerst `supabase-config.js` in met je Supabase URL en anon key.", true);
+    setAuthStatus("Supabase is niet ingesteld.", true);
     return;
   }
 
-  const emailInput = document.querySelector("#auth-email");
+  const usernameInput = document.querySelector("#auth-username");
   const passwordInput = document.querySelector("#auth-password");
-  const email = sanitizeText(emailInput?.value || "", 120);
+  const gebruikersnaam = sanitizeText(usernameInput?.value || "", 80);
   const password = String(passwordInput?.value || "");
-  const displayName = sanitizeText(state.profile?.name || "", 80);
 
-  if (!email || password.length < 6) {
-    setAuthStatus("Vul een geldig e-mailadres en een wachtwoord van minimaal 6 tekens in.", true);
+  if (!gebruikersnaam || password.length < 6) {
+    setAuthStatus("Vul een gebruikersnaam en wachtwoord van minimaal 6 tekens in.", true);
     return;
   }
 
-  setAuthStatus(mode === "signup" ? "Account wordt aangemaakt..." : "Inloggen...");
+  const email = loginNaarEmail(gebruikersnaam);
+  setAuthStatus("Inloggen...");
 
   try {
-    if (mode === "signup") {
-      const { data, error } = await client.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            display_name: displayName,
-          },
-        },
-      });
-      if (error) {
-        throw error;
-      }
-
-      if (displayName) {
-        state.profile.name = displayName;
-      }
-
-      if (data?.session?.user) {
-        await saveProfileToCloud(data.session.user);
-        setAuthStatus("Account aangemaakt. Je bent ingelogd en je data wordt nu gesynchroniseerd.");
-        closeAuthModal();
-      } else {
-        setAuthStatus("Account aangemaakt. Bevestig je e-mail en log daarna in.");
-      }
-      if (_renderAccountUi) _renderAccountUi();
-      return;
-    }
-
     const signInPromise = client.auth.signInWithPassword({ email, password });
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error("Inloggen duurt te lang. Controleer je verbinding en probeer opnieuw.")), 15000)
     );
     const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
 
+    await upsertGebruiker(client, data.user, gebruikersnaam);
     setAuthStatus("Ingelogd. Je gegevens worden geladen.");
     closeAuthModal();
   } catch (error) {
-    setAuthStatus(error?.message || "Inloggen is mislukt.", true);
+    const msg = error?.message || "";
+    const friendly = msg.includes("Invalid login") ? "Gebruikersnaam of wachtwoord klopt niet." : msg || "Inloggen is mislukt.";
+    setAuthStatus(friendly, true);
   }
+}
+
+async function upsertGebruiker(client, user, gebruikersnaam) {
+  if (!user) return;
+  try {
+    await client.from("gebruikers").upsert({
+      id: user.id,
+      gebruikersnaam,
+      last_login_at: new Date().toISOString(),
+    }, { onConflict: "id" });
+  } catch (_) {}
 }
 
 export function bindAuthModal() {
@@ -193,7 +188,6 @@ export function bindAuthModal() {
   authModalBound = true;
 
   const authForm = document.querySelector("#auth-form");
-  const authSignUpButton = document.querySelector("#auth-sign-up");
   const closeAuthButton = document.querySelector("#close-auth");
   const authModal = document.querySelector("#auth-modal");
   const pwToggle = document.querySelector("#auth-password-toggle");
@@ -201,11 +195,7 @@ export function bindAuthModal() {
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await submitAuth("signin");
-  });
-
-  authSignUpButton?.addEventListener("click", async () => {
-    await submitAuth("signup");
+    await submitAuth();
   });
 
   pwToggle?.addEventListener("click", () => {
@@ -216,41 +206,134 @@ export function bindAuthModal() {
     pwToggle.setAttribute("aria-label", show ? "Wachtwoord verbergen" : "Wachtwoord tonen");
   });
 
-  const forgotButton = document.querySelector("#auth-forgot");
-  forgotButton?.addEventListener("click", async () => {
-    const emailInput = document.querySelector("#auth-email");
-    const email = sanitizeText(emailInput?.value || "", 120);
-    if (!email) {
-      setAuthStatus("Vul eerst je e-mailadres in.", true);
-      emailInput?.focus();
-      return;
-    }
-    const client = getSupabaseClient();
-    if (!client) {
-      setAuthStatus("Supabase is niet ingesteld.", true);
-      return;
-    }
-    setAuthStatus("Reset-mail wordt verstuurd...");
-    try {
-      const resetPromise = client.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://potznloatst.vercel.app",
-      });
-      const { error } = await Promise.race([
-        resetPromise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Versturen duurt te lang. Probeer opnieuw.")), 15000)
-        ),
-      ]);
-      if (error) throw error;
-      setAuthStatus("E-mail verstuurd. Check je inbox (en de spamfolder) voor de reset-link.");
-    } catch (error) {
-      setAuthStatus(error?.message || "Versturen is mislukt.", true);
-    }
-  });
-
   closeAuthButton?.addEventListener("click", closeAuthModal);
   authModal?.addEventListener("click", (event) => {
     if (event.target?.dataset?.closeAuth === "true") closeAuthModal();
+  });
+}
+
+let adminGebruikersModalBound = false;
+
+export function openAdminGebruikersModal() {
+  const modal = document.querySelector("#admin-gebruikers-modal");
+  if (!modal) return;
+  modal.hidden = false;
+  bindAdminGebruikersModal();
+  laadGebruikers();
+}
+
+export function closeAdminGebruikersModal() {
+  const modal = document.querySelector("#admin-gebruikers-modal");
+  if (modal) modal.hidden = true;
+}
+
+async function laadGebruikers() {
+  const listEl = document.querySelector("#admin-gebruikers-list");
+  if (!listEl) return;
+  const client = getSupabaseClient();
+  if (!client) return;
+
+  listEl.textContent = "Laden…";
+  const { data, error } = await client
+    .from("gebruikers")
+    .select("id, gebruikersnaam, created_at, last_login_at")
+    .order("created_at", { ascending: true });
+
+  if (error || !data) {
+    listEl.textContent = "Kon gebruikers niet laden.";
+    return;
+  }
+
+  if (!data.length) {
+    listEl.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;">Nog geen gebruikers.</p>';
+    return;
+  }
+
+  listEl.innerHTML = data.map(g => {
+    const isAdminUser = g.gebruikersnaam === "admin";
+    const login = new Date(g.last_login_at || g.created_at).toLocaleDateString("nl-NL");
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <strong style="font-size:0.9rem;">${sanitizeText(g.gebruikersnaam)}</strong>
+        ${isAdminUser ? '<span style="font-size:0.7rem;background:var(--primary);color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;">admin</span>' : ""}
+        <div style="font-size:0.75rem;color:var(--muted);">Laatste login: ${login}</div>
+      </div>
+      ${!isAdminUser ? `<button class="ghost-button ghost-button--small" data-verwijder-gebruiker="${g.id}" style="color:#DC2626;">Verwijder</button>` : ""}
+    </div>`;
+  }).join("");
+
+  listEl.querySelectorAll("[data-verwijder-gebruiker]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Deze gebruiker verwijderen?")) return;
+      const uid = btn.dataset.verwijderGebruiker;
+      const client2 = getSupabaseClient();
+      await client2.from("gebruikers").delete().eq("id", uid);
+      await laadGebruikers();
+    });
+  });
+}
+
+function bindAdminGebruikersModal() {
+  if (adminGebruikersModalBound) return;
+  adminGebruikersModalBound = true;
+
+  document.querySelector("#close-admin-gebruikers")?.addEventListener("click", closeAdminGebruikersModal);
+  document.querySelector("#admin-gebruikers-modal")?.addEventListener("click", e => {
+    if (e.target?.dataset?.closeAdminGebruikers === "true") closeAdminGebruikersModal();
+  });
+
+  document.querySelector("#admin-gebruiker-form")?.addEventListener("submit", async e => {
+    e.preventDefault();
+    const statusEl = document.querySelector("#admin-gebruiker-status");
+    const naamInput = document.querySelector("#admin-gebruiker-naam");
+    const wwInput = document.querySelector("#admin-gebruiker-ww");
+    const submitBtn = e.target.querySelector('[type="submit"]');
+
+    const gebruikersnaam = sanitizeText(naamInput?.value || "", 40);
+    const password = String(wwInput?.value || "");
+
+    const setStatus = (msg, isError = false) => {
+      if (!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.hidden = !msg;
+      statusEl.style.color = isError ? "#DC2626" : "var(--success, #16a34a)";
+    };
+
+    if (!gebruikersnaam || password.length < 6) {
+      setStatus("Vul een gebruikersnaam en wachtwoord van min. 6 tekens in.", true);
+      return;
+    }
+
+    const client = getSupabaseClient();
+    if (!client) { setStatus("Supabase niet ingesteld.", true); return; }
+
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Aanmaken…"; }
+    setStatus("Bezig…");
+
+    try {
+      const email = loginNaarEmail(gebruikersnaam);
+      const { data, error } = await client.auth.signUp({ email, password });
+      if (error) throw error;
+
+      if (data?.user) {
+        await client.from("gebruikers").upsert({
+          id: data.user.id,
+          gebruikersnaam,
+          last_login_at: null,
+        }, { onConflict: "id" });
+      }
+
+      setStatus(`Gebruiker "${gebruikersnaam}" aangemaakt.`);
+      if (naamInput) naamInput.value = "";
+      if (wwInput) wwInput.value = "";
+      await laadGebruikers();
+    } catch (err) {
+      const msg = err?.message || "";
+      const friendly = msg.includes("already registered") ? `Gebruikersnaam "${gebruikersnaam}" bestaat al.` : msg || "Aanmaken mislukt.";
+      setStatus(friendly, true);
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Aanmaken"; }
+    }
   });
 }
 

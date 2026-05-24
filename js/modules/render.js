@@ -3,6 +3,7 @@ import { escapeHtml, formatDate, categoryColor, sanitizeAmount } from './utils.j
 import { state } from './state.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount, calculateSettlements } from './calculations.js';
 import { isSupabaseConfigured } from './cloud.js';
+import { emailNaarLogin, isAdmin } from './auth.js';
 import {
   getActiveTab, setActiveTab,
   getEditingParticipantId, setEditingParticipantId,
@@ -584,8 +585,9 @@ export function renderAccountUi(dom, getProfileName, getProfileAvatarSource) {
   const lastSyncText = state.auth?.lastSyncedAt
     ? ` · laatste sync ${dom.dateFormatter ? dom.dateFormatter.format(new Date(state.auth.lastSyncedAt)) : new Date(state.auth.lastSyncedAt).toLocaleDateString("nl-NL")}`
     : "";
+  const gebruikersnaam = state.auth?.email ? emailNaarLogin(state.auth.email) : "";
   const statusText = state.auth?.loggedIn
-    ? `Ingelogd${state.auth.email ? ` als ${state.auth.email}` : ""}${lastSyncText}`
+    ? `Ingelogd${gebruikersnaam ? ` als ${gebruikersnaam}` : ""}${lastSyncText}`
     : cloudReady
       ? "Lokale modus, cloud staat klaar"
       : "Lokale modus, Supabase nog niet ingesteld";
@@ -596,6 +598,14 @@ export function renderAccountUi(dom, getProfileName, getProfileAvatarSource) {
 
   if (dom.accountLoginButton) {
     dom.accountLoginButton.textContent = state.auth?.loggedIn ? "Uitloggen" : "Inloggen";
+  }
+
+  const adminBtn = document.querySelector("#open-admin-gebruikers");
+  if (adminBtn) {
+    const adminUser = state.auth?.loggedIn && state.auth?.email
+      ? { email: state.auth.email }
+      : null;
+    adminBtn.hidden = !isAdmin(adminUser);
   }
 
   if (dom.syncCloudButton) {
