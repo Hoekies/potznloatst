@@ -154,12 +154,12 @@ export async function submitAuth() {
   const email = loginNaarEmail(gebruikersnaam);
   setAuthStatus("Inloggen...");
 
+  // Toon na 5s een extra hint (Supabase free tier kan opgestart moeten worden)
+  const slowTimer = setTimeout(() => setAuthStatus("Even geduld, verbinding wordt opgestart…"), 5000);
+
   try {
-    const signInPromise = client.auth.signInWithPassword({ email, password });
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Inloggen duurt te lang. Controleer je verbinding en probeer opnieuw.")), 15000)
-    );
-    const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    clearTimeout(slowTimer);
     if (error) throw error;
 
     state.auth = {
@@ -173,8 +173,11 @@ export async function submitAuth() {
     closeAuthModal();
     await upsertGebruiker(client, data.user, gebruikersnaam);
   } catch (error) {
+    clearTimeout(slowTimer);
     const msg = error?.message || "";
-    const friendly = msg.includes("Invalid login") ? "Gebruikersnaam of wachtwoord klopt niet." : msg || "Inloggen is mislukt.";
+    const friendly = msg.includes("Invalid login") || msg.includes("invalid_grant")
+      ? "Gebruikersnaam of wachtwoord klopt niet."
+      : msg || "Inloggen is mislukt.";
     setAuthStatus(friendly, true);
   }
 }
