@@ -162,6 +162,9 @@ export async function submitAuth() {
     clearTimeout(slowTimer);
     if (error) throw error;
 
+    // Sluit modal direct — ongeacht wat er hierna misgaat
+    closeAuthModal();
+
     state.auth = {
       ...state.auth,
       loggedIn: true,
@@ -169,8 +172,14 @@ export async function submitAuth() {
       email: loginNaarEmail(gebruikersnaam),
       userId: data.user?.id || "",
     };
-    persistAndRender();
-    closeAuthModal();
+
+    try {
+      persistAndRender();
+    } catch (renderErr) {
+      console.warn("Render na inloggen mislukt:", renderErr);
+      writeToStorage(primaryStorageKey, JSON.stringify(state));
+    }
+
     await upsertGebruiker(client, data.user, gebruikersnaam);
   } catch (error) {
     clearTimeout(slowTimer);
