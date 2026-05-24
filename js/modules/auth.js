@@ -7,6 +7,7 @@ import {
 } from './cloud.js';
 
 let authModalBound = false;
+let passwordResetModalBound = false;
 let profileAvatarPreviewUrl = "";
 
 export const cropState = {
@@ -22,6 +23,74 @@ export const cropState = {
 let _renderAccountUi;
 export function setRenderAccountUiFn(fn) {
   _renderAccountUi = fn;
+}
+
+export function openPasswordResetModal() {
+  const modal = document.querySelector("#password-reset-modal");
+  const input = document.querySelector("#pw-reset-input");
+  const status = document.querySelector("#pw-reset-status");
+  if (!modal) return;
+  if (input) input.value = "";
+  if (status) { status.textContent = ""; status.hidden = true; }
+  modal.hidden = false;
+  bindPasswordResetModal();
+}
+
+export function closePasswordResetModal() {
+  const modal = document.querySelector("#password-reset-modal");
+  if (modal) modal.hidden = true;
+}
+
+function bindPasswordResetModal() {
+  if (passwordResetModalBound) return;
+  passwordResetModalBound = true;
+
+  const form = document.querySelector("#password-reset-form");
+  const toggle = document.querySelector("#pw-reset-toggle");
+  const input = document.querySelector("#pw-reset-input");
+  const status = document.querySelector("#pw-reset-status");
+
+  const setStatus = (msg, isError = false) => {
+    if (!status) return;
+    status.textContent = msg;
+    status.hidden = !msg;
+    status.style.color = isError ? "#DC2626" : "";
+  };
+
+  toggle?.addEventListener("click", () => {
+    if (!input) return;
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    toggle.textContent = show ? "\u{1F648}" : "\u{1F441}";
+    toggle.setAttribute("aria-label", show ? "Wachtwoord verbergen" : "Wachtwoord tonen");
+  });
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const password = String(input?.value || "");
+    if (password.length < 6) {
+      setStatus("Wachtwoord moet minimaal 6 tekens zijn.", true);
+      return;
+    }
+    const client = getSupabaseClient();
+    if (!client) { setStatus("Supabase is niet ingesteld.", true); return; }
+
+    const submitBtn = form.querySelector('[type="submit"]');
+    const origText = submitBtn?.textContent;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Opslaan…"; }
+    setStatus("Wachtwoord wordt opgeslagen…");
+
+    try {
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw error;
+      setStatus("Wachtwoord opgeslagen! Je bent nu ingelogd.");
+      setTimeout(closePasswordResetModal, 2000);
+    } catch (err) {
+      setStatus(err?.message || "Opslaan mislukt.", true);
+    } finally {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText; }
+    }
+  });
 }
 
 export function openAuthModal(prefillEmail = "") {

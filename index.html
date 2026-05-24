@@ -268,6 +268,26 @@
             </form>
           </div>
         </div>
+        <div id="password-reset-modal" class="profile-modal" hidden>
+          <div class="profile-modal__backdrop"></div>
+          <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="pw-reset-title" style="max-height:90dvh;overflow-y:auto;">
+            <div class="profile-modal__header">
+              <h3 id="pw-reset-title">Nieuw wachtwoord instellen</h3>
+            </div>
+            <form id="password-reset-form" class="stack-form" autocomplete="off">
+              <p class="field-help">Kies een nieuw wachtwoord van minimaal 6 tekens.</p>
+              <label>
+                Nieuw wachtwoord
+                <div class="password-wrap">
+                  <input id="pw-reset-input" name="password" type="password" minlength="6" placeholder="Minimaal 6 tekens" autocomplete="new-password" required />
+                  <button type="button" class="eye-toggle" id="pw-reset-toggle" aria-label="Wachtwoord tonen">&#x1F441;</button>
+                </div>
+              </label>
+              <p id="pw-reset-status" class="field-help" hidden></p>
+              <button class="primary-button" type="submit">Wachtwoord opslaan</button>
+            </form>
+          </div>
+        </div>
         <div id="auth-modal" class="profile-modal" hidden>
           <div class="profile-modal__backdrop" data-close-auth="true"></div>
           <div class="profile-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="auth-title" style="max-height:90dvh;overflow-y:auto;">

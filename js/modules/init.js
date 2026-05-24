@@ -23,7 +23,7 @@ import {
   openProfileModal, closeProfileModal, saveProfile, initCropper, getCroppedAvatarBlob,
   clampCropOffset, applyCropTransform, resetCropper,
   getProfileName, getProfileAvatarSource, cropState,
-  setRenderAccountUiFn, setAuthRenderFn,
+  setRenderAccountUiFn, setAuthRenderFn, openPasswordResetModal,
 } from './auth.js';
 import {
   bootstrapCloudFeatures, handleCloudSync, queueCloudSync, setRenderFn as setCloudRenderFn,
@@ -65,6 +65,7 @@ export function initializeApp() {
   bootstrapCloudFeatures(
     () => bindAuthModal(),
     () => renderAccountUiNow(),
+    () => openPasswordResetModal(),
   );
 }
 

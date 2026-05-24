@@ -430,7 +430,7 @@ export async function hydrateFromSupabaseSession(user) {
   applyCloudState(cloudState, user);
 }
 
-export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi) {
+export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onPasswordRecovery) {
   bindAuthModal();
   renderAccountUi();
 
@@ -442,6 +442,10 @@ export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi) {
   if (!authStateListenerBound) {
     authStateListenerBound = true;
     client.auth.onAuthStateChange(async (event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        if (onPasswordRecovery) onPasswordRecovery();
+        return;
+      }
       if (event === "SIGNED_OUT" || !session?.user) {
         if (state.auth?.loggedIn) {
           setState(createEmptyState());
