@@ -22,18 +22,33 @@ export function render(dom) {
   renderExpenses(dom);
   renderTimeline(dom);
   renderWeekendLogo(dom);
-  renderAccountUi(dom);
   if (dom.positionMenuPanel) dom.positionMenuPanel();
 }
 
 export function renderLoginGate(dom) {
-  const loginWall = document.querySelector("#login-wall");
-  const tabBar = document.querySelector(".tab-bar");
   const loggedIn = !!state.auth?.loggedIn;
-  if (loginWall) loginWall.hidden = loggedIn;
+
+  // Volledig-scherm login overlay
+  let overlay = document.querySelector("#login-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "login-overlay";
+    overlay.className = "login-overlay";
+    overlay.innerHTML = `
+      <div class="login-overlay__card">
+        <img class="login-overlay__logo" src="assets/branding/potznloatst.png" alt="Pot z'n Loatst" />
+        <p class="login-overlay__sub">Beheer de weekendpot</p>
+        <button id="login-overlay-btn" class="primary-button" type="button">Inloggen</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.hidden = loggedIn;
+
+  // Tabs en inhoud verbergen als niet ingelogd
+  const tabBar = document.querySelector(".tab-bar");
   if (tabBar) tabBar.hidden = !loggedIn;
-  if (dom.summaryCards) dom.summaryCards.hidden = !loggedIn;
-  if (!loggedIn) dom.tabPanels.forEach(p => { p.hidden = true; });
+  const main = document.querySelector("main.layout");
+  if (main) main.hidden = !loggedIn;
 }
 
 export function renderTabs(dom) {

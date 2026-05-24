@@ -79,6 +79,9 @@ function getDomBundle() {
 
 function renderAll() {
   render(getDomBundle());
+  renderAccountUiNow();
+  // Koppel login-overlay knop na elke render (overlay wordt dynamisch aangemaakt)
+  document.querySelector("#login-overlay-btn")?.addEventListener("click", () => openAuthModal());
 }
 
 function renderAccountUiNow() {
