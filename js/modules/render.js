@@ -36,9 +36,7 @@ export function renderLoginGate(dom) {
     overlay.className = "login-overlay";
     overlay.innerHTML = `
       <div class="login-overlay__card">
-        <div class="login-overlay__logo-wrap">
-          <img class="login-overlay__logo" src="assets/branding/potznloatst.png" alt="Pot z'n Loatst" />
-        </div>
+        <img class="login-overlay__logo" src="assets/branding/potznloatst.png" alt="Pot z'n Loatst" />
         <div class="login-overlay__divider"></div>
         <p class="login-overlay__sub">Beheer de weekendpot</p>
         <button id="login-overlay-btn" class="login-overlay__btn" type="button">Inloggen</button>
