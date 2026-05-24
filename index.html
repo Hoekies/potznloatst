@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0A1B36" />
+    <meta name="theme-color" content="#1B2B4B" />
     <title>Pot z'n Loatst | Op z'n Loatst</title>
     <link rel="icon" type="image/png" href="./assets/icons/favicon.png" />
     <link rel="apple-touch-icon" href="./assets/icons/favicon.png" />
@@ -23,6 +23,10 @@
               </h1>
             </div>
             <div class="hero__menu">
+              <div id="sync-status-badge" class="sync-badge sync-badge--local" aria-live="polite" aria-label="Synchronisatiestatus">
+                <span class="sync-badge__icon">&#x1F4BE;</span>
+                <span class="sync-badge__label">Lokaal</span>
+              </div>
               <div class="account-menu">
                 <span id="account-name" hidden>Lokaal profiel</span>
                 <span id="account-status" hidden>Nog niet ingelogd</span>
@@ -48,13 +52,13 @@
           </div>
           <div class="panel__header panel__header--tabs">
             <div class="tab-bar" role="tablist" aria-label="Onderdelen van de pot">
-              <button class="tab-button is-active" type="button" role="tab" data-tab-target="uitgaven">Uitgaven</button>
+              <button class="tab-button is-active" type="button" role="tab" data-tab-target="inleg">Inleg</button>
+              <button class="tab-button" type="button" role="tab" data-tab-target="uitgaven">Uitgaven</button>
               <button class="tab-button" type="button" role="tab" data-tab-target="overzicht">Overzicht</button>
-              <button class="tab-button" type="button" role="tab" data-tab-target="inleg">Inleg</button>
             </div>
           </div>
 
-          <div class="tab-panel" data-tab-panel="inleg" role="tabpanel">
+          <div class="tab-panel is-active" data-tab-panel="inleg" role="tabpanel">
             <div class="tab-grid">
               <section class="subpanel">
                 <form id="participant-form" class="stack-form" autocomplete="off">
@@ -145,7 +149,7 @@
             </section>
           </div>
 
-          <div class="tab-panel is-active" data-tab-panel="uitgaven" role="tabpanel">
+          <div class="tab-panel" data-tab-panel="uitgaven" role="tabpanel" hidden>
             <div class="tab-grid">
               <section class="subpanel">
                 <form id="expense-form" class="stack-form" autocomplete="off">

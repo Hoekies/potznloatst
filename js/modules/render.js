@@ -1,7 +1,7 @@
 import { currencyFormatter, categoryLabels, typeLabels, categoryEmoji, authStatusFallback } from './constants.js';
 import { escapeHtml, formatDate, categoryColor, sanitizeAmount } from './utils.js';
 import { state } from './state.js';
-import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
+import { calculateSummary, getSortedParticipants, getEstimateAmount, calculateSettlements } from './calculations.js';
 import { isSupabaseConfigured } from './cloud.js';
 import {
   getActiveTab, setActiveTab,
@@ -124,6 +124,38 @@ export function renderSummary(dom) {
     </div>
     <div class="summary-row summary-row--remaining">
       ${remainingCards.map(renderCard).join("")}
+    </div>
+    ${renderSettlements(state)}
+  `;
+}
+
+export function renderSettlements(stateRef) {
+  const settlements = calculateSettlements(stateRef);
+
+  if (!stateRef.participants.length) return "";
+
+  if (!settlements.length) {
+    return `
+      <div class="settlements-section">
+        <p class="settlements-title">Afrekenen</p>
+        <p class="settlements-empty">Alles is verrekend — niemand hoeft iets te betalen.</p>
+      </div>
+    `;
+  }
+
+  const cards = settlements.map((s) => `
+    <div class="settlement-card">
+      <span class="settlement-card__from">${escapeHtml(s.from)}</span>
+      <span class="settlement-card__arrow" aria-hidden="true">&#8594;</span>
+      <span class="settlement-card__to">${escapeHtml(s.to)}</span>
+      <span class="settlement-card__amount">${currencyFormatter.format(s.amount)}</span>
+    </div>
+  `).join("");
+
+  return `
+    <div class="settlements-section">
+      <p class="settlements-title">Afrekenen</p>
+      <div class="settlements-grid">${cards}</div>
     </div>
   `;
 }

@@ -1,7 +1,7 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync } from './state.js';
 import { primaryStorageKey, CROP_SIZE } from './constants.js';
-import { todayIso, createId, readFileAsText, showToast, fileToDataUrl } from './utils.js';
+import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus } from './utils.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
   renderAccountUi, renderTabs,
@@ -35,7 +35,21 @@ export function initializeApp() {
   setRenderFn(() => renderAll());
   setCloudRenderFn(() => renderAll());
   setAuthRenderFn(() => renderAll());
-  setQueueCloudSync(queueCloudSync);
+
+  // Sync-badge koppelen: wrapper rond queueCloudSync die de badge bijwerkt
+  setQueueCloudSync((reason) => {
+    updateSyncStatus('syncing');
+    const result = queueCloudSync(reason);
+    // Na kort moment: als er geen actieve sync is, toon 'synced'
+    setTimeout(() => {
+      if (state.auth?.loggedIn) {
+        updateSyncStatus('synced');
+      } else {
+        updateSyncStatus('local');
+      }
+    }, 1800);
+    return result;
+  });
   setRenderAccountUiFn(() => renderAccountUiNow());
 
   dom.expenseDateInput.value = todayIso();
@@ -126,7 +140,7 @@ function resetUiState() {
   setEditingParticipantId(null);
   setEditingTopupId(null);
   setEditingRecord(null);
-  setActiveTab("uitgaven");
+  setActiveTab("inleg");
   closeReceiptModal(dom);
   resetExpenseComposer(dom);
 }
@@ -243,6 +257,10 @@ function setupEventListeners() {
       return;
     }
 
+    const submitBtn = dom.participantForm.querySelector('[type="submit"]');
+    const origText = submitBtn?.textContent;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Toevoegen…"; }
+
     const participantId = createId();
     state.participants.push({
       id: participantId,
@@ -262,6 +280,10 @@ function setupEventListeners() {
     dom.participantForm.reset();
     dom.participantColorInput.value = "#2563EB";
     persistAndRender();
+
+    if (submitBtn) {
+      setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = origText; }, 400);
+    }
   });
 
   dom.topupForm.addEventListener("submit", (event) => {
@@ -272,6 +294,10 @@ function setupEventListeners() {
     if (!Number.isFinite(amount) || amount <= 0) {
       return;
     }
+
+    const submitBtn = dom.topupForm.querySelector('[type="submit"]');
+    const origText = submitBtn?.textContent;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Toevoegen…"; }
 
     state.contributions.unshift({
       id: createId(),
@@ -284,12 +310,21 @@ function setupEventListeners() {
 
     dom.topupForm.reset();
     persistAndRender();
+
+    if (submitBtn) {
+      setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = origText; }, 400);
+    }
   });
 
   dom.expenseForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submitBtn = dom.expenseForm.querySelector('#expense-submit');
+    const origText = submitBtn?.textContent;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Opslaan…"; }
+
     const payload = await collectExpenseForm(dom);
     if (!payload) {
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText; }
       return;
     }
 
@@ -302,6 +337,8 @@ function setupEventListeners() {
     }
     resetExpenseComposer(dom);
     persistAndRender();
+
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origText; }
   });
 
   dom.expenseKindInput.addEventListener("change", () => renderExpenseComposerState(getDomBundle(), state));
@@ -310,6 +347,11 @@ function setupEventListeners() {
   dom.estimatePerPersonAmountInput?.addEventListener("input", () => renderExpenseComposerState(getDomBundle(), state));
 
   dom.analyzeReceiptButton.addEventListener("click", async () => {
+    const btn = dom.analyzeReceiptButton;
+    const origText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Analyseren…";
+
     const requestPayload = {
       fileName: dom.expenseReceiptInput.files[0]?.name || "",
       notesHint: [dom.expenseDescriptionInput.value, dom.expenseNoteInput.value].filter(Boolean).join(" "),
@@ -326,6 +368,9 @@ function setupEventListeners() {
       showReceiptReview(result.message, result.ocrStatus, dom);
     } catch (error) {
       showReceiptReview(error.message, "manual_required", dom);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = origText;
     }
   });
 
