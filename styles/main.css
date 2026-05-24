@@ -247,7 +247,7 @@ textarea {
   position: fixed;
   inset: 0;
   z-index: 9000;
-  background: linear-gradient(145deg, #0A1B36 0%, #1B2B4B 60%, #2d3a5c 100%);
+  background: linear-gradient(160deg, #07122a 0%, #0f1f3d 45%, #1a2d52 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -259,30 +259,72 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  max-width: 340px;
+  gap: 0;
+  max-width: 360px;
   width: 100%;
   text-align: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 24px;
+  padding: 48px 40px 44px;
+  box-shadow:
+    0 32px 64px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255,255,255,0.04) inset;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .login-overlay__logo {
-  max-width: 220px;
-  width: 100%;
+  width: 240px;
+  max-width: 100%;
   filter: brightness(0) invert(1);
-  opacity: 0.95;
+  opacity: 0.96;
+  margin-bottom: 20px;
+}
+
+.login-overlay__divider {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,180,60,0.6), transparent);
+  border-radius: 2px;
+  margin-bottom: 18px;
 }
 
 .login-overlay__sub {
-  margin: 0;
-  color: rgba(255,255,255,0.65);
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
+  margin: 0 0 32px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
 }
 
-.login-overlay .primary-button {
-  width: 100%;
-  font-size: 1rem;
-  padding: 14px 24px;
+.login-overlay__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #1a1200;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  padding: 14px 48px;
+  border: none;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35), 0 1px 0 rgba(255,255,255,0.15) inset;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  min-width: 180px;
+}
+.login-overlay__btn:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 6px 28px rgba(245, 158, 11, 0.5), 0 1px 0 rgba(255,255,255,0.15) inset;
+  transform: translateY(-1px);
+}
+.login-overlay__btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3);
 }
 
 .avatar-crop-wrap {
