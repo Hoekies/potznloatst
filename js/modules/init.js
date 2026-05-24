@@ -28,9 +28,11 @@ import {
 } from './auth.js';
 import {
   bootstrapCloudFeatures, handleCloudSync, queueCloudSync, setRenderFn as setCloudRenderFn,
+  warmUpSupabase,
 } from './cloud.js';
 
 export function initializeApp() {
+  warmUpSupabase(); // Ping Supabase direct bij opstart zodat het project alvast wakker wordt
   setState(loadState());
 
   setRenderFn(() => renderAll());

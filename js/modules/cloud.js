@@ -430,6 +430,13 @@ export async function hydrateFromSupabaseSession(user) {
   applyCloudState(cloudState, user);
 }
 
+export function warmUpSupabase() {
+  const client = getSupabaseClient();
+  if (!client) return;
+  // Stille ping: wekt het Supabase project op zodat de eerste inlogpoging niet hoeft te wachten
+  client.auth.getSession().catch(() => {});
+}
+
 export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onPasswordRecovery) {
   bindAuthModal();
   renderAccountUi();
