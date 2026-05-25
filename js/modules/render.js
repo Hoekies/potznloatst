@@ -28,26 +28,9 @@ export function render(dom) {
 export function renderLoginGate(dom) {
   const loggedIn = !!state.auth?.loggedIn;
 
-  // Volledig-scherm login overlay
-  let overlay = document.querySelector("#login-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "login-overlay";
-    overlay.className = "login-overlay";
-    overlay.innerHTML = `
-      <div class="login-overlay__card">
-        <img class="login-overlay__logo" src="assets/branding/potznloatst.png" alt="Pot z'n Loatst" />
-        <div class="login-overlay__divider"></div>
-        <p class="login-overlay__sub">Beheer de weekendpot</p>
-        <button id="login-overlay-btn" class="login-overlay__btn" type="button">Inloggen</button>
-      </div>`;
-    document.body.appendChild(overlay);
-  }
-  overlay.hidden = loggedIn;
+  const overlay = document.querySelector("#login-overlay");
+  if (overlay) overlay.hidden = loggedIn;
 
-  // Tabs en inhoud verbergen als niet ingelogd
-  const tabBar = document.querySelector(".tab-bar");
-  if (tabBar) tabBar.hidden = !loggedIn;
   const main = document.querySelector("main.layout");
   if (main) main.hidden = !loggedIn;
 }
@@ -131,7 +114,6 @@ export function renderSummary(dom) {
     <article class="summary-card summary-card--${card.tone}">
       <p class="summary-card__label">${card.label}</p>
       <p class="summary-card__value">${currencyFormatter.format(card.value)}</p>
-      <p class="summary-card__hint">${card.hint}</p>
     </article>
   `;
 
@@ -154,7 +136,7 @@ export function renderSettlements(stateRef) {
   if (!settlements.length) {
     return `
       <div class="settlements-section">
-        <p class="settlements-title">Afrekenen</p>
+        <p class="settlements-title" hidden>Afrekenen</p>
         <p class="settlements-empty">Alles is verrekend — niemand hoeft iets te betalen.</p>
       </div>
     `;
@@ -171,7 +153,7 @@ export function renderSettlements(stateRef) {
 
   return `
     <div class="settlements-section">
-      <p class="settlements-title">Afrekenen</p>
+      <p class="settlements-title" hidden>Afrekenen</p>
       <div class="settlements-grid">${cards}</div>
     </div>
   `;
@@ -425,12 +407,11 @@ export function renderTimeline(dom) {
             <strong>${escapeHtml(entry.title)}</strong>
             <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
           </div>
-          <span class="timeline-card__tag">${typeLabel}</span>
+          <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
           <div class="timeline-card__actions">
             ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
             <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
             <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
-            <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
           </div>
         </article>
       `;
@@ -505,6 +486,16 @@ export function renderRecordEditFields(record) {
         <input data-field="note" type="text" value="${escapeHtml(record.note || "")}" />
       </label>
     </div>
+    ${record.kind === "expense" ? `
+    <div class="inline-edit-receipt">
+      ${record.receiptImage ? `<img class="inline-edit-receipt__thumb" src="${escapeHtml(record.receiptImage)}" alt="Huidige bon" />` : ""}
+      <label class="inline-edit-receipt__label">
+        ${record.receiptImage ? "Bon vervangen" : "Bon toevoegen"}
+        <input data-field="receipt-file" type="file" accept="image/*" capture="environment" />
+      </label>
+      <input data-field="receipt-data" type="hidden" value="" />
+    </div>
+    ` : ""}
   `;
 }
 

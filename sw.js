@@ -1,31 +1,20 @@
-﻿const CACHE_NAME = "potzloats-cache-v65";
-const APP_ASSETS = [
-  "./",
-  "./index.html",
-  "./styles/main.css",
-  "./js/app.js",
-  "./js/supabase-config.js",
-  "./js/modules/constants.js",
-  "./js/modules/utils.js",
-  "./js/modules/ui-state.js",
-  "./js/modules/calculations.js",
-  "./js/modules/state.js",
-  "./js/modules/cloud.js",
-  "./js/modules/auth.js",
-  "./js/modules/render.js",
-  "./js/modules/forms.js",
-  "./js/modules/dom.js",
-  "./js/modules/init.js",
-  "./manifest.webmanifest",
+const CACHE_NAME = "potzloats-cache-v68";
+
+// Alleen statische assets worden gecachet (afbeeldingen, manifest)
+// JS en CSS worden altijd vers opgehaald zodat updates direct werken
+const STATIC_ASSETS = [
   "./assets/icons/favicon.png",
   "./assets/branding/opznloatst.png",
   "./assets/branding/potznloatst.png",
+  "./manifest.webmanifest",
 ];
+
+const JS_CSS_PATTERN = /\.(js|css)$/;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(APP_ASSETS);
+      return cache.addAll(STATIC_ASSETS);
     })
   );
   self.skipWaiting();
@@ -56,22 +45,26 @@ self.addEventListener("fetch", (event) => {
   }
 
   const isNavigation = request.mode === "navigate";
+  const isJsOrCss = JS_CSS_PATTERN.test(requestUrl.pathname);
 
-  if (isNavigation) {
+  // HTML, JS en CSS: altijd vers ophalen van de server (network-first)
+  // Zo worden code-updates direct zichtbaar na een gewone F5
+  if (isNavigation || isJsOrCss) {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          if (response && response.status === 200) {
+          if (response && response.status === 200 && !isJsOrCss) {
             const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy));
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           }
           return response;
         })
-        .catch(() => caches.match("./index.html"))
+        .catch(() => caches.match(request).then((cached) => cached || caches.match("./index.html")))
     );
     return;
   }
 
+  // Statische assets (afbeeldingen, manifest): cache-first
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) {
@@ -92,13 +85,3 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-
-
-
-
-
-
-
-
-
-

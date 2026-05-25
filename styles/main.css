@@ -1,39 +1,63 @@
-﻿:root {
-  /* Pot z'n Loatst — Warme Uitje palette */
-  --bg: #EFF3F9;
+﻿/* Zorg dat [hidden] altijd werkt, ook als display: grid/flex via een klasse is gezet */
+[hidden] { display: none !important; }
+
+:root {
+  /* Pot z'n Loatst — Ocean palette (Plekkie z'n Loatst stijl) */
+  --bg: #EEF3FB;
   --paper: #FFFFFF;
   --panel: rgba(255, 255, 255, 0.97);
   --panel-strong: #FFFFFF;
 
-  /* Primaire navy/slate — rijker karakter */
-  --ink: #1B2B4B;
-  --text: #1E3351;
-  --muted: #556070;
+  --ink: #0A1B36;
+  --text: #122944;
+  --muted: #5B6D8A;
 
-  /* Amber/goud accent voor CTAs en highlights — past bij "pot" thema */
-  --olive: #B45309;
-  --olive-dark: #92400E;
-  --olive-soft: rgba(180, 83, 9, 0.10);
+  --blue: #1E40AF;
+  --blue-dark: #1E3A8A;
+  --blue-soft: rgba(30, 64, 175, 0.12);
 
-  /* Amber voor secondary borders en soft achtergronden */
-  --gold: #D97706;
-  --gold-soft: rgba(217, 119, 6, 0.14);
+  --cyan: #06B6D4;
+  --cyan-dark: #0891B2;
+  --cyan-soft: rgba(6, 182, 212, 0.15);
 
-  /* Accentkleuren */
-  --terracotta: #DC2626;
-  --success: #16A34A;
-  --success-soft: rgba(22, 163, 74, 0.12);
-  --warning: #D97706;
-  --warning-soft: rgba(217, 119, 6, 0.12);
-  --info: #0369A1;
-  --info-soft: rgba(3, 105, 161, 0.12);
+  --green: #10B981;
+  --green-soft: rgba(16, 185, 129, 0.15);
 
-  --blue-soft: #DBEAFE;
-  --line: rgba(27, 43, 75, 0.11);
-  --ring: rgba(180, 83, 9, 0.28);
-  --shadow: 0 18px 44px rgba(27, 43, 75, 0.09);
+  --red: #EF4444;
+  --red-soft: rgba(239, 68, 68, 0.12);
 
-  /* Grotere border-radius voor een warmere look */
+  --gold: #F59E0B;
+  --gold-soft: rgba(245, 158, 11, 0.15);
+
+  /* Backwards-compat aliases voor componenten die olive/terracotta gebruiken */
+  --olive: #0891B2;
+  --olive-dark: #0C6A8A;
+  --olive-soft: rgba(6, 182, 212, 0.12);
+  --terracotta: #EF4444;
+  --success: #10B981;
+  --success-soft: rgba(16, 185, 129, 0.15);
+  --warning: #F59E0B;
+  --warning-soft: rgba(245, 158, 11, 0.12);
+  --info: #1E40AF;
+  --info-soft: rgba(30, 64, 175, 0.12);
+
+  --line: rgba(10, 27, 54, 0.11);
+  --ring: rgba(6, 182, 212, 0.35);
+  --shadow: 0 18px 44px rgba(10, 27, 54, 0.09);
+  --shadow-sm: 0 2px 8px rgba(10, 27, 54, 0.06);
+
+  /* Ocean/game gradient (hero achtergrond) */
+  --game-bg-start: #0D3A5C;
+  --game-bg-mid:   #0C4E6B;
+  --game-bg-end:   #0A7A72;
+  --game-gradient: linear-gradient(145deg, var(--game-bg-start) 0%, var(--game-bg-mid) 48%, var(--game-bg-end) 100%);
+
+  /* Glassmorphism tokens */
+  --glass-bg:     rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.15);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+  --glass-blur:   blur(14px) saturate(130%);
+
   --radius-xl: 20px;
   --radius-lg: 16px;
   --radius-md: 12px;
@@ -46,14 +70,11 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Aptos", "Segoe UI", Verdana, sans-serif;
+  font-family: "Nunito", "Aptos", "Segoe UI", Verdana, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
-  background:
-    radial-gradient(circle at top left, rgba(180, 83, 9, 0.07), transparent 30%),
-    radial-gradient(circle at bottom right, rgba(27, 43, 75, 0.07), transparent 28%),
-    linear-gradient(180deg, #EFF3F9 0%, #E4EAF4 100%);
+  background: linear-gradient(180deg, #EEF3FB 0%, #E2EAF6 100%);
   position: relative;
 }
 
@@ -63,10 +84,10 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(27, 43, 75, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(27, 43, 75, 0.018) 1px, transparent 1px);
+    linear-gradient(rgba(10, 27, 54, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 27, 54, 0.015) 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.35), transparent 82%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.25), transparent 80%);
 }
 
 .backdrop-orb {
@@ -82,13 +103,13 @@ body::before {
 .backdrop-orb--left {
   top: -12rem;
   left: -12rem;
-  background: radial-gradient(circle, rgba(180, 83, 9, 0.10), rgba(180, 83, 9, 0));
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.08), rgba(6, 182, 212, 0));
 }
 
 .backdrop-orb--right {
   right: -10rem;
   top: 8rem;
-  background: radial-gradient(circle, rgba(27, 43, 75, 0.10), rgba(27, 43, 75, 0));
+  background: radial-gradient(circle, rgba(10, 27, 54, 0.08), rgba(10, 27, 54, 0));
 }
 
 button,
@@ -123,7 +144,7 @@ textarea {
 
 .account-menu__trigger:hover,
 .account-menu__trigger[aria-expanded="true"] {
-  border-color: rgba(180, 83, 9, 0.40);
+  border-color: rgba(6, 182, 212, 0.55);
 }
 
 .account-menu__avatar {
@@ -131,8 +152,8 @@ textarea {
   height: 38px;
   border-radius: 999px;
   overflow: hidden;
-  background: linear-gradient(135deg, #B45309, #D97706);
-  color: #FFFBEB;
+  background: linear-gradient(135deg, #0C4E6B, #06B6D4);
+  color: #ffffff;
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -200,20 +221,20 @@ textarea {
   padding: 0;
   transition: background 0.15s;
 }
-.close-btn:hover { background: var(--gold-soft); transform: none; }
+.close-btn:hover { background: var(--cyan-soft); transform: none; }
 
 .link-button {
   background: none;
   border: none;
   padding: 6px 0 0;
   margin: 0;
-  color: var(--gold);
+  color: var(--cyan);
   font-size: 0.9rem;
   text-decoration: underline;
   cursor: pointer;
   align-self: flex-start;
 }
-.link-button:hover { color: var(--olive-dark); }
+.link-button:hover { color: var(--cyan-dark); }
 
 .account-menu__item {
   display: block;
@@ -237,7 +258,7 @@ textarea {
 }
 
 .account-menu__item:hover {
-  background: #FEF3C7;
+  background: var(--cyan-soft);
 }
 
 .login-wall { display: none; }
@@ -277,7 +298,7 @@ textarea {
 .login-overlay__divider {
   width: 48px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #d97706, transparent);
+  background: linear-gradient(90deg, transparent, #06B6D4, transparent);
   border-radius: 2px;
   margin: 16px 0 20px;
 }
@@ -295,8 +316,8 @@ textarea {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-  color: #1a1200;
+  background: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
+  color: #ffffff;
   font-weight: 700;
   font-size: 0.95rem;
   letter-spacing: 0.03em;
@@ -304,18 +325,85 @@ textarea {
   border: none;
   border-radius: 100px;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.4);
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.45), 0 8px 24px rgba(6, 182, 212, 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   min-width: 180px;
 }
 .login-overlay__btn:hover {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  box-shadow: 0 6px 24px rgba(217, 119, 6, 0.55);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #0D9488 0%, #0891B2 100%);
+  box-shadow: 0 6px 24px rgba(6, 182, 212, 0.55);
+  transform: translateY(-2px);
 }
 .login-overlay__btn:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(217, 119, 6, 0.3);
+}
+.login-overlay__btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-overlay__form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 0;
+}
+.login-overlay__label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+}
+.login-overlay__input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: #fff;
+  color: #111827;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.login-overlay__input:focus {
+  border-color: #d97706;
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.18);
+}
+.login-overlay__pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.login-overlay__pw-wrap .login-overlay__input {
+  padding-right: 44px;
+}
+.login-overlay__eye {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 2px 4px;
+  color: #6b7280;
+  line-height: 1;
+}
+.login-overlay__status {
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin: 0;
+  text-align: left;
+  color: #DC2626;
+}
+.login-overlay__sub {
+  margin: 0 0 4px;
 }
 
 .avatar-crop-wrap {
@@ -471,7 +559,7 @@ textarea {
   width: 104px;
   height: 104px;
   border-radius: 50%;
-  background: rgba(180, 83, 9, 0.04);
+  background: rgba(6, 182, 212, 0.08);
   filter: blur(3px);
 }
 
@@ -481,17 +569,14 @@ textarea {
 }
 
 .panel--workspace {
-  background:
-    radial-gradient(circle at 14% 20%, rgba(217, 119, 6, 0.06), transparent 18%),
-    radial-gradient(circle at 86% 76%, rgba(27, 43, 75, 0.06), transparent 18%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.995), rgba(249, 250, 251, 0.985));
+  background: var(--game-gradient);
   overflow: visible;
 }
 
 .hero__content {
   position: relative;
-  min-height: 194px;
-  padding: 22px 28px 18px;
+  min-height: 120px;
+  padding: 16px 24px;
   display: grid;
   gap: 18px;
   align-items: center;
@@ -527,7 +612,7 @@ textarea {
 .eyebrow,
 .section-label {
   margin: 0 0 10px;
-  color: var(--olive);
+  color: var(--cyan-dark);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -568,8 +653,8 @@ h1 {
 
 .brand-logo--main {
   width: 100%;
-  max-width: 560px;
-  max-height: min(28vh, 240px);
+  max-width: min(600px, 80vw);
+  max-height: min(22vh, 160px);
   object-position: center;
 }
 
@@ -710,8 +795,8 @@ h3 {
 
 .tab-button.is-active {
   color: var(--ink);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(253, 246, 236, 0.95));
-  box-shadow: 0 8px 20px rgba(27, 43, 75, 0.10);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(236, 249, 252, 0.95));
+  box-shadow: 0 8px 20px rgba(6, 182, 212, 0.12);
 }
 
 .tab-panel {
@@ -879,8 +964,8 @@ h3 {
 }
 
 .summary-card {
-  min-height: 128px;
-  padding: 18px 20px 18px 24px;
+  min-height: 0;
+  padding: 14px 16px 14px 20px;
   border-radius: var(--radius-md);
   background: linear-gradient(160deg, rgba(255, 255, 255, 1), rgba(249, 250, 251, 0.98));
   border: 1px solid rgba(27, 43, 75, 0.09);
@@ -906,7 +991,7 @@ h3 {
   position: absolute;
   inset: 0 auto 0 0;
   width: 5px;
-  background: linear-gradient(180deg, #B45309, #D97706);
+  background: linear-gradient(180deg, #0C4E6B, #06B6D4);
   border-radius: 0 3px 3px 0;
 }
 
@@ -928,7 +1013,7 @@ h3 {
 }
 
 .summary-card--positive::before {
-  background: linear-gradient(180deg, #B45309, #D97706);
+  background: linear-gradient(180deg, #0C4E6B, #06B6D4);
 }
 
 .summary-card p {
@@ -944,7 +1029,7 @@ h3 {
 }
 
 .summary-card__value {
-  margin-top: 10px;
+  margin-top: 6px;
   font-size: clamp(1.25rem, 2vw, 1.65rem);
   font-weight: 800;
   line-height: 1;
@@ -1216,15 +1301,15 @@ input[type="color"] {
 }
 
 .primary-button {
-  color: #FFFBEB;
-  background: linear-gradient(135deg, #B45309, #D97706);
-  box-shadow: 0 10px 24px rgba(180, 83, 9, 0.30);
+  color: #ffffff;
+  background: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
+  box-shadow: 0 4px 0 rgba(6, 182, 212, 0.40), 0 8px 24px rgba(6, 182, 212, 0.25);
 }
 
 .secondary-button {
   background: transparent;
-  color: var(--olive);
-  border: 2px solid var(--gold);
+  color: var(--cyan-dark);
+  border: 2px solid var(--cyan);
   box-shadow: none;
 }
 
@@ -1235,18 +1320,18 @@ input[type="color"] {
 }
 
 .primary-button:hover {
-  background: linear-gradient(135deg, #92400E, #B45309);
-  box-shadow: 0 14px 30px rgba(180, 83, 9, 0.36);
+  background: linear-gradient(135deg, #0D9488 0%, #0891B2 100%);
+  box-shadow: 0 6px 0 rgba(6, 182, 212, 0.40), 0 12px 28px rgba(6, 182, 212, 0.32);
 }
 
 .secondary-button:hover {
-  background: var(--gold-soft);
-  border-color: var(--olive);
+  background: var(--cyan-soft);
+  border-color: var(--cyan-dark);
 }
 
 .ghost-button:hover {
-  background: #FFFBEB;
-  border-color: var(--gold);
+  background: var(--cyan-soft);
+  border-color: var(--cyan);
 }
 
 .header-actions .ghost-button {
@@ -1394,14 +1479,14 @@ input[type="color"] {
   padding: 10px 14px;
   cursor: pointer;
   font-weight: 800;
-  color: var(--olive-dark);
-  background: var(--gold-soft);
+  color: var(--cyan-dark);
+  background: var(--cyan-soft);
   min-height: 40px;
   transition: background 0.15s ease;
 }
 
 .soft-button:hover {
-  background: rgba(180, 83, 9, 0.20);
+  background: rgba(6, 182, 212, 0.28);
 }
 
 .ghost-button--small {
@@ -1475,10 +1560,10 @@ input[type="color"] {
 
 .timeline-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
-  gap: 16px;
+  grid-template-columns: 36px minmax(0, 1fr) auto auto;
+  gap: 10px 12px;
   align-items: center;
-  padding: 16px 18px;
+  padding: 12px 16px;
   border-radius: var(--radius-md);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(249, 250, 251, 0.96));
   border: 1px solid var(--line);
@@ -1490,12 +1575,13 @@ input[type="color"] {
 }
 
 .timeline-card__badge {
-  min-width: 52px;
-  height: 52px;
-  border-radius: 18px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: grid;
   place-items: center;
-  font-weight: 900;
+  font-size: 1rem;
   color: white;
   overflow: hidden;
 }
@@ -1522,9 +1608,10 @@ input[type="color"] {
 
 .timeline-card__actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
   gap: 8px;
+  align-items: center;
 }
 
 .timeline-card__details {
@@ -1645,8 +1732,8 @@ input[type="color"] {
 
   .brand-logo--main {
     width: 100%;
-    max-width: 420px;
-    max-height: min(26vh, 220px);
+    max-width: min(480px, 70vw);
+    max-height: min(18vh, 120px);
   }
 
   .weekend-logo-wrap {
@@ -1670,33 +1757,9 @@ input[type="color"] {
     flex-wrap: wrap;
   }
 
-  .timeline-card {
-    grid-template-columns: 56px minmax(0, 1fr);
-    grid-template-areas:
-      "badge main"
-      "tag tag"
-      "actions actions";
-    align-items: flex-start;
-  }
-
-  .timeline-card__badge {
-    grid-area: badge;
-  }
-
-  .timeline-card__main {
-    grid-area: main;
-  }
-
-  .timeline-card__tag {
-    grid-area: tag;
-    justify-self: flex-start;
-  }
-
   .timeline-card__actions {
-    grid-area: actions;
-    width: 100%;
     flex-wrap: wrap;
-    justify-content: flex-start;
+    justify-content: flex-end;
   }
 
   .panel__header,
@@ -1773,13 +1836,13 @@ input[type="color"] {
     justify-items: stretch;
     gap: 14px;
     min-height: auto;
-    padding: 18px 18px 16px;
+    padding: 20px 16px;
   }
 
   .brand-logo--main {
     width: 100%;
-    max-width: 360px;
-    max-height: min(30vh, 240px);
+    max-width: min(560px, 82vw);
+    max-height: min(26vh, 160px);
   }
 
   .management-card {
@@ -1793,23 +1856,29 @@ input[type="color"] {
   }
 
   .timeline-card {
-    grid-template-columns: 1fr;
+    grid-template-columns: 36px minmax(0, 1fr) auto;
     grid-template-areas:
-      "badge"
-      "main"
-      "tag"
-      "actions";
+      "badge main amount"
+      "actions actions actions";
+    align-items: center;
   }
 
-  .timeline-card__actions,
+  .timeline-card__badge  { grid-area: badge; }
+  .timeline-card__main   { grid-area: main; }
+  .timeline-card__amount { grid-area: amount; align-self: center; }
+  .timeline-card__actions {
+    grid-area: actions;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
   .management-card__actions,
   .button-row {
     display: grid;
     grid-template-columns: 1fr;
-  }
-
-  .timeline-card__amount {
-    justify-self: flex-start;
   }
 
   .weekend-logo-wrap {
@@ -1942,22 +2011,20 @@ input[type="color"] {
 }
 
 .sync-badge--local {
-  background: rgba(27, 43, 75, 0.07);
-  border-color: rgba(27, 43, 75, 0.12);
-  color: var(--muted);
+  display: none;
 }
 
 .sync-badge--syncing {
-  background: rgba(3, 105, 161, 0.10);
-  border-color: rgba(3, 105, 161, 0.22);
-  color: var(--info);
+  background: rgba(6, 182, 212, 0.22);
+  border-color: rgba(6, 182, 212, 0.40);
+  color: #67e8f9;
   animation: syncPulse 1.4s ease-in-out infinite;
 }
 
 .sync-badge--synced {
-  background: var(--success-soft);
-  border-color: rgba(22, 163, 74, 0.22);
-  color: var(--success);
+  background: rgba(16, 185, 129, 0.22);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
 }
 
 .sync-badge--fade {
@@ -2062,5 +2129,417 @@ input[type="color"] {
 .toast--success {
   border-color: rgba(22, 163, 74, 0.5);
   background: rgba(20, 83, 45, 0.96);
+}
+
+/* =====================================================
+   MOBILE IMPROVEMENTS
+   Target: smartphones ≤ 768px (primair 390px breed)
+   Aanpak: mobile-first verbeteringen boven op bestaande CSS
+   ===================================================== */
+
+@media (max-width: 768px) {
+
+  /* --------------------------------------------------
+     1. APP SHELL — ruimte onderaan voor de bottom nav
+     -------------------------------------------------- */
+  .app-shell {
+    padding-bottom: 88px; /* ruimte voor 72px tab-bar + 16px marge */
+  }
+
+  /* --------------------------------------------------
+     2. TAB-BAR — native-style bottom navigation
+     Op mobiel: fixed onderaan het scherm.
+     Op desktop: blijft bovenaan via de standaard stijl.
+     -------------------------------------------------- */
+  .panel--tabs {
+    /* Verwijder de bovenste tab-bar container stijl op mobiel:
+       de tab-bar verhuist naar fixed positie onderaan */
+    padding-top: 0;
+  }
+
+  .panel__header--tabs {
+    /* Verberg de header-wrapper zodat de bar niet dubbel staat */
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    margin-bottom: 0;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(27, 43, 75, 0.10);
+    box-shadow: 0 -4px 20px rgba(27, 43, 75, 0.08);
+  }
+
+  .tab-bar {
+    /* Strek de bar over de volledige breedte van de container */
+    width: 100%;
+    border-radius: 14px;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .tab-button {
+    /* Grotere touch-target, iets compactere tekst */
+    padding: 12px 8px;
+    min-height: 48px;
+    font-size: 0.82rem;
+    letter-spacing: 0.01em;
+    border-radius: 10px;
+    /* Subtiele tap-highlight */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tab-button.is-active {
+    /* Duidelijkere actieve staat op mobiel */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(253, 246, 236, 0.95));
+    box-shadow: 0 4px 12px rgba(27, 43, 75, 0.12);
+  }
+
+  /* --------------------------------------------------
+     3. LOGIN OVERLAY — goed gecentreerd op smal scherm
+     -------------------------------------------------- */
+  .login-overlay {
+    padding: 16px;
+    align-items: flex-start;
+    padding-top: max(48px, env(safe-area-inset-top, 24px));
+  }
+
+  .login-overlay__card {
+    max-width: 100%;
+    padding: 28px 20px 32px;
+    border-radius: 20px;
+    /* Zorg dat de kaart niet te hoog wordt en scrollbaar is */
+    max-height: calc(100dvh - 64px);
+    overflow-y: auto;
+  }
+
+  .login-overlay__logo {
+    width: 180px;
+  }
+
+  .login-overlay__input {
+    /* Minimaal 48px voor comfortabele touch, 16px font voorkomt iOS zoom */
+    padding: 13px 14px;
+    min-height: 48px;
+    font-size: 1rem;
+    border-radius: 12px;
+  }
+
+  .login-overlay__pw-wrap .login-overlay__input {
+    padding-right: 48px;
+  }
+
+  .login-overlay__eye {
+    /* Groter tap-target */
+    right: 8px;
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+  }
+
+  .login-overlay__btn {
+    /* Volledige breedte, comfortabele hoogte */
+    width: 100%;
+    padding: 15px 24px;
+    min-height: 52px;
+    font-size: 1rem;
+    border-radius: 14px;
+  }
+
+  .login-overlay__form {
+    gap: 16px;
+  }
+
+  .login-overlay__label {
+    font-size: 0.85rem;
+    gap: 6px;
+  }
+
+  /* --------------------------------------------------
+     4. FORMULIEREN — touch-vriendelijk op mobiel
+     -------------------------------------------------- */
+  input,
+  select,
+  textarea {
+    /* Minimaal 48px, 16px font-size voorkomt auto-zoom op iOS */
+    min-height: 48px;
+    font-size: 1rem;
+    padding: 13px 14px;
+    /* Verwijder transform op focus om layout-shift te voorkomen */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    transform: none; /* geen translateY op mobiel — vermijdt layout-shift */
+  }
+
+  label {
+    font-size: 0.9rem;
+    gap: 6px;
+  }
+
+  /* field-row: 2 kolommen is te krap op 390px, gebruik 1 kolom */
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .stack-form {
+    gap: 16px;
+  }
+
+  /* --------------------------------------------------
+     5. KNOPPEN — minimaal 48px touch-target op mobiel
+     -------------------------------------------------- */
+  .primary-button,
+  .secondary-button,
+  .ghost-button {
+    min-height: 48px;
+    padding: 13px 22px;
+    font-size: 0.95rem;
+    /* Geen hover-lift op touch: .active is voldoende feedback */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .primary-button:hover,
+  .secondary-button:hover,
+  .ghost-button:hover {
+    transform: none; /* lift-effect is onnatuurlijk op touch */
+  }
+
+  .icon-button,
+  .soft-button {
+    min-height: 44px;
+    padding: 10px 16px;
+  }
+
+  /* Sluit-knop in modals: groter touch-target */
+  .close-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 1.1rem;
+  }
+
+  /* Eye-toggle wachtwoordveld in modals */
+  .eye-toggle {
+    padding: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* --------------------------------------------------
+     6. HERO / HEADER — compacter op mobiel
+     -------------------------------------------------- */
+  .hero {
+    margin-bottom: 12px;
+  }
+
+  .hero__content {
+    padding: 14px 16px 12px;
+    gap: 10px;
+  }
+
+  .brand-logo--main {
+    max-width: min(480px, 80vw);
+    max-height: min(22vh, 140px);
+  }
+
+  /* Sync-badge: verberg label-tekst, toon alleen icoon */
+  .sync-badge__label {
+    display: none;
+  }
+
+  .sync-badge {
+    padding: 6px 8px;
+  }
+
+  /* --------------------------------------------------
+     7. PANELS / KAARTEN — voldoende padding voor touch
+     -------------------------------------------------- */
+  .panel {
+    padding: 18px 16px 20px;
+    border-radius: 20px;
+  }
+
+  .subpanel {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .management-card {
+    padding: 14px 14px;
+  }
+
+  .timeline-card {
+    padding: 14px 14px;
+  }
+
+  .person-card {
+    padding: 14px;
+  }
+
+  /* Kaart-acties: volledige breedte knoppen voor makkelijk tikken */
+  .person-card__actions,
+  .management-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* --------------------------------------------------
+     8. SUMMARY CARDS — leesbaar op klein scherm
+     -------------------------------------------------- */
+  .summary-card {
+    padding: 16px 16px 16px 20px;
+    min-height: 100px;
+  }
+
+  .summary-card__value {
+    font-size: 1.4rem;
+  }
+
+  .summary-card__label {
+    font-size: 0.72rem;
+  }
+
+  /* --------------------------------------------------
+     9. SETTLEMENT CARDS — stapelen op smal scherm
+     -------------------------------------------------- */
+  .settlements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-card {
+    padding: 14px 16px;
+  }
+
+  /* --------------------------------------------------
+     10. TOAST — bovenkant van bottom nav in acht nemen
+     -------------------------------------------------- */
+  .toast {
+    bottom: calc(88px + 12px); /* boven de bottom nav */
+    font-size: 0.88rem;
+    padding: 12px 18px;
+    max-width: calc(100vw - 32px);
+  }
+
+  /* --------------------------------------------------
+     11. FOOTER — verberg op mobiel (ruimte besparen)
+         De bottom nav vervangt functioneel de footer-navigatie
+     -------------------------------------------------- */
+  .site-footer {
+    display: none;
+  }
+
+  /* --------------------------------------------------
+     12. PROFIEL-MODAL — volledige hoogte op mobiel
+     -------------------------------------------------- */
+  .profile-modal {
+    padding: 0;
+    align-items: flex-end; /* sheet-style van onderaf */
+  }
+
+  .profile-modal__dialog {
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+    max-height: 90dvh;
+  }
+
+  /* --------------------------------------------------
+     13. INLINE EDIT GRIDS — 1 kolom op mobiel
+     -------------------------------------------------- */
+  .inline-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* --------------------------------------------------
+     14. DATA-TOOLS ACTIONS — al 1 kolom op 680px,
+         zorg dat knoppen minstens 48px zijn
+     -------------------------------------------------- */
+  .data-tools__actions .ghost-button,
+  .header-actions .ghost-button {
+    min-height: 48px;
+  }
+
+  /* --------------------------------------------------
+     15. COLLAPSIBLE PANEL SUMMARY — grotere tap-zone
+     -------------------------------------------------- */
+  .collapsible-panel__summary {
+    padding: 16px;
+    min-height: 52px;
+  }
+
+  .timeline-drawer__summary {
+    padding: 16px;
+    min-height: 52px;
+  }
+
+  /* --------------------------------------------------
+     16. RECEIPT REVIEW — compacter op mobiel
+     -------------------------------------------------- */
+  .receipt-review {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .receipt-thumb {
+    width: 80px;
+    height: 80px;
+  }
+
+} /* einde @media (max-width: 768px) */
+
+/* Zorg dat iOS safe-area ook werkt als er geen env() support is */
+@supports not (padding-bottom: env(safe-area-inset-bottom)) {
+  @media (max-width: 768px) {
+    .panel__header--tabs {
+      padding-bottom: 8px;
+    }
+    .login-overlay {
+      padding-top: 48px;
+    }
+    .profile-modal__dialog {
+      padding-bottom: 20px;
+    }
+  }
+}
+
+/* === INLINE RECEIPT EDIT === */
+.inline-edit-receipt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.inline-edit-receipt__thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.inline-edit-receipt__label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inline-edit-receipt__label input[type="file"] {
+  font-size: 0.8rem;
 }
 

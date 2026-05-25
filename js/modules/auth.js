@@ -106,20 +106,40 @@ function bindPasswordResetModal() {
 }
 
 export function openAuthModal(prefillUsername = "") {
-  const authModal = document.querySelector("#auth-modal");
+  // Primaire login gebeurt nu via de login-overlay (ingebouwd formulier).
+  // Zorg dat het veld wordt ingevuld en focus gezet als de overlay zichtbaar is.
   const usernameInput = document.querySelector("#auth-username");
   const passwordInput = document.querySelector("#auth-password");
-  if (!authModal || !usernameInput || !passwordInput) return;
+  const overlay = document.querySelector("#login-overlay");
 
-  const statusNode = document.querySelector("#auth-status");
+  if (overlay && !overlay.hidden) {
+    const statusNode = overlay.querySelector("#auth-status");
+    if (statusNode) { statusNode.textContent = ""; statusNode.hidden = true; }
+    if (usernameInput) {
+      usernameInput.value = prefillUsername || emailNaarLogin(state.auth?.email || "");
+      usernameInput.focus();
+    }
+    if (passwordInput) passwordInput.value = "";
+    return;
+  }
+
+  // Fallback: open de auth-modal als de overlay er niet is
+  const authModal = document.querySelector("#auth-modal");
+  if (!authModal) return;
+  const modalUsername = document.querySelector("#auth-modal-username");
+  const modalPassword = document.querySelector("#auth-modal-password");
+  const statusNode = document.querySelector("#auth-modal-status");
   if (statusNode) { statusNode.textContent = ""; statusNode.hidden = true; }
-  usernameInput.value = prefillUsername || emailNaarLogin(state.auth?.email || "");
-  passwordInput.value = "";
+  if (modalUsername) modalUsername.value = prefillUsername || emailNaarLogin(state.auth?.email || "");
+  if (modalPassword) modalPassword.value = "";
   authModal.hidden = false;
   bindAuthModal();
 }
 
 export function closeAuthModal() {
+  // Sluit login-overlay (primaire flow) als die zichtbaar is
+  // De overlay verdwijnt pas na een succesvolle renderAll() met loggedIn=true
+  // Hier hoeven we niets te doen — renderLoginGate() doet dit automatisch
   const authModal = document.querySelector("#auth-modal");
   if (authModal) {
     authModal.hidden = true;
@@ -135,6 +155,11 @@ export function setAuthStatus(message, isError = false) {
 }
 
 export async function submitAuth() {
+  if (!state) {
+    setAuthStatus("App is nog niet geladen. Ververs de pagina.", true);
+    return;
+  }
+
   const client = getSupabaseClient();
   if (!client) {
     setAuthStatus("Supabase is niet ingesteld.", true);
@@ -177,7 +202,7 @@ export async function submitAuth() {
     closeAuthModal();
 
     state.auth = {
-      ...state.auth,
+      ...(state.auth || {}),
       loggedIn: true,
       provider: "supabase",
       email: loginNaarEmail(gebruikersnaam),
@@ -223,7 +248,7 @@ export function bindAuthModal() {
   const closeAuthButton = document.querySelector("#close-auth");
   const authModal = document.querySelector("#auth-modal");
   const pwToggle = document.querySelector("#auth-password-toggle");
-  const pwInput = document.querySelector("#auth-password");
+  const pwInput = document.querySelector("#auth-modal-password");
 
   authForm?.addEventListener("submit", async (event) => {
     event.preventDefault();

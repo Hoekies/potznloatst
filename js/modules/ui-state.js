@@ -1,4 +1,4 @@
-export let activeTab = "inleg";
+export let activeTab = "overzicht";
 export function getActiveTab() { return activeTab; }
 export function setActiveTab(tab) { activeTab = tab; }
 

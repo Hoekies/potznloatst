@@ -34,7 +34,6 @@ export const estimatePerPersonAmountInput = document.querySelector("#estimate-pe
 export const estimateAmountWrap = document.querySelector("#expense-amount-wrap");
 export const estimateAmountLabel = document.querySelector("#expense-amount-label");
 export const estimateCalculation = document.querySelector("#estimate-calculation");
-export const analyzeReceiptButton = document.querySelector("#analyze-receipt");
 export const receiptReview = document.querySelector("#receipt-review");
 export const receiptPreview = document.querySelector("#receipt-preview");
 export const receiptPreviewImage = document.querySelector("#receipt-preview-image");

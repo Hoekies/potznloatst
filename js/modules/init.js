@@ -14,7 +14,7 @@ import {
 } from './ui-state.js';
 import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
-  requestReceiptAnalysis, setPendingReceiptImage, getPendingReceiptImage, setLastReceiptOcrText,
+  setPendingReceiptImage, getPendingReceiptImage,
   saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
   convertEstimateToExpense, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
@@ -24,7 +24,7 @@ import {
   clampCropOffset, applyCropTransform, resetCropper,
   getProfileName, getProfileAvatarSource, cropState,
   setRenderAccountUiFn, setAuthRenderFn, openPasswordResetModal,
-  openAdminGebruikersModal,
+  openAdminGebruikersModal, submitAuth,
 } from './auth.js';
 import {
   bootstrapCloudFeatures, handleCloudSync, queueCloudSync, setRenderFn as setCloudRenderFn,
@@ -33,7 +33,11 @@ import {
 
 export function initializeApp() {
   warmUpSupabase(); // Ping Supabase direct bij opstart zodat het project alvast wakker wordt
-  setState(loadState());
+
+  // Altijd starten als niet ingelogd — Supabase herstelt een geldige sessie automatisch
+  const loadedState = loadState();
+  if (loadedState.auth) loadedState.auth.loggedIn = false;
+  setState(loadedState);
 
   setRenderFn(() => renderAll());
   setCloudRenderFn(() => renderAll());
@@ -55,20 +59,28 @@ export function initializeApp() {
   });
   setRenderAccountUiFn(() => renderAccountUiNow());
 
+  setupEventListeners();
+
   dom.expenseDateInput.value = todayIso();
   renderWeekendLogo(getDomBundle());
-  renderExpenseComposerState(getDomBundle(), state);
+  try { renderExpenseComposerState(getDomBundle(), state); } catch (e) { console.warn('renderExpenseComposerState:', e); }
   renderAccountUiNow();
   positionMenuPanel();
 
-  setupEventListeners();
-
   renderAll();
+
+  // Login overlay toont nu (loggedIn=false) — het formulier zit direct IN de overlay.
+  // Focus op het gebruikersnaamveld zodat de gebruiker direct kan typen.
+  setTimeout(() => {
+    const usernameInput = document.querySelector("#auth-username");
+    usernameInput?.focus();
+  }, 50);
 
   bootstrapCloudFeatures(
     () => bindAuthModal(),
     () => renderAccountUiNow(),
     () => openPasswordResetModal(),
+    () => closeAuthModal(),
   );
 }
 
@@ -145,7 +157,7 @@ function resetUiState() {
   setEditingParticipantId(null);
   setEditingTopupId(null);
   setEditingRecord(null);
-  setActiveTab("inleg");
+  setActiveTab("overzicht");
   closeReceiptModal(dom);
   resetExpenseComposer(dom);
 }
@@ -351,33 +363,6 @@ function setupEventListeners() {
   dom.expenseAmountInput.addEventListener("input", () => renderExpenseComposerState(getDomBundle(), state));
   dom.estimatePerPersonAmountInput?.addEventListener("input", () => renderExpenseComposerState(getDomBundle(), state));
 
-  dom.analyzeReceiptButton.addEventListener("click", async () => {
-    const btn = dom.analyzeReceiptButton;
-    const origText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = "Analyseren…";
-
-    const requestPayload = {
-      fileName: dom.expenseReceiptInput.files[0]?.name || "",
-      notesHint: [dom.expenseDescriptionInput.value, dom.expenseNoteInput.value].filter(Boolean).join(" "),
-    };
-
-    try {
-      const result = await requestReceiptAnalysis(requestPayload, dom);
-
-      if (result.amount) dom.expenseAmountInput.value = result.amount;
-      if (result.description) dom.expenseDescriptionInput.value = result.description;
-      if (result.date) dom.expenseDateInput.value = result.date;
-      if (result.category) dom.expenseCategoryInput.value = result.category;
-
-      showReceiptReview(result.message, result.ocrStatus, dom);
-    } catch (error) {
-      showReceiptReview(error.message, "manual_required", dom);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = origText;
-    }
-  });
 
   dom.participantsList.addEventListener("click", (event) => {
     const target = event.target.closest("[data-action]");
@@ -414,16 +399,34 @@ function setupEventListeners() {
     }
   });
 
+  function handleReceiptFileChange(event) {
+    if (!event.target.matches('[data-field="receipt-file"]')) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const card = event.target.closest('[data-expense-card], [data-timeline-card]');
+    if (!card) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const hidden = card.querySelector('[data-field="receipt-data"]');
+      if (hidden) hidden.value = e.target.result;
+      const thumb = card.querySelector('.inline-edit-receipt__thumb');
+      if (thumb) { thumb.src = e.target.result; thumb.hidden = false; }
+    };
+    reader.readAsDataURL(file);
+  }
+
   dom.expenseList.addEventListener("change", (event) => {
     if (event.target.matches('[data-field="pricingMode"]')) {
       updateEstimateEditMode(event.target.closest('[data-expense-card], [data-timeline-card]'));
     }
+    handleReceiptFileChange(event);
   });
 
   dom.timeline.addEventListener("change", (event) => {
     if (event.target.matches('[data-field="pricingMode"]')) {
       updateEstimateEditMode(event.target.closest('[data-expense-card], [data-timeline-card]'));
     }
+    handleReceiptFileChange(event);
   });
 
   dom.expenseList.addEventListener("input", (event) => {
@@ -570,8 +573,7 @@ function setupEventListeners() {
       return;
     }
     setPendingReceiptImage(await fileToDataUrl(dom.expenseReceiptInput.files[0]));
-    setLastReceiptOcrText("");
-    showReceiptReview("Bon geladen. Vergroot de bon om het echte bedrag te controleren en neem daarna het juiste bedrag over.", "klaar_voor_review", dom);
+    showReceiptReview("Bon toegevoegd. Tik op de afbeelding om te vergroten.", "klaar_voor_review", dom);
   });
 
   dom.receiptPreview.addEventListener("click", () => {
@@ -627,9 +629,6 @@ function setupEventListeners() {
   dom.syncCloudButton?.addEventListener("click", () => handleCloudSync(() => openAuthModal(), showToast));
 
   document.querySelector("#login-wall-btn")?.addEventListener("click", () => openAuthModal());
-  document.body.addEventListener("click", (e) => {
-    if (e.target?.id === "login-overlay-btn") openAuthModal();
-  });
 
   dom.cropStage?.addEventListener("pointerdown", (e) => {
     dom.cropStage.setPointerCapture(e.pointerId);
@@ -663,4 +662,7 @@ function setupEventListeners() {
     resetCropper();
     if (dom.profileAvatarFileInput) dom.profileAvatarFileInput.value = "";
   });
+
+  // Binding voor #login-overlay-form en #login-overlay-eye zit in app.js
+  // (top-level, vóór init-chain) zodat ze gegarandeerd worden gebonden.
 }

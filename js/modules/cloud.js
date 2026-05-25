@@ -433,12 +433,13 @@ export async function hydrateFromSupabaseSession(user) {
 export function warmUpSupabase() {
   const client = getSupabaseClient();
   if (!client) return;
-  // Stille ping: wekt zowel de auth-service als de database op
-  client.auth.getSession().catch(() => {});
-  client.from("profiles").select("id").limit(1).catch(() => {});
+  (async () => {
+    try { await client.auth.getSession(); } catch (_) {}
+    try { await client.from("profiles").select("id").limit(1); } catch (_) {}
+  })();
 }
 
-export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onPasswordRecovery) {
+export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onPasswordRecovery, onAutoLogin) {
   bindAuthModal();
   renderAccountUi();
 
@@ -454,38 +455,23 @@ export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onP
         if (onPasswordRecovery) onPasswordRecovery();
         return;
       }
-      if (event === "SIGNED_OUT" || !session?.user) {
-        if (state.auth?.loggedIn) {
-          setState(createEmptyState());
-          writeToStorage(primaryStorageKey, JSON.stringify(state));
-          _render();
-        }
-        return;
-      }
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "INITIAL_SESSION") {
+      if (event === "SIGNED_IN") {
         const user = session.user;
         // Gebruik setTimeout(0) zodat de Supabase SDK zijn interne Promise-chain
         // eerst kan afronden vóór we zware DB-queries starten. Zonder deze
         // verschuiving blokkeert de hydration de resolve van signInWithPassword,
         // waardoor closeAuthModal() pas na de DB-queries wordt aangeroepen.
         setTimeout(() => {
-          hydrateFromSupabaseSession(user).catch((err) => {
-            console.warn("Hydration mislukt, gebruik lokale staat:", err);
-            applyCloudState(createEmptyState(), user);
-          });
+          hydrateFromSupabaseSession(user)
+            .then(() => onAutoLogin?.())
+            .catch((err) => {
+              console.warn("Hydration mislukt, gebruik lokale staat:", err);
+              applyCloudState(createEmptyState(), user);
+              onAutoLogin?.();
+            });
         }, 0);
       }
     });
-  }
-
-  // Hydrate eenmalig bij bootstrap als er al een actieve sessie is.
-  // De onAuthStateChange listener handelt INITIAL_SESSION al af via setTimeout(0),
-  // dus hier alleen hydrateren als de listener de sessie nog niet oppikt
-  // (d.w.z. we wachten een tick om dubbele hydration te vermijden).
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  const user = await getCurrentSessionUser();
-  if (user && !state.auth?.loggedIn) {
-    await hydrateFromSupabaseSession(user);
   }
 }
 

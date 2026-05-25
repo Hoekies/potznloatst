@@ -3,9 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; worker-src 'self' blob: https://cdn.jsdelivr.net; manifest-src 'self'; object-src 'none'; base-uri 'self'" />
-    <meta name="theme-color" content="#1B2B4B" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.supabase.co; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.supabase.co https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; manifest-src 'self'; object-src 'none'; base-uri 'self'" />
+    <meta name="theme-color" content="#0D3A5C" />
     <title>Pot z'n Loatst | Op z'n Loatst</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/png" href="./assets/icons/favicon.png" />
     <link rel="apple-touch-icon" href="./assets/icons/favicon.png" />
     <link rel="manifest" href="./manifest.webmanifest" />
@@ -20,7 +23,7 @@
           <div class="hero__bar">
             <div class="hero__brand">
               <h1 class="brand-heading">
-                <img class="brand-logo brand-logo--main" src="assets/branding/potznloatst.png" alt="Pot z,n Loatst" />
+                <img class="brand-logo brand-logo--main" src="assets/branding/potznloatst_donker.png" alt="Pot z'n Loatst" />
               </h1>
             </div>
             <div class="hero__menu">
@@ -47,20 +50,20 @@
           </div>
         </div>
       </header>
-      <main class="layout">
+      <main class="layout" hidden>
         <section class="panel panel--tabs" aria-label="Werkbladen">
           <div id="login-wall" class="login-wall" hidden>
             <button id="login-wall-btn" class="primary-button" type="button">Inloggen</button>
           </div>
           <div class="panel__header panel__header--tabs">
             <div class="tab-bar" role="tablist" aria-label="Onderdelen van de pot">
-              <button class="tab-button is-active" type="button" role="tab" data-tab-target="inleg">Inleg</button>
+              <button class="tab-button is-active" type="button" role="tab" data-tab-target="overzicht">Overzicht</button>
               <button class="tab-button" type="button" role="tab" data-tab-target="uitgaven">Uitgaven</button>
-              <button class="tab-button" type="button" role="tab" data-tab-target="overzicht">Overzicht</button>
+              <button class="tab-button" type="button" role="tab" data-tab-target="inleg">Inleg</button>
             </div>
           </div>
 
-          <div class="tab-panel is-active" data-tab-panel="inleg" role="tabpanel">
+          <div class="tab-panel" data-tab-panel="inleg" role="tabpanel" hidden>
             <div class="tab-grid">
               <section class="subpanel">
                 <form id="participant-form" class="stack-form" autocomplete="off">
@@ -114,19 +117,17 @@
             </div>
           </div>
 
-          <div class="tab-panel tab-panel--overview" data-tab-panel="overzicht" role="tabpanel" hidden>
+          <div class="tab-panel tab-panel--overview is-active" data-tab-panel="overzicht" role="tabpanel">
             <section class="subpanel subpanel--full">
               <div id="summary-cards" class="summary-grid"></div>
             </section>
             <section class="subpanel subpanel--full">
               <div class="panel__header">
                 <div>
-                  <p class="section-label">Alles of per categorie</p>
                   <h2>Bewegingen in de pot</h2>
                 </div>
                 <div class="header-actions">
                   <label class="filter-select">
-                    Filter
                     <select id="filter-category" aria-label="Filter overzicht op categorie">
                       <option value="all">Alles</option>
                       <option value="accommodatie">Accommodatie</option>
@@ -139,15 +140,7 @@
                   </label>
                 </div>
               </div>
-              <details class="timeline-drawer">
-                <summary class="timeline-drawer__summary">
-                  <span>Uitgaven en bewegingen</span>
-                  <small>Uitklappen</small>
-                </summary>
-                <div class="timeline-drawer__content">
-                  <div id="timeline" class="timeline"></div>
-                </div>
-              </details>
+              <div id="timeline" class="timeline"></div>
             </section>
           </div>
 
@@ -207,16 +200,13 @@
                     Bonfoto
                     <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" />
                   </label>
-                  <div class="button-row">
-                    <button id="analyze-receipt" class="secondary-button" type="button">Bon review</button>
-                  </div>
                   <div id="receipt-review" class="receipt-review" hidden>
                     <button id="receipt-preview" class="receipt-thumb" type="button">
                       <img id="receipt-preview-image" alt="Gekozen bon" />
                     </button>
                     <div>
-                      <strong id="ocr-status">Klaar voor review</strong>
-                      <p id="ocr-message" class="muted">Controleer de bon en neem het bedrag over.</p>
+                      <strong id="ocr-status">Bon toegevoegd</strong>
+                      <p id="ocr-message" class="muted">Tik op de bon om te vergroten.</p>
                     </div>
                   </div>
                   <label>
@@ -300,17 +290,17 @@
             <form id="auth-form" class="stack-form" autocomplete="on">
               <label>
                 Gebruikersnaam
-                <input id="auth-username" name="username" type="text" maxlength="80" placeholder="Bijv. admin" autocomplete="username" required />
+                <input id="auth-modal-username" name="username" type="text" maxlength="80" placeholder="Bijv. admin" autocomplete="username" required />
               </label>
               <label>
                 Wachtwoord
                 <div class="password-wrap">
-                  <input id="auth-password" name="password" type="password" minlength="6" placeholder="Minimaal 6 tekens" autocomplete="current-password" required />
+                  <input id="auth-modal-password" name="password" type="password" minlength="6" placeholder="Minimaal 6 tekens" autocomplete="current-password" required />
                   <button type="button" class="eye-toggle" id="auth-password-toggle" aria-label="Wachtwoord tonen">&#x1F441;</button>
                 </div>
               </label>
-              <p id="auth-status" class="field-help" hidden></p>
-              <button id="auth-sign-in" class="primary-button" type="submit">Inloggen</button>
+              <p id="auth-modal-status" class="field-help" hidden></p>
+              <button id="auth-sign-in-modal" class="primary-button" type="submit">Inloggen</button>
             </form>
           </div>
         </div>
@@ -359,10 +349,31 @@
         <img id="receipt-modal-image" alt="Vergrote bon" />
       </div>
     </div>
+    <div id="login-overlay" class="login-overlay">
+      <div class="login-overlay__card">
+        <img class="login-overlay__logo" src="assets/branding/potznloatst_licht.png" alt="Pot z'n Loatst" />
+        <div class="login-overlay__divider"></div>
+        <p class="login-overlay__sub">Beheer de weekendpot</p>
+        <form id="login-overlay-form" class="login-overlay__form" autocomplete="on" novalidate>
+          <label class="login-overlay__label">
+            Gebruikersnaam
+            <input id="auth-username" name="username" type="text" maxlength="80" placeholder="Bijv. admin" autocomplete="username" class="login-overlay__input" />
+          </label>
+          <label class="login-overlay__label">
+            Wachtwoord
+            <div class="login-overlay__pw-wrap">
+              <input id="auth-password" name="password" type="password" minlength="6" placeholder="Minimaal 6 tekens" autocomplete="current-password" class="login-overlay__input" />
+              <button type="button" class="login-overlay__eye" id="login-overlay-eye" aria-label="Wachtwoord tonen">&#x1F441;</button>
+            </div>
+          </label>
+          <p id="auth-status" class="login-overlay__status" hidden></p>
+          <button id="auth-sign-in" class="login-overlay__btn" type="submit">Inloggen</button>
+        </form>
+      </div>
+    </div>
     <script src="./js/supabase-config.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/app.js?v=2"></script>
   </body>
   </html>
 
