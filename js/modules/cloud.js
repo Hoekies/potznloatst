@@ -171,17 +171,60 @@ export async function saveProfileToCloud(user) {
   }
 }
 
+export async function checkSharedAccess(userId) {
+  const client = getSupabaseClient();
+  if (!client || !userId) return null;
+  const { data } = await client
+    .from("gedeelde_toegang")
+    .select("owner_id")
+    .eq("viewer_id", userId)
+    .maybeSingle();
+  return data?.owner_id || null;
+}
+
+export async function fetchCurrentViewers() {
+  const client = getSupabaseClient();
+  const user = await getCurrentSessionUser();
+  if (!client || !user) return [];
+  const { data } = await client
+    .from("gedeelde_toegang")
+    .select("viewer_id")
+    .eq("owner_id", user.id);
+  return (data || []).map((r) => r.viewer_id);
+}
+
+export async function grantViewerAccess(viewerUserId) {
+  const client = getSupabaseClient();
+  const user = await getCurrentSessionUser();
+  if (!client || !user) return;
+  await client.from("gedeelde_toegang").upsert(
+    { owner_id: user.id, viewer_id: viewerUserId },
+    { onConflict: "owner_id,viewer_id" }
+  );
+}
+
+export async function revokeViewerAccess(viewerUserId) {
+  const client = getSupabaseClient();
+  const user = await getCurrentSessionUser();
+  if (!client || !user) return;
+  await client.from("gedeelde_toegang").delete().eq("owner_id", user.id).eq("viewer_id", viewerUserId);
+}
+
 export async function buildCloudStateForUser(user) {
   const client = getSupabaseClient();
   if (!client || !user) {
     return createEmptyState();
   }
 
-  const [profileResult, participantsResult, contributionsResult, expensesResult] = await Promise.all([
+  const ownerId = await checkSharedAccess(user.id);
+  const dataUserId = ownerId || user.id;
+
+  const [profileResult, ownerProfileResult, participantsResult, contributionsResult, expensesResult] = await Promise.all([
     client.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
-    client.from("deelnemers").select("id, naam, kleur").eq("user_id", user.id).order("created_at", { ascending: true }),
-    client.from("extra_inleg").select("id, participant_id, bedrag, type, omschrijving, datum").eq("user_id", user.id).order("datum", { ascending: false }),
-    client.from("uitgaven").select("id, omschrijving, bedrag, categorie, betaald_door, datum, notitie, bon_path, is_gecontroleerd, is_raming").eq("user_id", user.id).order("datum", { ascending: false }),
+    ownerId ? client.from("profiles").select("display_name").eq("id", ownerId).maybeSingle() : Promise.resolve({ data: null }),
+    client.from("deelnemers").select("id, naam, kleur").eq("user_id", dataUserId).order("created_at", { ascending: true }),
+    client.from("extra_inleg").select("id, participant_id, bedrag, type, omschrijving, datum").eq("user_id", dataUserId).order("datum", { ascending: false }),
+    client.from("uitgaven").select("id, omschrijving, bedrag, categorie, betaald_door, datum, notitie, bon_path, is_gecontroleerd, is_raming").eq("user_id", dataUserId).order("datum", { ascending: false }),
   ]);
 
   if (participantsResult.error || contributionsResult.error || expensesResult.error) {
@@ -232,6 +275,11 @@ export async function buildCloudStateForUser(user) {
     }
   }
 
+  const sharedView = ownerId ? {
+    ownerId,
+    ownerName: sanitizeText(ownerProfileResult.data?.display_name || "Admin", 80),
+  } : null;
+
   return normalizeState({
     weekend: state.weekend,
     auth: {
@@ -249,6 +297,7 @@ export async function buildCloudStateForUser(user) {
     contributions,
     expenses: expenseRecords,
     estimates: estimateRecords,
+    sharedView,
   });
 }
 
@@ -283,6 +332,10 @@ export async function syncStateToCloud(reason = "auto") {
   const client = getSupabaseClient();
   const user = await getCurrentSessionUser();
   if (!client || !user || getCloudHydrating()) {
+    return;
+  }
+
+  if (state.sharedView) {
     return;
   }
 

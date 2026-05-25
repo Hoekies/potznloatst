@@ -4,6 +4,7 @@ import { state, setState, createEmptyState, writeToStorage, persistAndRender } f
 import { primaryStorageKey } from './constants.js';
 import {
   getSupabaseClient, isSupabaseConfigured, getCurrentSessionUser, saveProfileToCloud,
+  fetchCurrentViewers, grantViewerAccess, revokeViewerAccess,
 } from './cloud.js';
 
 export function loginNaarEmail(gebruikersnaam) {
@@ -291,10 +292,10 @@ async function laadGebruikers() {
   if (!client) return;
 
   listEl.textContent = "Laden…";
-  const { data, error } = await client
-    .from("gebruikers")
-    .select("id, gebruikersnaam, created_at, last_login_at")
-    .order("created_at", { ascending: true });
+  const [{ data, error }, currentViewers] = await Promise.all([
+    client.from("gebruikers").select("id, gebruikersnaam, created_at, last_login_at").order("created_at", { ascending: true }),
+    fetchCurrentViewers(),
+  ]);
 
   if (error || !data) {
     listEl.textContent = "Kon gebruikers niet laden.";
@@ -306,24 +307,48 @@ async function laadGebruikers() {
     return;
   }
 
+  const viewerSet = new Set(currentViewers);
+
   listEl.innerHTML = data.map(g => {
     const isAdminUser = g.gebruikersnaam === "admin";
     const login = new Date(g.last_login_at || g.created_at).toLocaleDateString("nl-NL");
+    const hasAccess = viewerSet.has(g.id);
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
       <div style="flex:1;min-width:0;">
         <strong style="font-size:0.9rem;">${sanitizeText(g.gebruikersnaam)}</strong>
         ${isAdminUser ? '<span style="font-size:0.7rem;background:var(--primary);color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;">admin</span>' : ""}
         <div style="font-size:0.75rem;color:var(--muted);">Laatste login: ${login}</div>
       </div>
-      ${!isAdminUser ? `<button class="ghost-button ghost-button--small" data-verwijder-gebruiker="${g.id}" style="color:#DC2626;">Verwijder</button>` : ""}
+      ${!isAdminUser ? `
+        <button class="soft-button" style="font-size:0.75rem;padding:4px 10px;${hasAccess ? "background:var(--cyan-soft);color:var(--cyan-dark);" : ""}" data-toegang-gebruiker="${g.id}" data-heeft-toegang="${hasAccess}">
+          ${hasAccess ? "✓ Meekijken" : "Meekijken"}
+        </button>
+        <button class="ghost-button ghost-button--small" data-verwijder-gebruiker="${g.id}" style="color:#DC2626;">Verwijder</button>
+      ` : ""}
     </div>`;
   }).join("");
+
+  listEl.querySelectorAll("[data-toegang-gebruiker]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const uid = btn.dataset.toegangGebruiker;
+      const heeftToegang = btn.dataset.heeftToegang === "true";
+      btn.disabled = true;
+      btn.textContent = "…";
+      if (heeftToegang) {
+        await revokeViewerAccess(uid);
+      } else {
+        await grantViewerAccess(uid);
+      }
+      await laadGebruikers();
+    });
+  });
 
   listEl.querySelectorAll("[data-verwijder-gebruiker]").forEach(btn => {
     btn.addEventListener("click", async () => {
       if (!confirm("Deze gebruiker verwijderen?")) return;
       const uid = btn.dataset.verwijderGebruiker;
       const client2 = getSupabaseClient();
+      await revokeViewerAccess(uid);
       await client2.from("gebruikers").delete().eq("id", uid);
       await laadGebruikers();
     });

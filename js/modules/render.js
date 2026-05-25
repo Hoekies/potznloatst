@@ -22,7 +22,26 @@ export function render(dom) {
   renderExpenses(dom);
   renderTimeline(dom);
   renderWeekendLogo(dom);
+  renderSharedViewBadge(dom);
   if (dom.positionMenuPanel) dom.positionMenuPanel();
+}
+
+export function renderSharedViewBadge(dom) {
+  const badge = document.querySelector("#shared-view-badge");
+  if (badge) {
+    if (state.sharedView) {
+      badge.textContent = `👁 Je kijkt mee met ${state.sharedView.ownerName}`;
+      badge.hidden = false;
+    } else {
+      badge.hidden = true;
+    }
+  }
+
+  const isViewer = !!state.sharedView;
+  ["#participant-form", "#topup-form", "#expense-form"].forEach((sel) => {
+    const el = document.querySelector(sel);
+    if (el) el.hidden = isViewer;
+  });
 }
 
 export function renderLoginGate(dom) {
@@ -201,8 +220,7 @@ export function renderParticipants(dom) {
             }
           </div>
           <div class="person-card__actions">
-            ${
-              isEditing
+            ${state.sharedView ? "" : isEditing
                 ? `
                   <button class="soft-button" type="button" data-action="save-participant" data-id="${participant.id}">Opslaan</button>
                   <button class="ghost-button ghost-button--small" type="button" data-action="cancel-participant" data-id="${participant.id}">Annuleer</button>
@@ -258,8 +276,7 @@ export function renderTopups(dom) {
               }
           </div>
           <div class="management-card__actions">
-            ${
-              isEditing
+            ${state.sharedView ? "" : isEditing
                 ? `
                   <button class="soft-button" type="button" data-topup-action="save" data-id="${topup.id}">Opslaan</button>
                   <button class="ghost-button ghost-button--small" type="button" data-topup-action="cancel" data-id="${topup.id}">Annuleer</button>
@@ -312,8 +329,9 @@ export function renderExpenses(dom) {
             }
           </div>
           <div class="management-card__actions">
-            ${
-              isEditing
+            ${state.sharedView
+              ? `${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}`
+              : isEditing
                 ? `
                   <button class="soft-button" type="button" data-expense-action="save" data-kind="${record.kind}" data-id="${record.id}">Opslaan</button>
                   <button class="ghost-button ghost-button--small" type="button" data-expense-action="cancel" data-kind="${record.kind}" data-id="${record.id}">Annuleer</button>
@@ -409,9 +427,11 @@ export function renderTimeline(dom) {
           </div>
           <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
           <div class="timeline-card__actions">
-            ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
-            <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
-            <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
+            ${state.sharedView ? "" : `
+              ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
+              <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
+              <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
+            `}
           </div>
         </article>
       `;

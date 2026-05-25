@@ -165,6 +165,9 @@ export function normalizeState(rawState) {
     estimates: estimates
       .filter((item) => item && typeof item === "object")
       .map((item) => normalizeEstimate(item, participants.length)),
+    sharedView: nextState.sharedView
+      ? { ownerId: String(nextState.sharedView.ownerId || ""), ownerName: sanitizeText(nextState.sharedView.ownerName || "Admin", 80) }
+      : null,
   };
 }
 
