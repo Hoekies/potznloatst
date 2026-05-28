@@ -62,10 +62,6 @@ export function resetExpenseComposer(dom) {
   dom.receiptReview.hidden = true;
 }
 
-export function getEstimateAmountFromForm(dom) {
-  return getEstimateAmount({ pricingMode: "total", amount: sanitizeAmount(dom.expenseAmountInput?.value) });
-}
-
 export function showReceiptReview(message, status, dom) {
   dom.ocrMessage.textContent = message;
   dom.ocrStatus.textContent = status.replace(/_/g, " ");

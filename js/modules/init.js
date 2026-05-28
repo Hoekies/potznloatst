@@ -1,7 +1,7 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync } from './state.js';
 import { primaryStorageKey, CROP_SIZE } from './constants.js';
-import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus } from './utils.js';
+import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker } from './utils.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
   renderAccountUi, renderTabs,
@@ -32,6 +32,7 @@ import {
 } from './cloud.js';
 
 export function initializeApp() {
+  registerServiceWorker();
   warmUpSupabase(); // Ping Supabase direct bij opstart zodat het project alvast wakker wordt
 
   // Altijd starten als niet ingelogd — Supabase herstelt een geldige sessie automatisch
