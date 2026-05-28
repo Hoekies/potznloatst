@@ -59,7 +59,6 @@ export function resetExpenseComposer(dom) {
   dom.estimatePricingModeInput.value = "total";
   dom.expenseDateInput.value = todayIso();
   pendingReceiptImage = "";
-  lastReceiptOcrText = "";
   dom.receiptReview.hidden = true;
 }
 
