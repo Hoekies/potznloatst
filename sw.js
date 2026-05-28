@@ -5,7 +5,8 @@ const CACHE_NAME = "potzloats-cache-v68";
 const STATIC_ASSETS = [
   "./assets/icons/favicon.png",
   "./assets/branding/opznloatst.png",
-  "./assets/branding/potznloatst.png",
+  "./assets/branding/potznloatst_donker.png",
+  "./assets/branding/potznloatst_licht.png",
   "./manifest.webmanifest",
 ];
 
