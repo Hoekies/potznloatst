@@ -1,5 +1,5 @@
 import { authStatusFallback, CROP_SIZE } from './constants.js';
-import { sanitizeText, sanitizeImageValue, fileToDataUrl } from './utils.js';
+import { sanitizeText, sanitizeImageValue, fileToDataUrl, escapeHtml } from './utils.js';
 import { state, setState, createEmptyState, writeToStorage, persistAndRender } from './state.js';
 import { primaryStorageKey } from './constants.js';
 import {
@@ -315,7 +315,7 @@ async function laadGebruikers() {
     const hasAccess = viewerSet.has(g.id);
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
       <div style="flex:1;min-width:0;">
-        <strong style="font-size:0.9rem;">${sanitizeText(g.gebruikersnaam)}</strong>
+        <strong style="font-size:0.9rem;">${escapeHtml(sanitizeText(g.gebruikersnaam))}</strong>
         ${isAdminUser ? '<span style="font-size:0.7rem;background:var(--primary);color:#fff;border-radius:4px;padding:1px 5px;margin-left:4px;">admin</span>' : ""}
         <div style="font-size:0.75rem;color:var(--muted);">Laatste login: ${login}</div>
       </div>

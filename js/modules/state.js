@@ -1,5 +1,5 @@
 import { primaryStorageKey, storageKey, migrationStorageKey, categoryLabels } from './constants.js';
-import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbackColor, cloneData, createId, todayIso } from './utils.js';
+import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, sanitizeColor, fallbackColor, cloneData, createId, todayIso } from './utils.js';
 
 function buildDemoState() {
   const participants = [
@@ -136,7 +136,7 @@ export function normalizeState(rawState) {
     participants: participants.map((participant, index) => ({
       id: participant.id || createId(),
       name: sanitizeText(participant.name) || `Deelnemer ${index + 1}`,
-      color: participant.color || fallbackColor(index),
+      color: sanitizeColor(participant.color) || fallbackColor(index),
     })),
     contributions: contributions
       .filter((item) => item && typeof item === "object")
