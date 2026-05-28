@@ -1196,9 +1196,39 @@ h3 {
 }
 
 .management-card__meta {
-  display: grid;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex: 1;
+  min-width: 0;
+}
+
+.management-card__top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.management-card__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+
+.management-card__amount-tag {
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.management-card__detail {
+  font-size: 0.78rem;
+  color: var(--muted);
 }
 
 .management-card__meta strong,
@@ -1206,16 +1236,17 @@ h3 {
   display: block;
 }
 
-.management-card__meta span,
+.management-card__meta > span,
 .management-empty {
   color: var(--muted);
 }
 
 .management-card__actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  flex-shrink: 0;
 }
 
 .timeline-drawer {
@@ -1777,15 +1808,13 @@ input[type="color"] {
   }
 
   .management-card {
-    grid-template-columns: 56px minmax(0, 1fr);
     align-items: flex-start;
   }
 
   .management-card__actions {
-    grid-column: 1 / -1;
-    width: 100%;
-    justify-content: flex-start;
+    flex-direction: row;
     flex-wrap: wrap;
+    align-items: center;
   }
 
   .timeline-card__actions {

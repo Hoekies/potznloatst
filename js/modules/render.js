@@ -323,8 +323,11 @@ export function renderExpenses(dom) {
               isEditing
                 ? renderRecordEditFields(record)
                 : `
-                  <strong>${itemLabel}: ${escapeHtml(record.description)} - ${currencyFormatter.format(record.amount)}</strong>
-                  <span>${detailBits.join(" - ")}</span>
+                  <div class="management-card__top">
+                    <strong class="management-card__title">${escapeHtml(record.description)}</strong>
+                    <span class="management-card__amount-tag">${currencyFormatter.format(record.amount)}</span>
+                  </div>
+                  <span class="management-card__detail">${detailBits.join(" · ")}</span>
                 `
             }
           </div>
