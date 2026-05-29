@@ -408,8 +408,8 @@ export function renderTimeline(dom) {
       }
       const typeLabel = typeLabels[entry.kind];
       const badgeText = entry.kind === "expense" || entry.kind === "estimate" ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
-      const amountClass = entry.kind === "expense" ? "negative" : "positive";
-      const amountPrefix = entry.kind === "expense" ? "-" : "+";
+      const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
+      const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
       const detailBits = [];
       if (entry.kind === "contribution" && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
       if (entry.kind === "expense" || entry.kind === "estimate") {
@@ -524,8 +524,8 @@ export function renderRecordEditFields(record) {
 
 export function renderTimelineEditCard(entry, participant) {
   const typeLabel = typeLabels[entry.kind];
-  const amountPrefix = entry.kind === "expense" ? "-" : "+";
-  const amountClass = entry.kind === "expense" ? "negative" : "positive";
+  const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
+  const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
 
   if (entry.kind === "contribution" || entry.kind === "topup") {
     return `
