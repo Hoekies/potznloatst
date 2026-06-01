@@ -290,7 +290,7 @@ textarea {
 }
 
 .login-overlay__logo {
-  width: 200px;
+  width: 260px;
   max-width: 100%;
   margin-bottom: 4px;
 }
@@ -305,7 +305,7 @@ textarea {
 
 .login-overlay__sub {
   margin: 0 0 28px;
-  color: #4a5568;
+  color: #B45309;
   font-size: 0.8rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -357,7 +357,7 @@ textarea {
   gap: 5px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: #374151;
+  color: #2C1A08;
   text-align: left;
 }
 .login-overlay__input {
@@ -367,7 +367,7 @@ textarea {
   border-radius: 10px;
   font-size: 0.95rem;
   background: #fff;
-  color: #111827;
+  color: #2C1A08;
   box-sizing: border-box;
   outline: none;
   transition: border-color 0.15s;
@@ -392,7 +392,7 @@ textarea {
   cursor: pointer;
   font-size: 1rem;
   padding: 2px 4px;
-  color: #6b7280;
+  color: #7A6550;
   line-height: 1;
 }
 .login-overlay__status {
