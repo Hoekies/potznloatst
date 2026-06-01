@@ -158,16 +158,25 @@ export async function saveProfileToCloud(user) {
     return;
   }
 
-  const payload = {
+  const avatarUrl = state.profile?.avatarUrl || "";
+  const displayName = state.profile?.name || "";
+
+  // Sla naam en avatar samen op; als de avatar te groot is, bewaar dan alleen de naam
+  const fullPayload = {
     id: user.id,
     email: user.email || "",
-    display_name: state.profile?.name || "",
-    avatar_url: state.profile?.avatarUrl || "",
+    display_name: displayName,
+    avatar_url: avatarUrl,
   };
 
-  const { error } = await client.from("profiles").upsert(payload, { onConflict: "id" });
+  const { error } = await client.from("profiles").upsert(fullPayload, { onConflict: "id" });
   if (error) {
-    console.warn("Profiel opslaan in Supabase mislukte:", error);
+    console.warn("Profiel opslaan mislukte (probeer zonder avatar):", error);
+    const nameOnlyPayload = { id: user.id, email: user.email || "", display_name: displayName, avatar_url: "" };
+    const { error: nameError } = await client.from("profiles").upsert(nameOnlyPayload, { onConflict: "id" });
+    if (nameError) {
+      console.warn("Profielnaam opslaan mislukte:", nameError);
+    }
   }
 }
 

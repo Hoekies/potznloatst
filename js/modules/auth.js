@@ -426,7 +426,9 @@ export function setAuthRenderFn(fn) {
 
 export async function toggleLocalLoginState(showToast) {
   if (state.auth?.loggedIn) {
+    const savedProfile = state.profile ? { ...state.profile } : {};
     setState(createEmptyState());
+    state.profile = savedProfile;
     writeToStorage(primaryStorageKey, JSON.stringify(state));
     if (_renderFn) _renderFn();
 
