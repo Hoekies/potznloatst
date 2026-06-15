@@ -16,7 +16,7 @@ import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
   setPendingReceiptImage, getPendingReceiptImage,
   saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
-  convertEstimateToExpense, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
+  convertEstimateToExpense, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
 import {
   openAuthModal, closeAuthModal, bindAuthModal, toggleLocalLoginState,
@@ -560,6 +560,11 @@ function setupEventListeners() {
 
     if (action === "convert") {
       convertEstimateToExpense(id);
+      return;
+    }
+
+    if (action === "convert-inleg") {
+      convertInlegEstimate(id);
     }
   });
 

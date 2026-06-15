@@ -454,6 +454,7 @@ export function renderTimeline(dom) {
           <div class="timeline-card__actions">
             ${state.sharedView ? "" : `
               ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
+              ${entry.kind === "contribution-estimate" || entry.kind === "topup-estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-inleg" data-kind="${entry.kind}" data-id="${entry.id}">Definitief</button>` : ""}
               <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
               <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
             `}
@@ -569,6 +570,10 @@ export function renderTimelineEditCard(entry, participant) {
           <label>
             Notitie
             <input data-field="note" type="text" value="${escapeHtml(entry.note || "")}" />
+          </label>
+          <label class="checkbox-label">
+            <input data-field="isEstimate" type="checkbox" ${isEstimateEntry ? "checked" : ""} />
+            Raming (nog niet ontvangen)
           </label>
         </div>
         <span class="timeline-card__tag">${typeLabel}</span>

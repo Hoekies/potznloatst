@@ -176,10 +176,12 @@ export function saveTimelineEdits(kind, id, row) {
     const amount = Number(row.querySelector('[data-field="amount"]').value);
     const date = row.querySelector('[data-field="date"]').value;
     const note = row.querySelector('[data-field="note"]').value.trim();
+    const isEstimateField = row.querySelector('[data-field="isEstimate"]');
     if (!Number.isFinite(amount) || amount < 0 || !date) return;
     item.amount = amount;
     item.date = date;
     item.note = note;
+    if (isEstimateField) item.isEstimate = isEstimateField.checked;
     persistAndRender();
     return;
   }
@@ -266,6 +268,13 @@ export function updateEstimateEditMode(container) {
       amount: sanitizeAmount(perPersonAmount * participantCountSnapshot),
     });
   }
+}
+
+export function convertInlegEstimate(id) {
+  const item = state.contributions.find((entry) => entry.id === id);
+  if (!item) return;
+  item.isEstimate = false;
+  persistAndRender();
 }
 
 export function removeRecord(kind, id) {
