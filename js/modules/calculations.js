@@ -73,7 +73,11 @@ export function getEstimateAmount(record) {
 
 export function calculateSummary(state) {
   const totalInitial = state.contributions
-    .filter((item) => item.type === "initial")
+    .filter((item) => item.type === "initial" && !item.isEstimate)
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const totalInitialEstimates = state.contributions
+    .filter((item) => item.type === "initial" && item.isEstimate)
     .reduce((sum, item) => sum + item.amount, 0);
 
   const totalTopups = state.contributions
@@ -84,18 +88,22 @@ export function calculateSummary(state) {
     .filter((item) => item.type === "topup" && item.isEstimate)
     .reduce((sum, item) => sum + item.amount, 0);
 
+  const totalInlegEstimates = totalInitialEstimates + totalTopupEstimates;
+
   const totalExpenses = state.expenses.reduce((sum, item) => sum + item.amount, 0);
   const totalEstimates = state.estimates.reduce((sum, item) => sum + getEstimateAmount(item), 0);
   const remaining = totalInitial + totalTopups - totalExpenses;
-  const remainingAfterEstimates = remaining + totalTopupEstimates - totalEstimates;
+  const remainingAfterEstimates = remaining + totalInlegEstimates - totalEstimates;
   const participantCount = state.participants.length;
   const remainingPerPerson = participantCount ? remaining / participantCount : 0;
   const remainingAfterEstimatesPerPerson = participantCount ? remainingAfterEstimates / participantCount : 0;
 
   return {
     totalInitial,
+    totalInitialEstimates,
     totalTopups,
     totalTopupEstimates,
+    totalInlegEstimates,
     totalExpenses,
     totalEstimates,
     remaining,

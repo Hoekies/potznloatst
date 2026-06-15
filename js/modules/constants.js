@@ -26,6 +26,7 @@ export const categoryLabels = {
 
 export const typeLabels = {
   contribution: "Inleg",
+  "contribution-estimate": "Raming startinleg",
   topup: "Extra inleg",
   "topup-estimate": "Raming inleg",
   expense: "Uitgave",

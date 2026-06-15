@@ -145,7 +145,7 @@ export function normalizeState(rawState) {
         participantId: item.type === "topup" ? "" : sanitizeText(item.participantId || "", 80),
         amount: sanitizeAmount(item.amount),
         type: item.type === "topup" ? "topup" : "initial",
-        isEstimate: item.type === "topup" ? Boolean(item.isEstimate) : false,
+        isEstimate: Boolean(item.isEstimate),
         note: sanitizeText(item.note),
         date: sanitizeDate(item.date),
       })),

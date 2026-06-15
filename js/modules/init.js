@@ -270,6 +270,7 @@ function setupEventListeners() {
     const name = dom.participantNameInput.value.trim();
     const amount = Number(dom.participantInitialInput.value);
     const color = dom.participantColorInput.value;
+    const initialIsEstimate = dom.participantInitialIsEstimateInput?.checked || false;
 
     if (!name || !Number.isFinite(amount) || amount < 0) {
       return;
@@ -291,6 +292,7 @@ function setupEventListeners() {
       participantId,
       amount,
       type: "initial",
+      isEstimate: initialIsEstimate,
       note: "Startinleg",
       date: todayIso(),
     });

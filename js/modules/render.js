@@ -73,6 +73,7 @@ export function renderSummary(dom) {
     totalInitial,
     totalTopups,
     totalTopupEstimates,
+    totalInlegEstimates,
     totalExpenses,
     totalEstimates,
     remaining,
@@ -97,9 +98,9 @@ export function renderSummary(dom) {
     },
     {
       label: "Verwachte inleg",
-      value: totalTopupEstimates,
-      hint: totalTopupEstimates ? "Raming, telt nog niet mee in saldo" : "Geen raming inleg open",
-      tone: totalTopupEstimates ? "positive" : "positive",
+      value: totalInlegEstimates,
+      hint: totalInlegEstimates ? "Raming, telt nog niet mee in saldo" : "Geen raming inleg open",
+      tone: totalInlegEstimates ? "positive" : "positive",
     },
     {
       label: "Openstaande ramingen",
@@ -199,7 +200,7 @@ export function renderParticipants(dom) {
       const isEditing = getEditingParticipantId() === participant.id;
 
       return `
-        <article class="person-card ${isEditing ? "person-card--editing" : ""}" data-participant-card="${participant.id}">
+        <article class="person-card ${isEditing ? "person-card--editing" : ""}${initialContribution?.isEstimate ? " person-card--estimate" : ""}" data-participant-card="${participant.id}">
           ${participantLogo(participant, "person-card__avatar")}
           <div class="person-card__meta">
             ${
@@ -219,10 +220,14 @@ export function renderParticipants(dom) {
                     Kleur
                     <input data-field="color" type="color" value="${participant.color}" />
                   </label>
+                  <label class="checkbox-label">
+                    <input data-field="initialIsEstimate" type="checkbox" ${initialContribution?.isEstimate ? "checked" : ""} />
+                    Startinleg is raming (nog niet ontvangen)
+                  </label>
                   `
                   : `
-                  <strong>${escapeHtml(participant.name)}</strong>
-                  <span>${currencyFormatter.format(total)} ingelegd</span>
+                  <strong>${escapeHtml(participant.name)}${initialContribution?.isEstimate ? " <small>(raming)</small>" : ""}</strong>
+                  <span>${currencyFormatter.format(initialContribution?.amount ?? 0)} ${initialContribution?.isEstimate ? "verwacht" : "ingelegd"}</span>
                 `
             }
           </div>
@@ -369,9 +374,13 @@ export function renderTimeline(dom) {
   const entries = [
     ...state.contributions.map((item) => ({
       id: item.id,
-      kind: item.type === "initial" ? "contribution" : (item.isEstimate ? "topup-estimate" : "topup"),
+      kind: item.type === "initial"
+        ? (item.isEstimate ? "contribution-estimate" : "contribution")
+        : (item.isEstimate ? "topup-estimate" : "topup"),
       category: null,
-      title: item.type === "initial" ? "Startinleg" : (item.isEstimate ? "Raming inleg" : "Extra inleg"),
+      title: item.type === "initial"
+        ? (item.isEstimate ? "Raming startinleg" : "Startinleg")
+        : (item.isEstimate ? "Raming inleg" : "Extra inleg"),
       amount: item.amount,
       personId: item.type === "initial" ? item.participantId : "",
       paidBy: "",
@@ -419,12 +428,12 @@ export function renderTimeline(dom) {
       }
       const typeLabel = typeLabels[entry.kind];
       const isExpenseKind = entry.kind === "expense" || entry.kind === "estimate";
-      const isInlegKind = entry.kind === "contribution" || entry.kind === "topup" || entry.kind === "topup-estimate";
+      const isEstimateKind = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
       const badgeText = isExpenseKind ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
       const amountClass = isExpenseKind ? "negative" : "positive";
       const amountPrefix = isExpenseKind ? "-" : "+";
       const detailBits = [];
-      if (entry.kind === "contribution" && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
+      if ((entry.kind === "contribution" || entry.kind === "contribution-estimate") && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
       if (isExpenseKind) {
         detailBits.push(categoryLabels[entry.category] || "Uitgave");
         if (entry.kind === "estimate" && entry.pricingMode === "per_person") {
@@ -435,7 +444,7 @@ export function renderTimeline(dom) {
       if (entry.note) detailBits.push(escapeHtml(entry.note));
 
       return `
-        <article class="timeline-card ${entry.kind === "estimate" || entry.kind === "topup-estimate" ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+        <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
           <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
           <div class="timeline-card__main">
             <strong>${escapeHtml(entry.title)}</strong>
@@ -540,10 +549,11 @@ export function renderTimelineEditCard(entry, participant) {
   const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
   const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
 
-  if (entry.kind === "contribution" || entry.kind === "topup" || entry.kind === "topup-estimate") {
+  if (entry.kind === "contribution" || entry.kind === "contribution-estimate" || entry.kind === "topup" || entry.kind === "topup-estimate") {
     const isTopupKind = entry.kind === "topup" || entry.kind === "topup-estimate";
+    const isEstimateEntry = entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
     return `
-      <article class="timeline-card timeline-card--editing${entry.kind === "topup-estimate" ? " timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+      <article class="timeline-card timeline-card--editing${isEstimateEntry ? " timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
         <div class="timeline-card__badge ${isTopupKind ? "" : "participant-logo"}" style="background:${isTopupKind ? "#2563EB" : participant?.color || "#0A1B36"}">${isTopupKind ? "&euro;" : "<span></span>"}</div>
         <div class="timeline-card__main">
           <div class="inline-edit-grid">

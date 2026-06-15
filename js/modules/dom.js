@@ -19,6 +19,7 @@ export const importStateFileInput = document.querySelector("#import-state-file")
 export const participantNameInput = document.querySelector("#participant-name");
 export const participantInitialInput = document.querySelector("#participant-initial");
 export const participantColorInput = document.querySelector("#participant-color");
+export const participantInitialIsEstimateInput = document.querySelector("#participant-initial-is-estimate");
 export const topupAmountInput = document.querySelector("#topup-amount");
 export const topupNoteInput = document.querySelector("#topup-note");
 export const topupIsEstimateInput = document.querySelector("#topup-is-estimate");
