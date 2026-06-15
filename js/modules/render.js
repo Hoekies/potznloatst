@@ -412,7 +412,12 @@ export function renderTimeline(dom) {
     })),
   ]
     .filter((entry) => categoryFilter === "all" || entry.category === categoryFilter)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => {
+      const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
+      const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";
+      if (aIsEstimate !== bIsEstimate) return aIsEstimate ? 1 : -1;
+      return new Date(b.date) - new Date(a.date);
+    });
 
   if (!entries.length) {
     dom.timeline.innerHTML = `<p class="muted">Nog geen bewegingen die bij deze filter passen.</p>`;

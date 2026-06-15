@@ -251,7 +251,7 @@ export async function buildCloudStateForUser(user) {
     participantId: sanitizeText(item.participant_id || "", 80),
     amount: sanitizeAmount(item.bedrag),
     type: item.type === "initial" ? "initial" : "topup",
-    isEstimate: item.type === "topup" ? Boolean(item.is_raming) : false,
+    isEstimate: Boolean(item.is_raming),
     note: sanitizeText(item.omschrijving),
     date: sanitizeDate(String(item.datum || "").slice(0, 10)),
   }));
