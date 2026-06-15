@@ -83,7 +83,7 @@ export function renderSummary(dom) {
     participantCount,
   } = calculateSummary(state);
 
-  const currentCards = [
+  const werkelijkCards = [
     {
       label: "Totaal ingelegd",
       value: totalInitial + totalTopups,
@@ -97,6 +97,21 @@ export function renderSummary(dom) {
       tone: "expense",
     },
     {
+      label: "Resterend budget",
+      value: remaining,
+      hint: participantCount ? `${participantCount} deelnemers` : "Nog geen deelnemers",
+      tone: remaining < 0 ? "negative" : "positive",
+    },
+    {
+      label: "Per persoon over",
+      value: remainingPerPerson,
+      hint: "Gezamenlijke pot gedeeld door alle deelnemers",
+      tone: remainingPerPerson < 0 ? "negative" : "positive",
+    },
+  ];
+
+  const ramingCards = [
+    {
       label: "Verwachte inleg",
       value: totalInlegEstimates,
       hint: totalInlegEstimates ? "Raming, telt nog niet mee in saldo" : "Geen raming inleg open",
@@ -108,26 +123,11 @@ export function renderSummary(dom) {
       hint: totalEstimates ? "Vooruitblik, telt nog niet mee in saldo" : "Nog geen ramingen open",
       tone: totalEstimates ? "estimate" : "positive",
     },
-  ];
-
-  const remainingCards = [
-    {
-      label: "Resterend budget",
-      value: remaining,
-      hint: participantCount ? `${participantCount} deelnemers` : "Nog geen deelnemers",
-      tone: remaining < 0 ? "negative" : "positive",
-    },
     {
       label: "Na ramingen over",
       value: remainingAfterEstimates,
-      hint: totalEstimates ? "Definitief saldo minus alle open ramingen" : "Gelijk aan resterend budget",
+      hint: "Definitief saldo plus verwachte inleg minus openstaande ramingen",
       tone: remainingAfterEstimates < 0 ? "negative" : "forecast",
-    },
-    {
-      label: "Per persoon over",
-      value: remainingPerPerson,
-      hint: "Gezamenlijke pot gedeeld door alle deelnemers",
-      tone: remainingPerPerson < 0 ? "negative" : "positive",
     },
     {
       label: "Per persoon na ramingen",
@@ -146,10 +146,10 @@ export function renderSummary(dom) {
 
   dom.summaryCards.innerHTML = `
     <div class="summary-row summary-row--current">
-      ${currentCards.map(renderCard).join("")}
+      ${werkelijkCards.map(renderCard).join("")}
     </div>
     <div class="summary-row summary-row--remaining">
-      ${remainingCards.map(renderCard).join("")}
+      ${ramingCards.map(renderCard).join("")}
     </div>
     ${renderSettlements(state)}
   `;
