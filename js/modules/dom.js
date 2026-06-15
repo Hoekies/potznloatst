@@ -21,6 +21,7 @@ export const participantInitialInput = document.querySelector("#participant-init
 export const participantColorInput = document.querySelector("#participant-color");
 export const topupAmountInput = document.querySelector("#topup-amount");
 export const topupNoteInput = document.querySelector("#topup-note");
+export const topupIsEstimateInput = document.querySelector("#topup-is-estimate");
 export const expenseKindInput = document.querySelector("#expense-kind");
 export const expenseDescriptionInput = document.querySelector("#expense-description");
 export const expenseAmountInput = document.querySelector("#expense-amount");

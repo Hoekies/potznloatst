@@ -72,6 +72,7 @@ export function renderSummary(dom) {
   const {
     totalInitial,
     totalTopups,
+    totalTopupEstimates,
     totalExpenses,
     totalEstimates,
     remaining,
@@ -93,6 +94,12 @@ export function renderSummary(dom) {
       value: totalExpenses,
       hint: "Alle definitieve uitgaven samen",
       tone: "expense",
+    },
+    {
+      label: "Verwachte inleg",
+      value: totalTopupEstimates,
+      hint: totalTopupEstimates ? "Raming, telt nog niet mee in saldo" : "Geen raming inleg open",
+      tone: totalTopupEstimates ? "positive" : "positive",
     },
     {
       label: "Openstaande ramingen",
@@ -252,7 +259,7 @@ export function renderTopups(dom) {
       const isEditing = getEditingTopupId() === topup.id;
 
       return `
-          <article class="management-card" data-topup-card="${topup.id}">
+          <article class="management-card${topup.isEstimate ? " management-card--estimate" : ""}" data-topup-card="${topup.id}">
             <div class="management-card__logo money-logo" aria-hidden="true">&euro;</div>
             <div class="management-card__meta">
               ${
@@ -268,10 +275,14 @@ export function renderTopups(dom) {
                     Notitie
                     <input data-field="note" type="text" value="${escapeHtml(topup.note || "")}" />
                   </label>
+                  <label class="checkbox-label">
+                    <input data-field="isEstimate" type="checkbox" ${topup.isEstimate ? "checked" : ""} />
+                    Raming (nog niet ontvangen)
+                  </label>
                   `
                   : `
-                  <strong>Extra inleg ${currencyFormatter.format(topup.amount)}</strong>
-                  <span>${formatDate(topup.date)}${topup.note ? ` - ${escapeHtml(topup.note)}` : ""}</span>
+                  <strong>${topup.isEstimate ? "Raming inleg" : "Extra inleg"} ${currencyFormatter.format(topup.amount)}</strong>
+                  <span>${formatDate(topup.date)}${topup.note ? ` - ${escapeHtml(topup.note)}` : ""}${topup.isEstimate ? " · Raming" : ""}</span>
                 `
               }
           </div>
@@ -358,9 +369,9 @@ export function renderTimeline(dom) {
   const entries = [
     ...state.contributions.map((item) => ({
       id: item.id,
-      kind: item.type === "initial" ? "contribution" : "topup",
+      kind: item.type === "initial" ? "contribution" : (item.isEstimate ? "topup-estimate" : "topup"),
       category: null,
-      title: item.type === "initial" ? "Startinleg" : "Extra inleg",
+      title: item.type === "initial" ? "Startinleg" : (item.isEstimate ? "Raming inleg" : "Extra inleg"),
       amount: item.amount,
       personId: item.type === "initial" ? item.participantId : "",
       paidBy: "",
@@ -407,12 +418,14 @@ export function renderTimeline(dom) {
         return renderTimelineEditCard(entry, participant);
       }
       const typeLabel = typeLabels[entry.kind];
-      const badgeText = entry.kind === "expense" || entry.kind === "estimate" ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
-      const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
-      const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
+      const isExpenseKind = entry.kind === "expense" || entry.kind === "estimate";
+      const isInlegKind = entry.kind === "contribution" || entry.kind === "topup" || entry.kind === "topup-estimate";
+      const badgeText = isExpenseKind ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
+      const amountClass = isExpenseKind ? "negative" : "positive";
+      const amountPrefix = isExpenseKind ? "-" : "+";
       const detailBits = [];
       if (entry.kind === "contribution" && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
-      if (entry.kind === "expense" || entry.kind === "estimate") {
+      if (isExpenseKind) {
         detailBits.push(categoryLabels[entry.category] || "Uitgave");
         if (entry.kind === "estimate" && entry.pricingMode === "per_person") {
           detailBits.push(renderEstimateSummaryText(entry));
@@ -422,8 +435,8 @@ export function renderTimeline(dom) {
       if (entry.note) detailBits.push(escapeHtml(entry.note));
 
       return `
-        <article class="timeline-card ${entry.kind === "estimate" ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
-          <div class="timeline-card__badge ${entry.kind === "expense" || entry.kind === "estimate" ? "" : "participant-logo"}" style="background:${entry.kind === "expense" || entry.kind === "estimate" ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${entry.kind === "expense" || entry.kind === "estimate" ? badgeText : "<span></span>"}</div>
+        <article class="timeline-card ${entry.kind === "estimate" || entry.kind === "topup-estimate" ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+          <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
           <div class="timeline-card__main">
             <strong>${escapeHtml(entry.title)}</strong>
             <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
@@ -527,10 +540,11 @@ export function renderTimelineEditCard(entry, participant) {
   const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
   const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
 
-  if (entry.kind === "contribution" || entry.kind === "topup") {
+  if (entry.kind === "contribution" || entry.kind === "topup" || entry.kind === "topup-estimate") {
+    const isTopupKind = entry.kind === "topup" || entry.kind === "topup-estimate";
     return `
-      <article class="timeline-card timeline-card--editing" data-timeline-card="${entry.id}">
-        <div class="timeline-card__badge ${entry.kind === "topup" ? "" : "participant-logo"}" style="background:${entry.kind === "topup" ? "#2563EB" : participant?.color || "#0A1B36"}">${entry.kind === "topup" ? "&euro;" : "<span></span>"}</div>
+      <article class="timeline-card timeline-card--editing${entry.kind === "topup-estimate" ? " timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+        <div class="timeline-card__badge ${isTopupKind ? "" : "participant-logo"}" style="background:${isTopupKind ? "#2563EB" : participant?.color || "#0A1B36"}">${isTopupKind ? "&euro;" : "<span></span>"}</div>
         <div class="timeline-card__main">
           <div class="inline-edit-grid">
             <label>

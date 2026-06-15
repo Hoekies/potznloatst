@@ -308,6 +308,7 @@ function setupEventListeners() {
     event.preventDefault();
     const amount = Number(dom.topupAmountInput.value);
     const note = dom.topupNoteInput.value.trim();
+    const isEstimate = dom.topupIsEstimateInput?.checked || false;
 
     if (!Number.isFinite(amount) || amount <= 0) {
       return;
@@ -322,6 +323,7 @@ function setupEventListeners() {
       participantId: "",
       amount,
       type: "topup",
+      isEstimate,
       note,
       date: todayIso(),
     });

@@ -77,13 +77,17 @@ export function calculateSummary(state) {
     .reduce((sum, item) => sum + item.amount, 0);
 
   const totalTopups = state.contributions
-    .filter((item) => item.type === "topup")
+    .filter((item) => item.type === "topup" && !item.isEstimate)
+    .reduce((sum, item) => sum + item.amount, 0);
+
+  const totalTopupEstimates = state.contributions
+    .filter((item) => item.type === "topup" && item.isEstimate)
     .reduce((sum, item) => sum + item.amount, 0);
 
   const totalExpenses = state.expenses.reduce((sum, item) => sum + item.amount, 0);
   const totalEstimates = state.estimates.reduce((sum, item) => sum + getEstimateAmount(item), 0);
   const remaining = totalInitial + totalTopups - totalExpenses;
-  const remainingAfterEstimates = remaining - totalEstimates;
+  const remainingAfterEstimates = remaining + totalTopupEstimates - totalEstimates;
   const participantCount = state.participants.length;
   const remainingPerPerson = participantCount ? remaining / participantCount : 0;
   const remainingAfterEstimatesPerPerson = participantCount ? remainingAfterEstimates / participantCount : 0;
@@ -91,6 +95,7 @@ export function calculateSummary(state) {
   return {
     totalInitial,
     totalTopups,
+    totalTopupEstimates,
     totalExpenses,
     totalEstimates,
     remaining,

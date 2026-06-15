@@ -232,7 +232,7 @@ export async function buildCloudStateForUser(user) {
     client.from("profiles").select("display_name, avatar_url").eq("id", user.id).maybeSingle(),
     ownerId ? client.from("profiles").select("display_name").eq("id", ownerId).maybeSingle() : Promise.resolve({ data: null }),
     client.from("deelnemers").select("id, naam, kleur").eq("user_id", dataUserId).order("created_at", { ascending: true }),
-    client.from("extra_inleg").select("id, participant_id, bedrag, type, omschrijving, datum").eq("user_id", dataUserId).order("datum", { ascending: false }),
+    client.from("extra_inleg").select("id, participant_id, bedrag, type, omschrijving, datum, is_raming").eq("user_id", dataUserId).order("datum", { ascending: false }),
     client.from("uitgaven").select("id, omschrijving, bedrag, categorie, betaald_door, datum, notitie, bon_path, is_gecontroleerd, is_raming").eq("user_id", dataUserId).order("datum", { ascending: false }),
   ]);
 
@@ -251,6 +251,7 @@ export async function buildCloudStateForUser(user) {
     participantId: sanitizeText(item.participant_id || "", 80),
     amount: sanitizeAmount(item.bedrag),
     type: item.type === "initial" ? "initial" : "topup",
+    isEstimate: item.type === "topup" ? Boolean(item.is_raming) : false,
     note: sanitizeText(item.omschrijving),
     date: sanitizeDate(String(item.datum || "").slice(0, 10)),
   }));
@@ -370,7 +371,7 @@ export async function syncStateToCloud(reason = "auto") {
     omschrijving: item.note || "",
     bedrag: item.amount,
     type: item.type,
-    is_raming: false,
+    is_raming: item.isEstimate || false,
     datum: `${item.date}T12:00:00.000Z`,
   }));
 

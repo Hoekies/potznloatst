@@ -111,6 +111,7 @@ export function saveTopupEdits(topupId, row) {
 
   const amount = Number(row.querySelector('[data-field="amount"]').value);
   const note = row.querySelector('[data-field="note"]').value.trim();
+  const isEstimateField = row.querySelector('[data-field="isEstimate"]');
 
   if (!Number.isFinite(amount) || amount <= 0) {
     return;
@@ -119,6 +120,7 @@ export function saveTopupEdits(topupId, row) {
   topup.participantId = "";
   topup.amount = amount;
   topup.note = note;
+  if (isEstimateField) topup.isEstimate = isEstimateField.checked;
   persistAndRender();
 }
 
@@ -166,7 +168,7 @@ export function saveExpenseEdits(expenseId, kind, row) {
 }
 
 export function saveTimelineEdits(kind, id, row) {
-  if (kind === "contribution" || kind === "topup") {
+  if (kind === "contribution" || kind === "topup" || kind === "topup-estimate") {
     const item = state.contributions.find((entry) => entry.id === id);
     if (!item || !row) return;
     const amount = Number(row.querySelector('[data-field="amount"]').value);
@@ -265,7 +267,7 @@ export function updateEstimateEditMode(container) {
 }
 
 export function removeRecord(kind, id) {
-  if (kind === "contribution" || kind === "topup") {
+  if (kind === "contribution" || kind === "topup" || kind === "topup-estimate") {
     state.contributions = state.contributions.filter((item) => item.id !== id);
   } else if (kind === "estimate") {
     state.estimates = state.estimates.filter((item) => item.id !== id);
