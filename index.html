@@ -64,26 +64,25 @@
           </div>
 
           <div class="tab-panel" data-tab-panel="inleg" role="tabpanel" hidden>
-            <div class="tab-grid">
-              <section class="subpanel">
+            <section class="subpanel">
                 <form id="participant-form" class="stack-form" autocomplete="off">
                   <div class="field-row">
-                    <label>
-                      Naam
-                      <input id="participant-name" name="participant-name" type="text" placeholder="Bijv. Kim" required />
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                      <input id="participant-name" name="participant-name" type="text" placeholder="Naam" aria-label="Naam" required />
                     </label>
-                    <label>
-                      Startinleg
-                      <input id="participant-initial" name="participant-initial" type="number" min="0" step="0.01" inputmode="decimal" placeholder="50,00" required />
-                    </label>
+                    <div class="icon-field icon-field--amount">
+                      <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                      <input id="participant-initial" name="participant-initial" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
+                      <label class="inline-raming" title="Startinleg is raming">
+                        <input id="participant-initial-is-estimate" name="participant-initial-is-estimate" type="checkbox" aria-label="Startinleg is raming" />
+                        <span aria-hidden="true">&#128302;</span>
+                      </label>
+                    </div>
                   </div>
-                  <label>
-                    Kleur
-                    <input id="participant-color" name="participant-color" type="color" value="#7A8446" />
-                  </label>
-                  <label class="checkbox-label">
-                    <input id="participant-initial-is-estimate" name="participant-initial-is-estimate" type="checkbox" />
-                    Startinleg is raming (nog niet ontvangen)
+                  <label class="icon-field icon-field--color">
+                    <span class="icon-field__icon" aria-hidden="true">&#127912;</span>
+                    <input id="participant-color" name="participant-color" type="color" value="#7A8446" aria-label="Kleur" />
                   </label>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>
@@ -95,45 +94,38 @@
                   </summary>
                   <div id="participants-list" class="management-list"></div>
                 </details>
-              </section>
 
-              <section class="subpanel">
+                <hr class="section-divider" />
+
                 <form id="topup-form" class="stack-form" autocomplete="off">
-                  <label>
-                    Extra inleg
-                    <input id="topup-amount" name="topup-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="25,00" required />
-                  </label>
-                  <label>
-                    Omschrijving
-                    <input id="topup-note" name="topup-note" type="text" placeholder="Bijv. extra drankbudget" />
-                  </label>
-                  <label class="checkbox-label">
-                    <input id="topup-is-estimate" name="topup-is-estimate" type="checkbox" />
-                    Raming (nog niet ontvangen)
+                  <div class="icon-field icon-field--amount">
+                    <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                    <input id="topup-amount" name="topup-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
+                    <label class="inline-raming" title="Raming">
+                      <input id="topup-is-estimate" name="topup-is-estimate" type="checkbox" aria-label="Raming" />
+                      <span aria-hidden="true">&#128302;</span>
+                    </label>
+                  </div>
+                  <label class="icon-field">
+                    <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                    <input id="topup-note" name="topup-note" type="text" placeholder="Omschrijving (optioneel)" aria-label="Omschrijving" />
                   </label>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>
-
-                <details class="collapsible-panel" id="topup-panel">
-                  <summary class="collapsible-panel__summary">
-                    <span>Extra inleg overzicht</span>
-                    <small class="collapsible-panel__state"></small>
-                  </summary>
-                  <div id="topup-list" class="management-list"></div>
-                </details>
-              </section>
-            </div>
+            </section>
           </div>
 
           <div class="tab-panel tab-panel--overview is-active" data-tab-panel="overzicht" role="tabpanel">
-            <section class="subpanel subpanel--full">
+            <section class="subpanel">
               <div id="summary-cards" class="summary-grid"></div>
-            </section>
-            <section class="subpanel subpanel--full">
-              <div class="panel__header">
-                <div>
+
+              <hr class="section-divider" />
+
+              <details class="section-collapsible" id="timeline-panel">
+                <summary class="section-collapsible__summary">
                   <h2>Bewegingen in de pot</h2>
-                </div>
+                  <span class="section-collapsible__chevron" aria-hidden="true">&#9662;</span>
+                </summary>
                 <div class="header-actions">
                   <label class="filter-select">
                     <select id="filter-category" aria-label="Filter overzicht op categorie">
@@ -147,67 +139,65 @@
                     </select>
                   </label>
                 </div>
-              </div>
-              <div id="timeline" class="timeline"></div>
+                <div id="timeline" class="timeline"></div>
+              </details>
             </section>
           </div>
 
           <div class="tab-panel" data-tab-panel="uitgaven" role="tabpanel" hidden>
-            <div class="tab-grid">
-              <section class="subpanel">
+            <section class="subpanel">
                 <form id="expense-form" class="stack-form" autocomplete="off">
-                  <label>
-                    Soort
-                    <select id="expense-kind" name="expense-kind">
-                      <option value="expense">Uitgave</option>
-                      <option value="estimate">Raming</option>
-                    </select>
-                  </label>
                   <div class="field-row">
-                    <label>
-                      Omschrijving
-                      <input id="expense-description" name="expense-description" type="text" placeholder="Bijv. boodschappen vrijdag" required />
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                      <input id="expense-description" name="expense-description" type="text" placeholder="Omschrijving" aria-label="Omschrijving" required />
                     </label>
-                    <label id="expense-amount-wrap">
-                      <span id="expense-amount-label">Bedrag totaal</span>
-                      <input id="expense-amount" name="expense-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="95,00" required />
-                    </label>
+                    <div id="expense-amount-wrap" class="icon-field icon-field--amount">
+                      <span class="icon-field__icon" id="expense-amount-label" aria-hidden="true">&euro;</span>
+                      <input id="expense-amount" name="expense-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" aria-label="Bedrag totaal" required />
+                      <label class="inline-raming" title="Nog een raming">
+                        <input id="expense-kind" name="expense-kind" type="checkbox" aria-label="Nog een raming" />
+                        <span aria-hidden="true">&#128302;</span>
+                      </label>
+                    </div>
                   </div>
+
                   <div id="estimate-per-person-wrap" hidden>
-                    <label>
-                      Raming berekenen als
-                      <select id="estimate-pricing-mode" name="estimate-pricing-mode">
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
+                      <select id="estimate-pricing-mode" name="estimate-pricing-mode" aria-label="Raming berekenen als">
                         <option value="total">Totaalbedrag</option>
-                        <option value="per_person">Bedrag per persoon</option>
+                        <option value="per_person">Per persoon</option>
                       </select>
                     </label>
-                    <label>
-                      Bedrag per persoon
-                      <input id="estimate-per-person-amount" name="estimate-per-person-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="25,00" />
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                      <input id="estimate-per-person-amount" name="estimate-per-person-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Bedrag per persoon" aria-label="Bedrag per persoon" />
                     </label>
                     <span id="estimate-calculation" class="field-help"></span>
                   </div>
-                  <div class="field-row">
-                    <label>
-                      Categorie
-                      <select id="expense-category" name="expense-category">
-                        <option value="accommodatie">Accommodatie</option>
-                        <option value="eten">Eten</option>
-                        <option value="drinken">Drinken</option>
-                        <option value="activiteit">Activiteit</option>
-                        <option value="vervoer">Vervoer</option>
-                        <option value="overig">Overig</option>
-                      </select>
-                    </label>
-                    <label>
-                      Datum
-                      <input id="expense-date" name="expense-date" type="date" required />
-                    </label>
+
+                  <div class="category-chips" role="group" aria-label="Categorie">
+                    <button type="button" class="category-chip is-active" data-category="accommodatie">&#127968; Accommodatie</button>
+                    <button type="button" class="category-chip" data-category="eten">&#127869; Eten</button>
+                    <button type="button" class="category-chip" data-category="drinken">&#127867; Drinken</button>
+                    <button type="button" class="category-chip" data-category="activiteit">&#127919; Activiteit</button>
+                    <button type="button" class="category-chip" data-category="vervoer">&#128663; Vervoer</button>
+                    <button type="button" class="category-chip" data-category="overig">&#129790; Overig</button>
                   </div>
-                  <label>
-                    Bonfoto
-                    <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" />
+                  <input type="hidden" id="expense-category" name="expense-category" value="accommodatie" />
+
+                  <label class="icon-field">
+                    <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
+                    <input id="expense-date" name="expense-date" type="date" aria-label="Datum" required />
                   </label>
+
+                  <div class="receipt-actions">
+                    <button type="button" id="receipt-camera-btn" class="ghost-button ghost-button--small">&#128247; Foto maken</button>
+                    <button type="button" id="receipt-upload-btn" class="ghost-button ghost-button--small">&#128193; Uploaden</button>
+                    <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" hidden />
+                    <input id="expense-receipt-upload" name="expense-receipt-upload" type="file" accept="image/*" hidden />
+                  </div>
                   <div id="receipt-review" class="receipt-review" hidden>
                     <button id="receipt-preview" class="receipt-thumb" type="button">
                       <img id="receipt-preview-image" alt="Gekozen bon" />
@@ -217,18 +207,18 @@
                       <p id="ocr-message" class="muted">Tik op de bon om te vergroten.</p>
                     </div>
                   </div>
-                  <label>
-                    Notitie
-                    <textarea id="expense-note" name="expense-note" rows="3" placeholder="Bijv. nog afrekenen bij aankomst"></textarea>
+
+                  <label class="icon-field">
+                    <span class="icon-field__icon" aria-hidden="true">&#128221;</span>
+                    <textarea id="expense-note" name="expense-note" rows="2" placeholder="Notitie (optioneel)" aria-label="Notitie"></textarea>
                   </label>
                   <button id="expense-submit" class="primary-button" type="submit">Uitgave opslaan</button>
                 </form>
-              </section>
 
-              <section class="subpanel subpanel--full">
+                <hr class="section-divider" />
+
                 <div id="expense-list" class="management-list"></div>
-              </section>
-            </div>
+            </section>
           </div>
         </section>
       </main>

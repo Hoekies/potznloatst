@@ -161,12 +161,7 @@ export function renderSettlements(stateRef) {
   if (!stateRef.participants.length) return "";
 
   if (!settlements.length) {
-    return `
-      <div class="settlements-section">
-        <p class="settlements-title" hidden>Afrekenen</p>
-        <p class="settlements-empty">Alles is verrekend — niemand hoeft iets te betalen.</p>
-      </div>
-    `;
+    return "";
   }
 
   const cards = settlements.map((s) => `
@@ -250,6 +245,7 @@ export function renderParticipants(dom) {
 }
 
 export function renderTopups(dom) {
+  if (!dom.topupList) return;
   const topups = state.contributions
     .filter((item) => item.type === "topup")
     .sort((a, b) => new Date(b.date) - new Date(a.date));

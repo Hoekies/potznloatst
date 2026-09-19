@@ -10,7 +10,7 @@ export function getPendingReceiptImage() { return pendingReceiptImage; }
 export function setPendingReceiptImage(val) { pendingReceiptImage = val; }
 
 export async function collectExpenseForm(dom) {
-  const kind = dom.expenseKindInput.value;
+  const kind = dom.expenseKindInput.checked ? "estimate" : "expense";
   const description = dom.expenseDescriptionInput.value.trim();
   const category = dom.expenseCategoryInput.value;
   const date = dom.expenseDateInput.value;
@@ -53,13 +53,21 @@ export async function collectExpenseForm(dom) {
   };
 }
 
+export function syncCategoryChips(dom, value) {
+  dom.expenseCategoryInput.value = value;
+  document.querySelectorAll(".category-chip").forEach((chip) => {
+    chip.classList.toggle("is-active", chip.dataset.category === value);
+  });
+}
+
 export function resetExpenseComposer(dom) {
   dom.expenseForm.reset();
-  dom.expenseKindInput.value = "expense";
+  dom.expenseKindInput.checked = false;
   dom.estimatePricingModeInput.value = "total";
   dom.expenseDateInput.value = todayIso();
   pendingReceiptImage = "";
   dom.receiptReview.hidden = true;
+  syncCategoryChips(dom, dom.expenseCategoryInput.value);
 }
 
 export function showReceiptReview(message, status, dom) {
@@ -212,7 +220,7 @@ export function convertEstimateToExpense(id) {
 }
 
 export function renderExpenseComposerState(dom, stateRef) {
-  const isEstimate = dom.expenseKindInput.value === "estimate";
+  const isEstimate = dom.expenseKindInput.checked;
   const perPersonMode = isEstimate && dom.estimatePricingModeInput.value === "per_person";
 
   dom.estimatePerPersonWrap.hidden = !isEstimate;
@@ -222,7 +230,8 @@ export function renderExpenseComposerState(dom, stateRef) {
   if (dom.estimateCalculation) dom.estimateCalculation.hidden = !perPersonMode;
 
   dom.expenseForm.querySelector('button[type="submit"]').textContent = isEstimate ? "Raming opslaan" : "Uitgave opslaan";
-  dom.expenseReceiptInput.closest("label").hidden = isEstimate;
+  const receiptActions = dom.expenseReceiptInput.closest(".receipt-actions");
+  if (receiptActions) receiptActions.hidden = isEstimate;
   if (isEstimate) dom.receiptReview.hidden = true;
 
   if (perPersonMode) {

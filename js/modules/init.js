@@ -14,7 +14,7 @@ import {
 } from './ui-state.js';
 import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
-  setPendingReceiptImage, getPendingReceiptImage,
+  setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips,
   saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
   convertEstimateToExpense, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
@@ -446,7 +446,7 @@ function setupEventListeners() {
     }
   });
 
-  dom.topupList.addEventListener("click", (event) => {
+  dom.topupList?.addEventListener("click", (event) => {
     const target = event.target.closest("[data-topup-action]");
     if (!target) return;
 
@@ -576,14 +576,19 @@ function setupEventListeners() {
     persistAndRender();
   });
 
-  dom.expenseReceiptInput.addEventListener("change", async () => {
-    if (!dom.expenseReceiptInput.files[0]) {
-      setPendingReceiptImage("");
-      dom.receiptReview.hidden = true;
-      return;
-    }
-    setPendingReceiptImage(await fileToDataUrl(dom.expenseReceiptInput.files[0]));
+  const handleReceiptPickerChange = async (fileInput) => {
+    if (!fileInput.files[0]) return;
+    setPendingReceiptImage(await fileToDataUrl(fileInput.files[0]));
     showReceiptReview("Bon toegevoegd. Tik op de afbeelding om te vergroten.", "klaar_voor_review", dom);
+  };
+
+  dom.expenseReceiptInput.addEventListener("change", () => handleReceiptPickerChange(dom.expenseReceiptInput));
+  dom.expenseReceiptUploadInput?.addEventListener("change", () => handleReceiptPickerChange(dom.expenseReceiptUploadInput));
+  dom.receiptCameraButton?.addEventListener("click", () => dom.expenseReceiptInput.click());
+  dom.receiptUploadButton?.addEventListener("click", () => dom.expenseReceiptUploadInput.click());
+
+  document.querySelectorAll(".category-chip").forEach((chip) => {
+    chip.addEventListener("click", () => syncCategoryChips(dom, chip.dataset.category));
   });
 
   dom.receiptPreview.addEventListener("click", () => {
