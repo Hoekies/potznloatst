@@ -411,7 +411,7 @@ export function renderTimeline(dom) {
     .sort((a, b) => {
       const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
       const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";
-      if (aIsEstimate !== bIsEstimate) return aIsEstimate ? 1 : -1;
+      if (aIsEstimate !== bIsEstimate) return aIsEstimate ? -1 : 1;
       return new Date(b.date) - new Date(a.date);
     });
 
