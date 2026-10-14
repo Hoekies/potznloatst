@@ -13,6 +13,20 @@ import {
 
 export { getActiveTab, setActiveTab, getEditingParticipantId, setEditingParticipantId, getEditingTopupId, setEditingTopupId, getEditingRecord, setEditingRecord };
 
+// Welke timeline-groepen (per categorie + inleg) open staan. De lijst wordt
+// bij elke actie volledig opnieuw opgebouwd (innerHTML), dus zonder dit zou
+// een open groep telkens weer dichtklappen - ook als je net op Wijzig had
+// geklikt op een regel erin.
+const openTimelineGroups = new Set();
+
+export function setTimelineGroupOpen(groupKey, isOpen) {
+  if (isOpen) {
+    openTimelineGroups.add(groupKey);
+  } else {
+    openTimelineGroups.delete(groupKey);
+  }
+}
+
 export function render(dom) {
   renderLoginGate(dom);
   renderTabs(dom);
@@ -452,14 +466,20 @@ export function renderTimeline(dom) {
 
   // Net als inleg: per categorie ingeklapt met alleen het totaalbedrag,
   // zodat de lijst compact blijft totdat je een categorie openklikt.
+  const editingRecord = getEditingRecord();
+  const groupContainsEditingEntry = (items) => editingRecord?.scope === "timeline"
+    && items.some((entry) => entry.id === editingRecord.id && entry.kind === editingRecord.kind);
+  const isGroupOpen = (groupKey, items) => openTimelineGroups.has(groupKey) || groupContainsEditingEntry(items);
+
   const categoryOrder = Object.keys(categoryLabels);
   const otherHtml = categoryOrder
     .map((categoryKey) => {
       const items = otherEntries.filter((entry) => entry.category === categoryKey);
       if (!items.length) return "";
       const total = items.reduce((sum, entry) => sum + entry.amount, 0);
+      const groupKey = `category:${categoryKey}`;
       return `
-        <details class="timeline-inleg-group">
+        <details class="timeline-inleg-group" data-group-key="${groupKey}" ${isGroupOpen(groupKey, items) ? "open" : ""}>
           <summary class="timeline-inleg-group__summary">
             <span>${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]} &mdash; totaal ${currencyFormatter.format(total)}</span>
             <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
@@ -474,7 +494,7 @@ export function renderTimeline(dom) {
   if (inlegEntries.length) {
     const inlegTotal = inlegEntries.reduce((sum, entry) => sum + entry.amount, 0);
     inlegHtml = `
-      <details class="timeline-inleg-group">
+      <details class="timeline-inleg-group" data-group-key="inleg" ${isGroupOpen("inleg", inlegEntries) ? "open" : ""}>
         <summary class="timeline-inleg-group__summary">
           <span>&#128176; Inleg &mdash; totaal ${currencyFormatter.format(inlegTotal)}</span>
           <span class="timeline-inleg-group__count">${inlegEntries.length} ${inlegEntries.length === 1 ? "post" : "posten"}</span>

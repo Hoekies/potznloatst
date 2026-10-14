@@ -492,6 +492,7 @@ export function queueCloudSync(reason = "auto") {
   cloudSyncPromise = syncStateToCloud(reason)
     .catch((error) => {
       console.warn("Cloud-sync mislukte:", error);
+      showToast("Opslaan naar de cloud is mislukt — check je internetverbinding. Probeer het opnieuw of synchroniseer handmatig via het account-menu.", "error");
     })
     .finally(() => {
       cloudSyncPromise = null;

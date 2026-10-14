@@ -5,7 +5,7 @@ import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyn
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
-  renderAccountUi, renderTabs,
+  renderAccountUi, renderTabs, setTimelineGroupOpen,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
@@ -863,6 +863,16 @@ function setupEventListeners() {
       }
     }
   });
+
+  // "toggle" op <details> bubbelt niet, dus luisteren in de capture-fase
+  // op een voorouder om bij te houden welke groep (categorie/inleg) de
+  // gebruiker open heeft staan. Zonder dit zou elke her-render (bv. na een
+  // andere wijziging) alle groepen weer dichtklappen.
+  dom.timeline.addEventListener("toggle", (event) => {
+    const details = event.target.closest?.("[data-group-key]");
+    if (!details) return;
+    setTimelineGroupOpen(details.dataset.groupKey, details.open);
+  }, true);
 
   dom.timeline.addEventListener("click", (event) => {
     const target = event.target.closest("[data-timeline-action]");

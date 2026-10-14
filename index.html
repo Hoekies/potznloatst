@@ -41,6 +41,7 @@
                 </button>
                 <div id="account-dropdown" class="account-menu__dropdown" hidden>
                   <button id="account-login" class="account-menu__item" type="button">Inloggen</button>
+                  <button id="sync-cloud" class="account-menu__item" type="button"><span>Nu synchroniseren</span></button>
                   <button id="open-profile" class="account-menu__item" type="button">Profiel</button>
                   <button id="open-admin-gebruikers" class="account-menu__item" type="button" hidden>Gebruikers beheren</button>
                   <button id="share-balance-pdf" class="account-menu__item" type="button">Balans delen (PDF)</button>
@@ -198,11 +199,11 @@
                   <span id="estimate-calculation" class="field-help"></span>
 
                   <div class="category-chips" role="group" aria-label="Categorie">
-                    <button type="button" class="category-chip is-active" data-category="accommodatie" title="Accommodatie" aria-label="Accommodatie">&#127968; Acc.</button>
-                    <button type="button" class="category-chip" data-category="eten" title="Eten en drinken" aria-label="Eten en drinken">&#127869; Eten</button>
-                    <button type="button" class="category-chip" data-category="activiteit" title="Activiteit" aria-label="Activiteit">&#127919; Act.</button>
-                    <button type="button" class="category-chip" data-category="vervoer" title="Boodschappen" aria-label="Boodschappen">&#128722; Bood.</button>
-                    <button type="button" class="category-chip" data-category="overig" title="Overig" aria-label="Overig">&#129790; Ov.</button>
+                    <button type="button" class="category-chip is-active" data-category="accommodatie" title="Accommodatie" aria-label="Accommodatie"><span class="category-chip__icon" aria-hidden="true">&#127968;</span><span class="category-chip__label">Acc.</span></button>
+                    <button type="button" class="category-chip" data-category="eten" title="Eten en drinken" aria-label="Eten en drinken"><span class="category-chip__icon" aria-hidden="true">&#127869;</span><span class="category-chip__label">Eten</span></button>
+                    <button type="button" class="category-chip" data-category="activiteit" title="Activiteit" aria-label="Activiteit"><span class="category-chip__icon" aria-hidden="true">&#127919;</span><span class="category-chip__label">Act.</span></button>
+                    <button type="button" class="category-chip" data-category="vervoer" title="Boodschappen" aria-label="Boodschappen"><span class="category-chip__icon" aria-hidden="true">&#128722;</span><span class="category-chip__label">Bood.</span></button>
+                    <button type="button" class="category-chip" data-category="overig" title="Overig" aria-label="Overig"><span class="category-chip__icon" aria-hidden="true">&#129790;</span><span class="category-chip__label">Ov.</span></button>
                   </div>
                   <input type="hidden" id="expense-category" name="expense-category" value="accommodatie" />
 
@@ -212,8 +213,8 @@
                       <input id="expense-date" name="expense-date" type="date" aria-label="Datum" required />
                     </label>
                     <div class="receipt-actions">
-                      <button type="button" id="receipt-camera-btn" class="ghost-button ghost-button--small">&#128247; Foto maken</button>
-                      <button type="button" id="receipt-upload-btn" class="ghost-button ghost-button--small">&#128193; Uploaden</button>
+                      <button type="button" id="receipt-camera-btn" class="ghost-button ghost-button--small" title="Foto maken" aria-label="Foto maken"><span class="receipt-action-icon" aria-hidden="true">&#128247;</span><span class="receipt-action-label">Foto maken</span></button>
+                      <button type="button" id="receipt-upload-btn" class="ghost-button ghost-button--small" title="Uploaden" aria-label="Uploaden"><span class="receipt-action-icon" aria-hidden="true">&#128193;</span><span class="receipt-action-label">Uploaden</span></button>
                       <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" hidden />
                       <input id="expense-receipt-upload" name="expense-receipt-upload" type="file" accept="image/*" hidden />
                     </div>

@@ -1159,6 +1159,10 @@ h3 {
   align-items: center;
   justify-content: flex-end;
   flex-shrink: 0;
+  /* Vaste minimumbreedte zodat Wijzig/Verwijder altijd op dezelfde plek
+     staan, ook als de knop ervoor (Definitief/Maak raming/Bon) per rij
+     een andere tekstlengte heeft — anders oogt de lijst scheef. */
+  min-width: 290px;
 }
 
 
@@ -1542,6 +1546,10 @@ textarea:focus {
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
+.category-chip__icon {
+  margin-right: 5px;
+}
+
 .category-chip:hover {
   border-color: var(--cyan);
 }
@@ -1560,6 +1568,10 @@ textarea:focus {
 
 .receipt-actions .ghost-button {
   flex: 1 1 0;
+}
+
+.receipt-action-icon {
+  margin-right: 6px;
 }
 
 /* Inline raming-vinkje, direct achter een bedragveld i.p.v. een eigen
@@ -1754,6 +1766,7 @@ textarea:focus {
   justify-content: flex-end;
   gap: 8px;
   align-items: center;
+  min-width: 290px;
 }
 
 .timeline-card__details {
@@ -2507,14 +2520,46 @@ textarea:focus {
     min-height: 0;
   }
 
+  /* Op mobiel: alleen pictogrammen, geen tekst, alle 5 naast elkaar en
+     groter (makkelijker te raken met een duim). */
   .category-chips {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 6px;
   }
 
   .category-chip {
-    padding: 8px 4px;
-    font-size: 0.74rem;
+    padding: 12px 2px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .category-chip__icon {
+    font-size: 1.4rem;
+    line-height: 1;
+    margin-right: 0;
+  }
+
+  .category-chip__label {
+    display: none;
+  }
+
+  .receipt-action-label {
+    display: none;
+  }
+
+  .receipt-actions .ghost-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .receipt-action-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    margin-right: 0;
   }
 
   .icon-field__icon {
