@@ -1,11 +1,11 @@
-const CACHE_NAME = "potzloats-cache-v78";
+const CACHE_NAME = "potzloats-cache-v79";
 
 // Alleen statische assets worden gecachet (afbeeldingen, manifest)
 // JS en CSS worden altijd vers opgehaald zodat updates direct werken
 const STATIC_ASSETS = [
   "./assets/icons/favicon.png",
   "./assets/branding/opznloatst.png",
-  "./assets/branding/logo breed.png",
+  "./assets/branding/logo-breed.png",
   "./manifest.webmanifest",
 ];
 
