@@ -208,7 +208,7 @@ export function renderParticipants(dom) {
                     </label>
                     <label>
                       Startinleg
-                      <input data-field="initial" type="number" min="0" step="0.01" inputmode="decimal" value="${initialContribution?.amount ?? 0}" />
+                      <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" />
                     </label>
                   </div>
                   <label>
@@ -269,7 +269,7 @@ export function renderTopups(dom) {
                     <div class="inline-edit-grid">
                       <label>
                         Bedrag
-                        <input data-field="amount" type="number" min="0" step="0.01" value="${topup.amount}" />
+                        <input data-field="amount" type="text" inputmode="decimal" value="${topup.amount}" />
                       </label>
                   </div>
                   <label>
@@ -480,7 +480,7 @@ export function renderRecordEditFields(record) {
       </label>
       <label>
         Bedrag
-        <input data-field="amount" type="number" min="0" step="0.01" inputmode="decimal" value="${record.amount}" />
+        <input data-field="amount" type="text" inputmode="decimal" value="${record.amount}" />
       </label>
     </div>
     <div class="inline-edit-grid">
@@ -512,7 +512,7 @@ export function renderRecordEditFields(record) {
           <div class="inline-edit-grid">
             <label data-per-person-group ${pricingMode === "per_person" ? "" : 'hidden'}>
               Bedrag per persoon
-              <input data-field="perPersonAmount" type="number" min="0" step="0.01" inputmode="decimal" value="${perPersonAmount || ""}" />
+              <input data-field="perPersonAmount" type="text" inputmode="decimal" value="${perPersonAmount || ""}" />
             </label>
             <label data-per-person-group ${pricingMode === "per_person" ? "" : 'hidden'}>
               Aantal deelnemers
@@ -561,7 +561,7 @@ export function renderTimelineEditCard(entry, participant) {
           <div class="inline-edit-grid">
             <label>
               Bedrag
-              <input data-field="amount" type="number" min="0" step="0.01" inputmode="decimal" value="${entry.amount}" />
+              <input data-field="amount" type="text" inputmode="decimal" value="${entry.amount}" />
             </label>
             <label>
               Datum

@@ -29,7 +29,16 @@ export async function collectExpenseForm(dom) {
     return null;
   }
 
-  if (!description || !Number.isFinite(amount) || amount <= 0 || !date) {
+  if (!description) {
+    showToast("Vul een omschrijving in.", "error");
+    return null;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    showToast("Vul een geldig bedrag in.", "error");
+    return null;
+  }
+  if (!date) {
+    showToast("Kies een datum.", "error");
     return null;
   }
 
@@ -99,7 +108,7 @@ export function saveParticipantEdits(participantId, card) {
 
   const name = card.querySelector('[data-field="name"]').value.trim();
   const color = card.querySelector('[data-field="color"]').value;
-  const initialAmount = Number(card.querySelector('[data-field="initial"]').value);
+  const initialAmount = sanitizeAmount(card.querySelector('[data-field="initial"]').value);
   const isEstimateField = card.querySelector('[data-field="initialIsEstimate"]');
 
   if (!name || !Number.isFinite(initialAmount) || initialAmount < 0) {
@@ -119,7 +128,7 @@ export function saveTopupEdits(topupId, row) {
     return;
   }
 
-  const amount = Number(row.querySelector('[data-field="amount"]').value);
+  const amount = sanitizeAmount(row.querySelector('[data-field="amount"]').value);
   const note = row.querySelector('[data-field="note"]').value.trim();
   const isEstimateField = row.querySelector('[data-field="isEstimate"]');
 
@@ -181,7 +190,7 @@ export function saveTimelineEdits(kind, id, row) {
   if (kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate") {
     const item = state.contributions.find((entry) => entry.id === id);
     if (!item || !row) return;
-    const amount = Number(row.querySelector('[data-field="amount"]').value);
+    const amount = sanitizeAmount(row.querySelector('[data-field="amount"]').value);
     const date = row.querySelector('[data-field="date"]').value;
     const note = row.querySelector('[data-field="note"]').value.trim();
     const isEstimateField = row.querySelector('[data-field="isEstimate"]');

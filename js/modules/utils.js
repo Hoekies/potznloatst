@@ -32,7 +32,12 @@ export function sanitizeColor(value) {
 }
 
 export function sanitizeAmount(value) {
-  const amount = Number(value);
+  let str = String(value ?? "").trim();
+  if (str.includes(",")) {
+    // NL-notatie: punt is duizendtal-scheiding, komma is decimaal (bv. "1.234,56")
+    str = str.replace(/\./g, "").replace(",", ".");
+  }
+  const amount = Number(str);
   if (!Number.isFinite(amount)) {
     return 0;
   }

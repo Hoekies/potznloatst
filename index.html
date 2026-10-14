@@ -73,7 +73,7 @@
                     </label>
                     <div class="icon-field icon-field--amount">
                       <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                      <input id="participant-initial" name="participant-initial" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
+                      <input id="participant-initial" name="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
                       <label class="inline-raming" title="Startinleg is raming">
                         <input id="participant-initial-is-estimate" name="participant-initial-is-estimate" type="checkbox" aria-label="Startinleg is raming" />
                         <span aria-hidden="true">&#128302;</span>
@@ -100,7 +100,7 @@
                 <form id="topup-form" class="stack-form" autocomplete="off">
                   <div class="icon-field icon-field--amount">
                     <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                    <input id="topup-amount" name="topup-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
+                    <input id="topup-amount" name="topup-amount" type="text" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
                     <label class="inline-raming" title="Raming">
                       <input id="topup-is-estimate" name="topup-is-estimate" type="checkbox" aria-label="Raming" />
                       <span aria-hidden="true">&#128302;</span>
@@ -154,7 +154,7 @@
                     </label>
                     <div id="expense-amount-wrap" class="icon-field icon-field--amount">
                       <span class="icon-field__icon" id="expense-amount-label" aria-hidden="true">&euro;</span>
-                      <input id="expense-amount" name="expense-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" aria-label="Bedrag totaal" required />
+                      <input id="expense-amount" name="expense-amount" type="text" inputmode="decimal" placeholder="0,00" aria-label="Bedrag totaal" required />
                       <label class="inline-raming" title="Nog een raming">
                         <input id="expense-kind" name="expense-kind" type="checkbox" aria-label="Nog een raming" />
                         <span aria-hidden="true">&#128302;</span>
@@ -172,7 +172,7 @@
                     </label>
                     <label class="icon-field">
                       <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
-                      <input id="estimate-per-person-amount" name="estimate-per-person-amount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="Bedrag per persoon" aria-label="Bedrag per persoon" />
+                      <input id="estimate-per-person-amount" name="estimate-per-person-amount" type="text" inputmode="decimal" placeholder="Bedrag per persoon" aria-label="Bedrag per persoon" />
                     </label>
                     <span id="estimate-calculation" class="field-help"></span>
                   </div>

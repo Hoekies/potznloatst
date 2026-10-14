@@ -1,7 +1,7 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync } from './state.js';
 import { primaryStorageKey, CROP_SIZE } from './constants.js';
-import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker } from './utils.js';
+import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount } from './utils.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
   renderAccountUi, renderTabs,
@@ -268,7 +268,7 @@ function setupEventListeners() {
   dom.participantForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const name = dom.participantNameInput.value.trim();
-    const amount = Number(dom.participantInitialInput.value);
+    const amount = sanitizeAmount(dom.participantInitialInput.value);
     const color = dom.participantColorInput.value;
     const initialIsEstimate = dom.participantInitialIsEstimateInput?.checked || false;
 
@@ -308,7 +308,7 @@ function setupEventListeners() {
 
   dom.topupForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const amount = Number(dom.topupAmountInput.value);
+    const amount = sanitizeAmount(dom.topupAmountInput.value);
     const note = dom.topupNoteInput.value.trim();
     const isEstimate = dom.topupIsEstimateInput?.checked || false;
 
