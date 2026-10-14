@@ -1506,34 +1506,20 @@ textarea:focus {
   margin-bottom: 14px;
 }
 
-.bulk-inleg-list {
+.participant-name-rows {
   display: grid;
   gap: 8px;
-  margin-bottom: 14px;
 }
 
-.bulk-inleg-row {
+.participant-name-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--radius-md);
-  background: rgba(255, 253, 248, 0.9);
-  border: 1px solid var(--line);
 }
 
-.bulk-inleg-row__name {
+.participant-name-row .icon-field {
   flex: 1 1 auto;
   min-width: 0;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.bulk-inleg-row .icon-field--amount {
-  flex: 0 0 auto;
-  width: min(220px, 60%);
 }
 
 .category-chip {

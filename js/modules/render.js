@@ -18,7 +18,6 @@ export function render(dom) {
   renderTabs(dom);
   renderSummary(dom);
   renderParticipants(dom);
-  renderBulkInlegList(dom);
   renderTopups(dom);
   renderExpenses(dom);
   renderTimeline(dom);
@@ -236,37 +235,6 @@ export function renderParticipants(dom) {
             }
           </div>
         </article>
-      `;
-    })
-    .join("");
-}
-
-export function renderBulkInlegList(dom) {
-  if (!dom.bulkInlegList) return;
-
-  if (!state.participants.length) {
-    dom.bulkInlegList.innerHTML = `<p class="muted management-empty">Voeg eerst deelnemers toe.</p>`;
-    return;
-  }
-
-  dom.bulkInlegList.innerHTML = getSortedParticipants(state)
-    .map((participant) => {
-      const initialContribution = state.contributions.find((item) => item.participantId === participant.id && item.type === "initial");
-      const amount = initialContribution?.amount ?? 0;
-      const isEstimate = Boolean(initialContribution?.isEstimate);
-
-      return `
-        <div class="bulk-inleg-row" data-participant-id="${participant.id}">
-          <span class="bulk-inleg-row__name">${escapeHtml(participant.name)}</span>
-          <div class="icon-field icon-field--amount">
-            <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-            <input type="text" inputmode="decimal" data-field="amount" value="${amount}" aria-label="Startinleg ${escapeHtml(participant.name)}" />
-            <label class="inline-raming" title="Nog een raming">
-              <input type="checkbox" data-field="isEstimate" ${isEstimate ? "checked" : ""} aria-label="Startinleg ${escapeHtml(participant.name)} is raming" />
-              <span aria-hidden="true">&#128302;</span>
-            </label>
-          </div>
-        </div>
       `;
     })
     .join("");

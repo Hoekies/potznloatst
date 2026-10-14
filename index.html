@@ -71,20 +71,33 @@
           <div class="tab-panel" data-tab-panel="inleg" role="tabpanel" hidden>
             <section class="subpanel">
                 <form id="participant-form" class="stack-form" autocomplete="off">
-                  <div class="field-row">
-                    <label class="icon-field">
-                      <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
-                      <input id="participant-name" name="participant-name" type="text" placeholder="Naam" aria-label="Naam" required />
-                    </label>
-                    <div class="icon-field icon-field--amount">
-                      <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                      <input id="participant-initial" name="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
-                      <label class="inline-raming" title="Startinleg is raming">
-                        <input id="participant-initial-is-estimate" name="participant-initial-is-estimate" type="checkbox" aria-label="Startinleg is raming" />
+                  <div class="icon-field icon-field--amount">
+                    <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                    <input id="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg voor iedereen" aria-label="Startinleg voor iedereen" required />
+                  </div>
+                  <div id="participant-name-rows" class="participant-name-rows">
+                    <div class="participant-name-row">
+                      <label class="icon-field">
+                        <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                        <input type="text" class="participant-name-input" placeholder="Naam" autocomplete="off" aria-label="Naam" />
+                      </label>
+                      <label class="inline-raming" title="Nog een raming">
+                        <input type="checkbox" class="participant-raming-input" aria-label="Raming" />
+                        <span aria-hidden="true">&#128302;</span>
+                      </label>
+                    </div>
+                    <div class="participant-name-row">
+                      <label class="icon-field">
+                        <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                        <input type="text" class="participant-name-input" placeholder="Naam" autocomplete="off" aria-label="Naam" />
+                      </label>
+                      <label class="inline-raming" title="Nog een raming">
+                        <input type="checkbox" class="participant-raming-input" aria-label="Raming" />
                         <span aria-hidden="true">&#128302;</span>
                       </label>
                     </div>
                   </div>
+                  <button type="button" id="add-participant-row" class="ghost-button ghost-button--small">+ Nog een naam</button>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>
 
@@ -94,17 +107,6 @@
                     <small class="collapsible-panel__state"></small>
                   </summary>
                   <div id="participants-list" class="management-list"></div>
-                </details>
-
-                <details class="collapsible-panel" id="bulk-inleg-panel">
-                  <summary class="collapsible-panel__summary">
-                    <span>Startinleg snel invullen</span>
-                    <small class="collapsible-panel__state"></small>
-                  </summary>
-                  <form id="bulk-inleg-form" class="stack-form">
-                    <div id="bulk-inleg-list"></div>
-                    <button class="primary-button" type="submit">Alles opslaan</button>
-                  </form>
                 </details>
 
                 <hr class="section-divider" />

@@ -4,7 +4,7 @@ import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from 
 import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
-  render, renderWeekendLogo, renderParticipants, renderBulkInlegList, renderTopups, renderTimeline,
+  render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
   renderAccountUi, renderTabs,
 } from './render.js';
 import {
@@ -526,6 +526,31 @@ async function startFreshBalance() {
   showToast(`Nieuwe balans "${trimmedName}" gestart.`, "success");
 }
 
+function participantNameRowHtml() {
+  return `
+    <div class="participant-name-row">
+      <label class="icon-field">
+        <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+        <input type="text" class="participant-name-input" placeholder="Naam" autocomplete="off" aria-label="Naam" />
+      </label>
+      <label class="inline-raming" title="Nog een raming">
+        <input type="checkbox" class="participant-raming-input" aria-label="Raming" />
+        <span aria-hidden="true">&#128302;</span>
+      </label>
+    </div>
+  `;
+}
+
+function addParticipantNameRow() {
+  if (!dom.participantNameRows) return;
+  dom.participantNameRows.insertAdjacentHTML("beforeend", participantNameRowHtml());
+}
+
+function resetParticipantNameRows() {
+  if (!dom.participantNameRows) return;
+  dom.participantNameRows.innerHTML = participantNameRowHtml() + participantNameRowHtml();
+}
+
 function setupEventListeners() {
   dom.tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -564,12 +589,23 @@ function setupEventListeners() {
 
   dom.participantForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    const name = dom.participantNameInput.value.trim();
     const amount = sanitizeAmount(dom.participantInitialInput.value);
-    const color = fallbackColor(state.participants.length);
-    const initialIsEstimate = dom.participantInitialIsEstimateInput?.checked || false;
 
-    if (!name || !Number.isFinite(amount) || amount < 0) {
+    if (!Number.isFinite(amount) || amount < 0) {
+      showToast("Vul een geldige startinleg in.", "error");
+      return;
+    }
+
+    const rows = Array.from(dom.participantNameRows?.querySelectorAll(".participant-name-row") || []);
+    const entries = rows
+      .map((row) => ({
+        name: row.querySelector(".participant-name-input")?.value.trim() || "",
+        isEstimate: row.querySelector(".participant-raming-input")?.checked || false,
+      }))
+      .filter((entry) => entry.name);
+
+    if (!entries.length) {
+      showToast("Vul minstens één naam in.", "error");
       return;
     }
 
@@ -577,24 +613,26 @@ function setupEventListeners() {
     const origText = submitBtn?.textContent;
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Toevoegen…"; }
 
-    const participantId = createId();
-    state.participants.push({
-      id: participantId,
-      name,
-      color,
-    });
-
-    state.contributions.push({
-      id: createId(),
-      participantId,
-      amount,
-      type: "initial",
-      isEstimate: initialIsEstimate,
-      note: "Startinleg",
-      date: todayIso(),
+    entries.forEach((entry) => {
+      const participantId = createId();
+      state.participants.push({
+        id: participantId,
+        name: entry.name,
+        color: fallbackColor(state.participants.length),
+      });
+      state.contributions.push({
+        id: createId(),
+        participantId,
+        amount,
+        type: "initial",
+        isEstimate: entry.isEstimate,
+        note: "Startinleg",
+        date: todayIso(),
+      });
     });
 
     dom.participantForm.reset();
+    resetParticipantNameRows();
     persistAndRender();
 
     if (submitBtn) {
@@ -602,21 +640,7 @@ function setupEventListeners() {
     }
   });
 
-  dom.bulkInlegForm?.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const rows = dom.bulkInlegList?.querySelectorAll("[data-participant-id]") || [];
-    rows.forEach((row) => {
-      const participantId = row.dataset.participantId;
-      const contribution = state.contributions.find((item) => item.participantId === participantId && item.type === "initial");
-      if (!contribution) return;
-      const amount = sanitizeAmount(row.querySelector('[data-field="amount"]')?.value);
-      const isEstimateField = row.querySelector('[data-field="isEstimate"]');
-      contribution.amount = amount;
-      if (isEstimateField) contribution.isEstimate = isEstimateField.checked;
-    });
-    persistAndRender();
-    showToast("Startinleg bijgewerkt voor alle deelnemers.", "success");
-  });
+  dom.addParticipantRowButton?.addEventListener("click", () => addParticipantNameRow());
 
   dom.topupForm.addEventListener("submit", (event) => {
     event.preventDefault();
