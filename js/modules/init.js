@@ -1,7 +1,7 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync, readBackupSnapshot } from './state.js';
 import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from './constants.js';
-import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
+import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressImageToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
@@ -744,14 +744,17 @@ function setupEventListeners() {
     if (!file) return;
     const card = event.target.closest('[data-expense-card], [data-timeline-card]');
     if (!card) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const hidden = card.querySelector('[data-field="receipt-data"]');
-      if (hidden) hidden.value = e.target.result;
-      const thumb = card.querySelector('.inline-edit-receipt__thumb');
-      if (thumb) { thumb.src = e.target.result; thumb.hidden = false; }
-    };
-    reader.readAsDataURL(file);
+    compressImageToDataUrl(file)
+      .catch((error) => {
+        console.warn("Bonfoto verkleinen mislukt, originele foto wordt gebruikt:", error);
+        return fileToDataUrl(file);
+      })
+      .then((dataUrl) => {
+        const hidden = card.querySelector('[data-field="receipt-data"]');
+        if (hidden) hidden.value = dataUrl;
+        const thumb = card.querySelector('.inline-edit-receipt__thumb');
+        if (thumb) { thumb.src = dataUrl; thumb.hidden = false; }
+      });
   }
 
   dom.expenseList.addEventListener("change", (event) => {
@@ -931,8 +934,14 @@ function setupEventListeners() {
   });
 
   const handleReceiptPickerChange = async (fileInput) => {
-    if (!fileInput.files[0]) return;
-    setPendingReceiptImage(await fileToDataUrl(fileInput.files[0]));
+    const file = fileInput.files[0];
+    if (!file) return;
+    try {
+      setPendingReceiptImage(await compressImageToDataUrl(file));
+    } catch (error) {
+      console.warn("Bonfoto verkleinen mislukt, originele foto wordt gebruikt:", error);
+      setPendingReceiptImage(await fileToDataUrl(file));
+    }
     showReceiptReview("Bon toegevoegd. Tik op de afbeelding om te vergroten.", "klaar_voor_review", dom);
   };
 

@@ -94,6 +94,46 @@ export function fileToDataUrl(file) {
   });
 }
 
+// Foto's rechtstreeks van een telefooncamera zijn vaak 3-10MB — dat maakt
+// het uploaden naar Supabase Storage op een wankele mobiele verbinding
+// onbetrouwbaar. Schaal daarom altijd terug naar een redelijk formaat en
+// comprimeer als JPEG voordat de foto verder gaat (meestal een paar
+// honderd KB i.p.v. meerdere MB), ongeacht het origineel.
+export function compressImageToDataUrl(file, { maxDimension = 1600, quality = 0.75 } = {}) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Kon de bonfoto niet lezen."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Kon de bonfoto niet verwerken."));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(reader.result);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 export function readFileAsText(file) {
   if (typeof file.text === "function") {
     return file.text();
