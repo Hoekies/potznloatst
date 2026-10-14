@@ -448,7 +448,25 @@ export function renderTimeline(dom) {
   const otherEntries = entries.filter((entry) => !isInlegKind(entry.kind));
   const inlegEntries = entries.filter((entry) => isInlegKind(entry.kind));
 
-  const otherHtml = otherEntries.map((entry) => renderTimelineEntryCard(entry)).join("");
+  // Net als inleg: per categorie ingeklapt met alleen het totaalbedrag,
+  // zodat de lijst compact blijft totdat je een categorie openklikt.
+  const categoryOrder = Object.keys(categoryLabels);
+  const otherHtml = categoryOrder
+    .map((categoryKey) => {
+      const items = otherEntries.filter((entry) => entry.category === categoryKey);
+      if (!items.length) return "";
+      const total = items.reduce((sum, entry) => sum + entry.amount, 0);
+      return `
+        <details class="timeline-inleg-group">
+          <summary class="timeline-inleg-group__summary">
+            <span>${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]} &mdash; totaal ${currencyFormatter.format(total)}</span>
+            <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
+          </summary>
+          <div class="timeline-inleg-group__list">${items.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
+        </details>
+      `;
+    })
+    .join("");
 
   let inlegHtml = "";
   if (inlegEntries.length) {
