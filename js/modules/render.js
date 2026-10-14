@@ -358,17 +358,17 @@ export function renderExpenses(dom) {
                     <span class="management-card__amount-tag">${currencyFormatter.format(record.amount)}</span>
                   </div>
                   <span class="management-card__detail">${detailBits.join(" · ")}</span>
+                  ${record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : ""}
                 `
             }
           </div>
           ${isEditing ? "" : `
           <div class="management-card__actions">
             ${state.sharedView
-              ? `${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}`
+              ? ""
               : `
                   ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
                   ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
-                  ${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}
                   <button class="soft-button" type="button" data-expense-action="edit" data-kind="${record.kind}" data-id="${record.id}">Wijzig</button>
                   <button class="icon-button" type="button" data-expense-action="remove" data-kind="${record.kind}" data-id="${record.id}">Verwijder</button>
                 `
@@ -410,6 +410,8 @@ export function renderTimeline(dom) {
       personId: "",
       date: record.date,
       note: record.note,
+      receiptImage: record.receiptImage,
+      receiptPath: record.receiptPath,
     })),
     ...state.estimates.map((record) => ({
       id: record.id,
@@ -523,6 +525,14 @@ export function renderTimeline(dom) {
   dom.timeline.innerHTML = otherHtml + inlegHtml;
 }
 
+// Een bon met receiptPath (en geen lokale data-URL meer) staat in Supabase
+// Storage; een data-URL zonder pad is alleen nog lokaal en wacht op upload.
+function renderReceiptBadge(record, actionAttr) {
+  if (!record.receiptImage && !record.receiptPath) return "";
+  const isUploaded = Boolean(record.receiptPath) && !/^data:image\//.test(record.receiptImage || "");
+  return `<button type="button" class="receipt-badge ${isUploaded ? "receipt-badge--uploaded" : "receipt-badge--local"}" ${actionAttr}="view-receipt" data-kind="expense" data-id="${record.id}" title="${isUploaded ? "Bon staat in de cloud" : "Bon staat alleen op dit apparaat"}">&#128206; ${isUploaded ? "Bon in cloud" : "Bon nog niet geüpload"}</button>`;
+}
+
 function renderTimelineEntryCard(entry) {
   const participant = state.participants.find((person) => person.id === entry.personId);
   const isEditing = getEditingRecord()?.scope === "timeline" && getEditingRecord().id === entry.id && getEditingRecord().kind === entry.kind;
@@ -550,7 +560,7 @@ function renderTimelineEntryCard(entry) {
       <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
       <div class="timeline-card__main">
         <strong>${escapeHtml(entry.title)}</strong>
-        <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
+        <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}${entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : ""}</div>
       </div>
       <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
       <div class="timeline-card__actions">

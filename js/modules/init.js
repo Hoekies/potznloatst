@@ -922,6 +922,14 @@ function setupEventListeners() {
     const id = target.dataset.id;
     const action = target.dataset.timelineAction;
 
+    if (action === "view-receipt") {
+      const expense = state.expenses.find((item) => item.id === id);
+      if (expense?.receiptImage) {
+        openReceiptModal(expense.receiptImage, dom);
+      }
+      return;
+    }
+
     if (action === "edit") {
       setEditingRecord({ kind, id, scope: "timeline" });
       renderTimeline(getDomBundle());
