@@ -686,8 +686,10 @@ h1 {
   margin-bottom: 0;
 }
 
+/* Sectiekop ("Bewegingen in de pot"): kleiner dan de bedragen in de
+   overzichtskaarten (tot 1.65rem), groter dan de groepskoppen eronder. */
 h2 {
-  font-size: clamp(2rem, 3vw, 2.7rem);
+  font-size: 1.35rem;
 }
 
 h3 {
@@ -2779,9 +2781,6 @@ article.timeline-card.timeline-card--estimate {
     padding: 0 0 16px;
   }
 
-  /* h2 valt op mobiel terug op zijn clamp-minimum (2rem/32px) omdat
-     3vw op dit formaat kleiner is dan dat minimum — te groot voor een
-     sectiekopje zoals "Bewegingen in de pot". */
   h2 {
     font-size: 1.15rem;
   }
