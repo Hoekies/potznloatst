@@ -1,5 +1,5 @@
 import * as dom from './dom.js';
-import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync } from './state.js';
+import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync, readBackupSnapshot } from './state.js';
 import { primaryStorageKey, CROP_SIZE } from './constants.js';
 import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount } from './utils.js';
 import {
@@ -145,6 +145,9 @@ function toggleAccountDropdown() {
   const next = dom.accountDropdown.hidden;
   dom.accountDropdown.hidden = !next;
   dom.accountToggleButton?.setAttribute("aria-expanded", next ? "true" : "false");
+  if (next && dom.restoreBackupButton) {
+    dom.restoreBackupButton.hidden = !readBackupSnapshot();
+  }
 }
 
 function closeAccountDropdown() {
@@ -227,6 +230,30 @@ async function importStateFromFile(event) {
   } finally {
     if (dom.importStateFileInput) dom.importStateFileInput.value = "";
   }
+}
+
+function restoreFromLocalBackup() {
+  const backup = readBackupSnapshot();
+  if (!backup) {
+    showToast("Geen lokale back-up gevonden op dit toestel.", "info");
+    return;
+  }
+
+  const { data, savedAt } = backup;
+  const savedLabel = savedAt ? new Date(savedAt).toLocaleString("nl-NL") : "onbekend moment";
+  const summary = `${data.participants.length} deelnemers, ${data.contributions.length} inlegposten, `
+    + `${data.expenses.length} uitgaven en ${data.estimates.length} ramingen`;
+
+  const confirmed = confirm(
+    `Lokale back-up van ${savedLabel} herstellen?\n\n${summary}\n\n`
+    + "Dit vervangt de huidige gegevens op dit toestel (en wordt meteen gesynchroniseerd naar de cloud als je bent ingelogd)."
+  );
+  if (!confirmed) return;
+
+  setState({ ...data, auth: state.auth, sharedView: state.sharedView });
+  resetUiState();
+  persistAndRender();
+  showToast("Back-up hersteld.", "success");
 }
 
 function setupEventListeners() {
@@ -607,6 +634,7 @@ function setupEventListeners() {
   dom.exportStateButton?.addEventListener("click", exportStateToFile);
   dom.importStateButton?.addEventListener("click", () => dom.importStateFileInput?.click());
   dom.importStateFileInput?.addEventListener("change", importStateFromFile);
+  dom.restoreBackupButton?.addEventListener("click", restoreFromLocalBackup);
   dom.accountToggleButton?.addEventListener("click", toggleAccountDropdown);
   dom.accountLoginButton?.addEventListener("click", () => {
     closeAccountDropdown();

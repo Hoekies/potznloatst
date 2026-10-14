@@ -1,6 +1,10 @@
 export const storageKey = "potzloats-state-v4";
 export const primaryStorageKey = "potzloats-state-v5";
 export const migrationStorageKey = "potzloats-supabase-migrations-v1";
+// Aparte sleutel voor de laatste-bekend-goede back-up. Wordt alleen
+// geschreven als de staat echt iets bevat, en NOOIT overschreven met een
+// lege staat — zo overleeft hij een mislukte sync of hydration altijd.
+export const backupStorageKey = "potzloats-last-good-backup-v1";
 
 export const authStatusFallback = "Je kunt lokaal blijven werken, maar online sync staat klaar zodra Supabase is gekoppeld.";
 

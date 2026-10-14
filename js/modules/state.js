@@ -1,4 +1,4 @@
-import { primaryStorageKey, storageKey, migrationStorageKey, categoryLabels } from './constants.js';
+import { primaryStorageKey, storageKey, migrationStorageKey, backupStorageKey, categoryLabels } from './constants.js';
 import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, sanitizeColor, fallbackColor, cloneData, createId, todayIso } from './utils.js';
 
 function buildDemoState() {
@@ -241,6 +241,7 @@ export function setQueueCloudSync(fn) {
 
 export function persistAndRender() {
   writeToStorage(primaryStorageKey, JSON.stringify(state));
+  writeBackupSnapshot(state);
   _render();
   if (!_cloudHydrating && _queueCloudSync) {
     _queueCloudSync("local-change");
@@ -256,6 +257,38 @@ export function hasMeaningfulState(candidateState) {
     candidateState?.profile?.name ||
     candidateState?.profile?.avatarUrl
   );
+}
+
+// Laatste-bekend-goede back-up: een losse kopie die alleen wordt
+// bijgewerkt als er echt iets in zit, en dus altijd overleeft als de
+// hoofd-staat (primaryStorageKey) per ongeluk leeg raakt door een bug,
+// mislukte sync of mislukte hydration.
+export function writeBackupSnapshot(candidateState) {
+  if (!hasMeaningfulState(candidateState)) {
+    return;
+  }
+  try {
+    const payload = { savedAt: new Date().toISOString(), data: candidateState };
+    writeToStorage(backupStorageKey, JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Back-up bewaren mislukte:", error);
+  }
+}
+
+export function readBackupSnapshot() {
+  const raw = readFromStorage(backupStorageKey);
+  if (!raw) {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.data) {
+      return null;
+    }
+    return { savedAt: parsed.savedAt || "", data: normalizeState(parsed.data) };
+  } catch (error) {
+    return null;
+  }
 }
 
 export function getMigrationMap() {

@@ -3,7 +3,7 @@ import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbac
 import { categoryLabels } from './constants.js';
 import {
   state, setState, normalizeState, normalizeEstimate, createEmptyState, hasMeaningfulState,
-  writeToStorage, getCloudHydrating, setCloudHydrating,
+  writeToStorage, writeBackupSnapshot, getCloudHydrating, setCloudHydrating,
   markMigrationDone, wasMigrationDone,
 } from './state.js';
 
@@ -334,6 +334,7 @@ export function applyCloudState(cloudState, user) {
     },
   }));
   writeToStorage(primaryStorageKey, JSON.stringify(state));
+  writeBackupSnapshot(state);
   _render();
   setCloudHydrating(false);
 }
@@ -559,6 +560,7 @@ export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onP
                 userId: user.id,
               };
               writeToStorage(primaryStorageKey, JSON.stringify(state));
+              writeBackupSnapshot(state);
               _render();
               showToast("Synchroniseren met de cloud is mislukt. Probeer het later opnieuw — je gegevens zijn niet aangepast.", "error");
               onAutoLogin?.();
