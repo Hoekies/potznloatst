@@ -464,7 +464,12 @@ export function renderTimeline(dom) {
 
   const isInlegKind = (kind) => kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate";
   const otherEntries = entries.filter((entry) => !isInlegKind(entry.kind));
-  const inlegEntries = entries.filter((entry) => isInlegKind(entry.kind));
+  // Inleg: ramingen bovenaan, verder alfabetisch op titel ("Extra inleg — …",
+  // "Startinleg — naam"), zodat dezelfde soort bij elkaar staat.
+  const inlegEntries = entries
+    .filter((entry) => isInlegKind(entry.kind))
+    .sort((a, b) => (Number(isEstimateKindValue(b.kind)) - Number(isEstimateKindValue(a.kind)))
+      || a.title.localeCompare(b.title, "nl", { sensitivity: "base" }));
 
   const editingRecord = getEditingRecord();
   const isGroupOpen = (groupKey, items) => openListGroups.has(groupKey)
