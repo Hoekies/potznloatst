@@ -88,6 +88,20 @@ export async function getSignedReceiptUrl(path) {
   return data?.signedUrl || "";
 }
 
+// Niet via fetch(dataUrl): de CSP (connect-src in vercel.json) staat data:
+// niet toe, waardoor die fetch altijd geblokkeerd werd en geen bon ooit
+// werd geüpload.
+function dataUrlToBlob(dataUrl) {
+  const [header, payload = ""] = dataUrl.split(",");
+  const mime = header.match(/^data:([^;,]+)/)?.[1] || "image/jpeg";
+  const binary = header.includes(";base64") ? atob(payload) : decodeURIComponent(payload);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
 export async function ensureReceiptUploaded(expense, userId) {
   const client = getSupabaseClient();
   if (!client || !expense) {
@@ -116,7 +130,7 @@ export async function ensureReceiptUploaded(expense, userId) {
       return expense;
     }
 
-    const blob = await fetch(expense.receiptImage).then((response) => response.blob());
+    const blob = dataUrlToBlob(expense.receiptImage);
     const extension = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
     const path = `receipts/${userId}/${expense.id}.${extension}`;
 
