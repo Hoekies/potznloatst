@@ -1,0 +1,49 @@
+.logo-choice { background: #FFFDF8; }
+.logo-choice .choice-shell { width: min(1200px, calc(100% - 48px)); margin: auto; padding: 64px 0 32px; }
+.logo-choice .intro { max-width: 850px; padding-bottom: 44px; }
+.logo-choice .eyebrow { color: #2E7D32; font-size: 12px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 24px; }
+.logo-choice h1 { color: #1B5E20; font-size: clamp(40px, 6vw, 76px); line-height: 1.03; letter-spacing: -.035em; }
+.logo-choice .intro-text { max-width: 600px; margin: 24px 0; font-size: 18px; }
+.logo-choice nav { display: flex; flex-wrap: wrap; gap: 10px; }
+.logo-choice nav a { padding: 9px 15px; border: 1px solid #cbd8cb; border-radius: 24px; color: #1B5E20; text-decoration: none; font-size: 14px; }
+.logo-choice a:hover { background: #edf3e8; }
+.logo-choice a:focus-visible { outline: 3px solid #2E7D32; outline-offset: 4px; }
+.logo-choice .intro-note, .logo-choice footer { font-size: 13px; color: #5B6E5D; }
+.logo-choice .choice { padding: 36px 0; border-top: 1px solid #dce3d6; scroll-margin-top: 20px; }
+.logo-choice .choice-heading { display: flex; align-items: flex-start; gap: 22px; margin-bottom: 26px; max-width: 760px; }
+.logo-choice .number { color: #A8741A; font: 32px Georgia, serif; }
+.logo-choice h2 { font-size: 32px; line-height: 1.15; }
+.logo-choice .choice-heading p { margin: 12px 0 0; }
+.logo-choice .samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.logo-choice figure { margin: 0; min-width: 0; }
+.logo-choice figcaption { font-size: 12px; font-weight: 700; color: #5B6E5D; margin-bottom: 8px; }
+.logo-choice .header-demo, .logo-choice .phone, .logo-choice .login-demo, .logo-choice .mono-demo, .logo-choice .original-demo { border: 1px solid #dce3d6; background: #FFFDF8; border-radius: 16px; }
+.logo-choice .header-demo { display: flex; align-items: center; gap: 12px; min-height: 112px; padding: 10px; overflow-x: auto; }
+.logo-choice .desktop-logo { flex: 0 0 440px; width: 440px; height: 90px; }
+.logo-choice img { display: block; object-fit: contain; }
+.logo-choice .sample-logo { width: 100%; height: 100%; }
+.logo-choice .demo-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 36px; border-radius: 50%; color: white; background: #1B5E20; font-size: 15px; font-weight: 700; }
+.logo-choice .mobile { grid-row: span 2; overflow-x: auto; }
+.logo-choice .phone { width: 390px; max-width: none; overflow: hidden; }
+.logo-choice .mobile-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 22px; border-bottom: 1px solid #dce3d6; }
+.logo-choice .mobile-bar img { width: 240px; height: 72px; }
+.logo-choice .phone-body { padding: 24px 22px; background: #FDF8F0; }
+.logo-choice .phone-body > span { display: block; color: #5B6E5D; font-size: 12px; }
+.logo-choice .phone-body strong { display: block; font: 24px/1.25 Georgia, serif; margin: 10px 0 24px; max-width: 290px; }
+.logo-choice .demo-tabs { display: flex; gap: 18px; color: #1B5E20; font-size: 13px; }
+.logo-choice .login-demo { min-height: 138px; padding: 16px; display: grid; align-content: center; justify-items: center; gap: 10px; }
+.logo-choice .login-demo span { font-size: 12px; color: #5B6E5D; }
+.logo-choice .login-logo { max-width: 100%; }
+.logo-choice .mono-demo, .logo-choice .original-demo { min-height: 112px; padding: 16px; display: grid; place-items: center; }
+.logo-choice .original-demo img { width: 260px; max-width: 100%; height: 73px; }
+.logo-choice .small-note { color: #5B6E5D; font-size: 13px; margin-top: 20px; }
+.logo-choice .downloads { display: flex; flex-wrap: wrap; gap: 20px; }
+.logo-choice .downloads a { color: #1B5E20; font-size: 13px; text-underline-offset: 4px; }
+.logo-choice footer { padding: 24px 0; border-top: 1px solid #dce3d6; }
+@media (max-width: 760px) {
+  .logo-choice .choice-shell { width: calc(100% - 32px); padding-top: 36px; }
+  .logo-choice .samples { grid-template-columns: minmax(0, 1fr); }
+  .logo-choice .mobile { grid-row: auto; }
+  .logo-choice .choice-heading { gap: 14px; }
+  .logo-choice h2 { font-size: 27px; }
+}
