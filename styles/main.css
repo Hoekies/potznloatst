@@ -923,12 +923,29 @@ h3 {
   fill: #25D366;
 }
 
+/* Compacte pil rechts op de kopregel van "Bewegingen in de pot". */
 .share-whatsapp-button {
-  width: 100%;
-  margin-top: 14px;
-  color: #075E54;
-  border-color: rgba(37, 211, 102, 0.45);
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid rgba(37, 211, 102, 0.45);
+  border-radius: 999px;
   background: rgba(37, 211, 102, 0.12);
+  color: #075E54;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.share-whatsapp-button:hover {
+  background: rgba(37, 211, 102, 0.22);
+}
+
+.share-whatsapp-button .wa-icon {
+  width: 18px;
+  height: 18px;
 }
 
 .summary-row {
@@ -2377,6 +2394,8 @@ article.timeline-card.timeline-card--estimate {
 
 .section-collapsible__summary h2 {
   margin: 0;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .section-collapsible__chevron {

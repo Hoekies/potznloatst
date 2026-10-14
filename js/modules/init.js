@@ -1117,7 +1117,12 @@ function setupEventListeners() {
     }
   });
 
-  dom.shareWhatsappButton?.addEventListener("click", openShareModal);
+  // De knop staat in de <summary> van "Bewegingen in de pot": preventDefault
+  // voorkomt dat een klik erop die sectie open- of dichtklapt.
+  dom.shareWhatsappButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    openShareModal();
+  });
   const shareForm = document.querySelector("#share-form");
   shareForm?.addEventListener("change", updateSharePreview);
   shareForm?.addEventListener("submit", (event) => {
