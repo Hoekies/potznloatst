@@ -437,12 +437,8 @@ export function renderTimeline(dom) {
       return true;
     })
     .sort((a, b) => {
-      const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
-      const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";
-      if (aIsEstimate !== bIsEstimate) return aIsEstimate ? -1 : 1;
-
-      // Uitgaven (en ramingen) groeperen op categorie; inleg heeft geen
-      // categorie en blijft daarbinnen gewoon op datum gesorteerd.
+      // Ramingen staan gewoon tussen de definitieve posten van hun
+      // categorie (op datum); inleg heeft geen categorie.
       const categoryOrder = Object.keys(categoryLabels);
       const aCategoryIndex = a.category ? categoryOrder.indexOf(a.category) : -1;
       const bCategoryIndex = b.category ? categoryOrder.indexOf(b.category) : -1;
@@ -457,6 +453,14 @@ export function renderTimeline(dom) {
   }
 
   const isInlegKind = (kind) => kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate";
+  const isEstimateKind = (kind) => kind === "estimate" || kind === "topup-estimate" || kind === "contribution-estimate";
+  const renderGroupTotal = (items) => {
+    const total = items.reduce((sum, entry) => sum + entry.amount, 0);
+    const estimateTotal = items.filter((entry) => isEstimateKind(entry.kind)).reduce((sum, entry) => sum + entry.amount, 0);
+    return estimateTotal > 0
+      ? `totaal ${currencyFormatter.format(total)} <small class="timeline-inleg-group__incl">(incl. ${currencyFormatter.format(estimateTotal)} raming)</small>`
+      : `totaal ${currencyFormatter.format(total)}`;
+  };
 
   // Inleg is minder belangrijk om in detail te zien in dit overzicht — alleen
   // groeperen/inklappen als de gebruiker niet al specifiek op "Inleg" filtert
@@ -481,12 +485,11 @@ export function renderTimeline(dom) {
     .map((categoryKey) => {
       const items = otherEntries.filter((entry) => entry.category === categoryKey);
       if (!items.length) return "";
-      const total = items.reduce((sum, entry) => sum + entry.amount, 0);
       const groupKey = `category:${categoryKey}`;
       return `
         <details class="timeline-inleg-group" data-group-key="${groupKey}" ${isGroupOpen(groupKey, items) ? "open" : ""}>
           <summary class="timeline-inleg-group__summary">
-            <span>${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]} &mdash; totaal ${currencyFormatter.format(total)}</span>
+            <span>${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]} &mdash; ${renderGroupTotal(items)}</span>
             <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
           </summary>
           <div class="timeline-inleg-group__list">${items.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
@@ -497,11 +500,10 @@ export function renderTimeline(dom) {
 
   let inlegHtml = "";
   if (inlegEntries.length) {
-    const inlegTotal = inlegEntries.reduce((sum, entry) => sum + entry.amount, 0);
     inlegHtml = `
       <details class="timeline-inleg-group" data-group-key="inleg" ${isGroupOpen("inleg", inlegEntries) ? "open" : ""}>
         <summary class="timeline-inleg-group__summary">
-          <span>&#128176; Inleg &mdash; totaal ${currencyFormatter.format(inlegTotal)}</span>
+          <span>&#128176; Inleg &mdash; ${renderGroupTotal(inlegEntries)}</span>
           <span class="timeline-inleg-group__count">${inlegEntries.length} ${inlegEntries.length === 1 ? "post" : "posten"}</span>
         </summary>
         <div class="timeline-inleg-group__list">${inlegEntries.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>

@@ -1710,6 +1710,13 @@ textarea:focus {
   white-space: nowrap;
 }
 
+.timeline-inleg-group__incl {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .timeline-inleg-group__list {
   display: grid;
   gap: 10px;
@@ -1956,7 +1963,7 @@ textarea:focus {
 
 @media (max-width: 680px) {
   .app-shell {
-    width: min(100vw, calc(100vw - 16px));
+    width: calc(100vw - 8px);
     padding-top: 8px;
   }
 
@@ -2673,13 +2680,16 @@ textarea:focus {
   /* --------------------------------------------------
      7. PANELS / KAARTEN — voldoende padding voor touch
      -------------------------------------------------- */
+  /* Op mobiel geen zijkanten-padding op de buitenste lagen: elke
+     genestelde laag (panel → subpanel → groep → kaart) at anders een stuk
+     breedte weg, terwijl de balk onderin de volle breedte gebruikt. */
   .panel {
-    /* Minder zijkanten-padding dan voorheen — anders eet elke genestelde
-       laag (panel → subpanel → group-lijst → kaart) hier nog een stuk
-       breedte weg, terwijl de balk onderin wél bijna de volle breedte
-       gebruikt. */
-    padding: 18px 10px 20px;
+    padding: 14px 10px 16px;
     border-radius: 20px;
+  }
+
+  .panel.panel--tabs {
+    padding: 0 0 16px;
   }
 
   /* h2 valt op mobiel terug op zijn clamp-minimum (2rem/32px) omdat
@@ -2694,12 +2704,12 @@ textarea:focus {
   }
 
   .subpanel {
-    padding: 16px 10px;
+    padding: 12px 6px;
     border-radius: 14px;
   }
 
   .timeline-inleg-group__list {
-    padding: 0 6px 10px;
+    padding: 0 4px 8px;
   }
 
   .section-divider {
@@ -2707,7 +2717,7 @@ textarea:focus {
   }
 
   .management-card {
-    padding: 14px 14px;
+    padding: 12px 10px;
   }
 
   .timeline {
@@ -2715,7 +2725,7 @@ textarea:focus {
   }
 
   .timeline-card {
-    padding: 12px 14px;
+    padding: 12px 10px;
     gap: 6px 10px;
   }
 
@@ -2729,7 +2739,7 @@ textarea:focus {
   }
 
   .person-card {
-    padding: 14px;
+    padding: 12px 10px;
   }
 
   /* Kaart-acties: volledige breedte knoppen voor makkelijk tikken */
