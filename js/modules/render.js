@@ -404,9 +404,10 @@ export function renderTimeline(dom) {
         ? (item.isEstimate ? "contribution-estimate" : "contribution")
         : (item.isEstimate ? "topup-estimate" : "topup"),
       category: null,
+      // Altijd "wat het is — onderwerp": soort inleg, dan naam of omschrijving.
       title: item.type === "initial"
-        ? `${state.participants.find((person) => person.id === item.participantId)?.name || "Onbekend"} — ${item.isEstimate ? "raming startinleg" : "startinleg"}`
-        : `${item.isEstimate ? "Raming inleg" : "Extra inleg"}${item.note?.trim() ? ` — ${item.note.trim()}` : ""}`,
+        ? `${item.isEstimate ? "Raming startinleg" : "Startinleg"} — ${state.participants.find((person) => person.id === item.participantId)?.name || "Onbekend"}`
+        : `${item.isEstimate ? "Raming extra inleg" : "Extra inleg"}${item.note?.trim() ? ` — ${item.note.trim()}` : ""}`,
       amount: item.amount,
       personId: item.type === "initial" ? item.participantId : "",
       paidBy: "",
