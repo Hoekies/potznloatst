@@ -495,6 +495,74 @@ function shareBalanceWhatsapp() {
   closeShareModal();
 }
 
+// Fisher-Yates met crypto-random: elke volgorde even waarschijnlijk.
+function shuffled(items) {
+  const result = items.slice();
+  for (let i = result.length - 1; i > 0; i--) {
+    const random = new Uint32Array(1);
+    crypto.getRandomValues(random);
+    const j = random[0] % (i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+// Om en om delen na schudden: groepen verschillen hooguit één persoon.
+function splitIntoGroups(items, groupCount) {
+  const groups = Array.from({ length: groupCount }, () => []);
+  shuffled(items).forEach((item, index) => groups[index % groupCount].push(item));
+  return groups;
+}
+
+function renderGroups() {
+  const countInput = document.querySelector("#groups-count");
+  const help = document.querySelector("#groups-help");
+  const result = document.querySelector("#groups-result");
+  if (!countInput || !help || !result) return;
+
+  const participants = state.participants;
+  result.replaceChildren();
+  if (participants.length < 2) {
+    help.textContent = "Voeg eerst minstens 2 deelnemers toe.";
+    return;
+  }
+
+  const groupCount = Math.min(participants.length, Math.max(2, Math.round(Number(countInput.value) || 2)));
+  countInput.value = groupCount;
+  countInput.max = participants.length;
+  help.textContent = `${participants.length} deelnemers verdeeld over ${groupCount} groepen. Druk opnieuw op Verdeel voor een nieuwe indeling.`;
+
+  splitIntoGroups(participants, groupCount).forEach((members, index) => {
+    const card = document.createElement("section");
+    card.className = "groups-result__group";
+    const title = document.createElement("strong");
+    title.textContent = `Groep ${index + 1} (${members.length})`;
+    const list = document.createElement("ul");
+    members.forEach((person) => {
+      const item = document.createElement("li");
+      const dot = document.createElement("span");
+      dot.className = "groups-result__dot";
+      dot.style.background = person.color || "#2E7D32";
+      item.append(dot, document.createTextNode(person.name));
+      list.append(item);
+    });
+    card.append(title, list);
+    result.append(card);
+  });
+}
+
+function openGroupsModal() {
+  const modal = document.querySelector("#groups-modal");
+  if (!modal) return;
+  modal.hidden = false;
+  renderGroups();
+}
+
+function closeGroupsModal() {
+  const modal = document.querySelector("#groups-modal");
+  if (modal) modal.hidden = true;
+}
+
 async function shareBalancePdf() {
   let JsPdfCtor;
   try {
@@ -686,7 +754,20 @@ function setupEventListeners() {
     if (event.key === "Escape") {
       closeAccountDropdown();
       closeShareModal();
+      closeGroupsModal();
     }
+  });
+
+  document.querySelector("#open-groups")?.addEventListener("click", openGroupsModal);
+  const groupsForm = document.querySelector("#groups-form");
+  groupsForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    renderGroups();
+  });
+  document.querySelector("#groups-count")?.addEventListener("change", renderGroups);
+  document.querySelector("#close-groups")?.addEventListener("click", closeGroupsModal);
+  document.querySelector("#groups-modal")?.addEventListener("click", (event) => {
+    if (event.target.dataset?.closeGroups === "true") closeGroupsModal();
   });
 
   dom.participantForm.addEventListener("submit", (event) => {

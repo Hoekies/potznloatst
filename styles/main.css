@@ -956,6 +956,54 @@ h3 {
   height: 18px;
 }
 
+/* Groepjes maken (Inleg-tabblad) */
+.groups-open-button {
+  width: 100%;
+  margin-top: 16px;
+}
+
+.groups-result {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.groups-result__group {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid #E0A526;
+  border-radius: var(--radius-md);
+  background: #FFFDF8;
+}
+
+.groups-result__group strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.groups-result__group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+
+.groups-result__group li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.groups-result__dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
 .summary-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

@@ -100,6 +100,8 @@
                   </div>
                 </form>
 
+                <button id="open-groups" class="ghost-button ghost-button--small groups-open-button" type="button">&#127922; Groepjes maken</button>
+
                 <details class="collapsible-panel" id="participants-panel">
                   <summary class="collapsible-panel__summary">
                     <span>Toegevoegde deelnemers</span>
@@ -339,6 +341,26 @@
           <p class="site-footer__credit">Ontwerp: Hoekies 2026</p>
         </footer>
       </div>
+    <div id="groups-modal" class="profile-modal" hidden>
+      <div class="profile-modal__backdrop" data-close-groups="true"></div>
+      <div class="profile-modal__dialog share-dialog" role="dialog" aria-modal="true" aria-labelledby="groups-title">
+        <div class="profile-modal__header">
+          <h3 id="groups-title">Groepjes maken</h3>
+          <button id="close-groups" class="close-btn" type="button" aria-label="Sluiten">&#x2715;</button>
+        </div>
+        <form id="groups-form" class="stack-form" autocomplete="off">
+          <div class="form-actions">
+            <label class="icon-field">
+              <span class="icon-field__icon" aria-hidden="true">&#128101;</span>
+              <input id="groups-count" type="number" min="2" step="1" value="2" inputmode="numeric" aria-label="Aantal groepen" />
+            </label>
+            <button class="primary-button" type="submit">&#127922; Verdeel</button>
+          </div>
+          <p id="groups-help" class="field-help"></p>
+          <div id="groups-result" class="groups-result"></div>
+        </form>
+      </div>
+    </div>
     <div id="share-modal" class="profile-modal" hidden>
       <div class="profile-modal__backdrop" data-close-share="true"></div>
       <div class="profile-modal__dialog share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title">
