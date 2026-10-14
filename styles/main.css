@@ -635,10 +635,12 @@ h1 {
   object-fit: contain;
 }
 
+/* Zelfde balkhoogte als voorheen (90px); het logo-bestand is strak
+   bijgesneden, dus het logo vult die hoogte nu volledig. */
 .brand-logo--main {
   width: 100%;
-  max-width: min(620px, 55vw);
-  max-height: min(22vh, 200px);
+  max-width: min(440px, 50vw);
+  max-height: min(12vh, 90px);
   object-position: center;
 }
 
