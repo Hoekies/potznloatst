@@ -1,4 +1,4 @@
-import { currencyFormatter, categoryLabels, typeLabels, categoryEmoji, authStatusFallback } from './constants.js';
+import { currencyFormatter, categoryLabels, categoryShortLabels, typeLabels, categoryEmoji, authStatusFallback } from './constants.js';
 import { escapeHtml, formatDate, categoryColor, sanitizeAmount } from './utils.js';
 import { state } from './state.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount, calculateSettlements } from './calculations.js';
@@ -210,25 +210,31 @@ export function renderParticipants(dom) {
 
       return `
         <article class="person-card ${isEditing ? "person-card--editing" : ""}${initialContribution?.isEstimate ? " person-card--estimate" : ""}" data-participant-card="${participant.id}">
-          ${participantLogo(participant, "person-card__avatar")}
+          ${isEditing ? "" : participantLogo(participant, "person-card__avatar")}
           <div class="person-card__meta">
             ${
               isEditing
                 ? `
-                  <div class="inline-edit-grid">
-                    <label>
-                      Naam
-                      <input data-field="name" type="text" value="${escapeHtml(participant.name)}" />
-                    </label>
-                    <label>
-                      Startinleg
-                      <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" />
-                    </label>
+                  <div class="edit-card">
+                    <div class="field-row">
+                      <label class="icon-field">
+                        <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                        <input data-field="name" type="text" value="${escapeHtml(participant.name)}" aria-label="Naam" />
+                      </label>
+                      <div class="icon-field icon-field--amount">
+                        <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                        <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" aria-label="Startinleg" />
+                        <label class="inline-raming" title="Raming">
+                          <input data-field="initialIsEstimate" type="checkbox" ${initialContribution?.isEstimate ? "checked" : ""} aria-label="Raming" />
+                          <span aria-hidden="true">&#128302;</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="edit-card__footer">
+                      <button class="soft-button" type="button" data-action="save-participant" data-id="${participant.id}">Opslaan</button>
+                      <button class="ghost-button ghost-button--small" type="button" data-action="cancel-participant" data-id="${participant.id}">Annuleer</button>
+                    </div>
                   </div>
-                  <label class="checkbox-label">
-                    <input data-field="initialIsEstimate" type="checkbox" ${initialContribution?.isEstimate ? "checked" : ""} />
-                    Startinleg is raming (nog niet ontvangen)
-                  </label>
                   `
                   : `
                   <strong>${escapeHtml(participant.name)}${initialContribution?.isEstimate ? " <small>(raming)</small>" : ""}</strong>
@@ -236,18 +242,14 @@ export function renderParticipants(dom) {
                 `
             }
           </div>
+          ${isEditing ? "" : `
           <div class="person-card__actions">
-            ${state.sharedView ? "" : isEditing
-                ? `
-                  <button class="soft-button" type="button" data-action="save-participant" data-id="${participant.id}">Opslaan</button>
-                  <button class="ghost-button ghost-button--small" type="button" data-action="cancel-participant" data-id="${participant.id}">Annuleer</button>
-                `
-                : `
+            ${state.sharedView ? "" : `
                   <button class="soft-button" type="button" data-action="edit-participant" data-id="${participant.id}">Wijzig</button>
                   <button class="icon-button" type="button" data-action="remove-participant" data-id="${participant.id}">Verwijder</button>
-                `
-            }
+                `}
           </div>
+          `}
         </article>
       `;
     })
@@ -270,26 +272,36 @@ export function renderTopups(dom) {
       const isEditing = getEditingTopupId() === topup.id;
 
       return `
-          <article class="management-card${topup.isEstimate ? " management-card--estimate" : ""}" data-topup-card="${topup.id}">
-            <div class="management-card__logo money-logo" aria-hidden="true">&euro;</div>
+          <article class="management-card${topup.isEstimate ? " management-card--estimate" : ""}${isEditing ? " management-card--editing" : ""}" data-topup-card="${topup.id}">
+            ${isEditing ? "" : `<div class="management-card__logo money-logo" aria-hidden="true">&euro;</div>`}
             <div class="management-card__meta">
               ${
                 isEditing
                   ? `
-                    <div class="inline-edit-grid">
-                      <label>
-                        Bedrag
-                        <input data-field="amount" type="text" inputmode="decimal" value="${topup.amount}" />
+                    <div class="edit-card">
+                      <div class="field-row">
+                        <label class="icon-field">
+                          <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                          <input data-field="note" type="text" value="${escapeHtml(topup.note || "")}" aria-label="Omschrijving" placeholder="Omschrijving (optioneel)" />
+                        </label>
+                        <div class="icon-field icon-field--amount">
+                          <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                          <input data-field="amount" type="text" inputmode="decimal" value="${topup.amount}" aria-label="Bedrag" />
+                          <label class="inline-raming" title="Raming">
+                            <input data-field="isEstimate" type="checkbox" ${topup.isEstimate ? "checked" : ""} aria-label="Raming" />
+                            <span aria-hidden="true">&#128302;</span>
+                          </label>
+                        </div>
+                      </div>
+                      <label class="icon-field">
+                        <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
+                        <input data-field="date" type="date" value="${topup.date}" aria-label="Datum" />
                       </label>
-                  </div>
-                  <label>
-                    Notitie
-                    <input data-field="note" type="text" value="${escapeHtml(topup.note || "")}" />
-                  </label>
-                  <label class="checkbox-label">
-                    <input data-field="isEstimate" type="checkbox" ${topup.isEstimate ? "checked" : ""} />
-                    Raming (nog niet ontvangen)
-                  </label>
+                      <div class="edit-card__footer">
+                        <button class="soft-button" type="button" data-topup-action="save" data-id="${topup.id}">Opslaan</button>
+                        <button class="ghost-button ghost-button--small" type="button" data-topup-action="cancel" data-id="${topup.id}">Annuleer</button>
+                      </div>
+                    </div>
                   `
                   : `
                   <strong>${topup.isEstimate ? "Raming inleg" : "Extra inleg"} ${currencyFormatter.format(topup.amount)}</strong>
@@ -297,18 +309,14 @@ export function renderTopups(dom) {
                 `
               }
           </div>
+          ${isEditing ? "" : `
           <div class="management-card__actions">
-            ${state.sharedView ? "" : isEditing
-                ? `
-                  <button class="soft-button" type="button" data-topup-action="save" data-id="${topup.id}">Opslaan</button>
-                  <button class="ghost-button ghost-button--small" type="button" data-topup-action="cancel" data-id="${topup.id}">Annuleer</button>
-                `
-                : `
-                  <button class="soft-button" type="button" data-topup-action="edit" data-id="${topup.id}">Wijzig</button>
-                  <button class="icon-button" type="button" data-topup-action="remove" data-id="${topup.id}">Verwijder</button>
-                `
-            }
+            ${state.sharedView ? "" : `
+              <button class="soft-button" type="button" data-topup-action="edit" data-id="${topup.id}">Wijzig</button>
+              <button class="icon-button" type="button" data-topup-action="remove" data-id="${topup.id}">Verwijder</button>
+            `}
           </div>
+          `}
         </article>
       `;
     })
@@ -338,8 +346,8 @@ export function renderExpenses(dom) {
       if (record.note) detailBits.push(escapeHtml(record.note));
 
       return `
-        <article class="management-card management-card--expense ${record.kind === "estimate" ? "management-card--estimate" : ""}" data-expense-card="${record.id}">
-          <div class="management-card__logo" aria-hidden="true">${categoryIcon}</div>
+        <article class="management-card management-card--expense ${record.kind === "estimate" ? "management-card--estimate" : ""}${isEditing ? " management-card--editing" : ""}" data-expense-card="${record.id}">
+          ${isEditing ? "" : `<div class="management-card__logo" aria-hidden="true">${categoryIcon}</div>`}
           <div class="management-card__meta">
             ${
               isEditing
@@ -353,15 +361,11 @@ export function renderExpenses(dom) {
                 `
             }
           </div>
+          ${isEditing ? "" : `
           <div class="management-card__actions">
             ${state.sharedView
               ? `${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}`
-              : isEditing
-                ? `
-                  <button class="soft-button" type="button" data-expense-action="save" data-kind="${record.kind}" data-id="${record.id}">Opslaan</button>
-                  <button class="ghost-button ghost-button--small" type="button" data-expense-action="cancel" data-kind="${record.kind}" data-id="${record.id}">Annuleer</button>
-                `
-                : `
+              : `
                   ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
                   ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
                   ${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}
@@ -370,6 +374,7 @@ export function renderExpenses(dom) {
                 `
             }
           </div>
+          `}
         </article>
       `;
     })
@@ -550,122 +555,123 @@ function renderTimelineEntryCard(entry) {
   `;
 }
 
-export function renderRecordEditFields(record) {
+export function renderRecordEditFields(record, { actionAttr = "data-expense-action" } = {}) {
   const pricingMode = record.pricingMode === "per_person" ? "per_person" : "total";
   const participantCountSnapshot = pricingMode === "per_person" ? Math.max(1, Number(record.participantCountSnapshot) || state.participants.length || 1) : 0;
   const perPersonAmount = pricingMode === "per_person"
     ? sanitizeAmount(record.perPersonAmount || (participantCountSnapshot ? record.amount / participantCountSnapshot : 0))
     : 0;
   return `
-    <div class="inline-edit-grid">
-      <label>
-        Omschrijving
-        <input data-field="description" type="text" value="${escapeHtml(record.description)}" />
-      </label>
-      <label>
-        Bedrag
-        <input data-field="amount" type="text" inputmode="decimal" value="${record.amount}" />
-      </label>
-    </div>
-    <div class="inline-edit-grid">
-      <label>
-        Categorie
-        <select data-field="category">
-          ${Object.entries(categoryLabels)
-            .map(([value, label]) => `<option value="${value}" ${record.category === value ? "selected" : ""}>${label}</option>`)
-            .join("")}
-        </select>
-      </label>
+    <div class="edit-card">
+      <div class="field-row">
+        <label class="icon-field">
+          <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+          <input data-field="description" type="text" value="${escapeHtml(record.description)}" aria-label="Omschrijving" />
+        </label>
+        <div class="icon-field icon-field--amount">
+          <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+          <input data-field="amount" type="text" inputmode="decimal" value="${record.amount}" aria-label="Bedrag" />
+          ${
+            record.kind === "estimate"
+              ? `
+                <input type="hidden" data-field="pricingMode" value="${pricingMode}" />
+                <label class="inline-raming" title="Bedrag is per persoon, niet totaal">
+                  <input type="checkbox" data-edit-per-person ${pricingMode === "per_person" ? "checked" : ""} aria-label="Bedrag is per persoon, niet totaal" />
+                  <span aria-hidden="true">&#128101;</span>
+                </label>
+              `
+              : ""
+          }
+        </div>
+      </div>
       ${
         record.kind === "estimate"
           ? `
-            <label>
-              Ramingmodus
-              <select data-field="pricingMode">
-                <option value="total" ${pricingMode === "total" ? "selected" : ""}>Totaalbedrag</option>
-                <option value="per_person" ${pricingMode === "per_person" ? "selected" : ""}>Bedrag per persoon</option>
-              </select>
-            </label>
+            <div class="field-row" data-per-person-group ${pricingMode === "per_person" ? "" : 'hidden'}>
+              <label class="icon-field">
+                <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                <input data-field="perPersonAmount" type="text" inputmode="decimal" value="${perPersonAmount || ""}" aria-label="Bedrag per persoon" />
+              </label>
+              <label class="icon-field">
+                <span class="icon-field__icon" aria-hidden="true">&#128101;</span>
+                <input data-field="participantCountSnapshot" type="number" min="1" step="1" value="${participantCountSnapshot || ""}" aria-label="Aantal deelnemers" />
+              </label>
+            </div>
+            <span class="field-help" data-per-person-summary ${pricingMode === "per_person" ? "" : 'hidden'}>${renderEstimateSummaryText({ pricingMode, perPersonAmount, participantCountSnapshot, amount: record.amount })}</span>
           `
           : ""
       }
-    </div>
-    ${
-      record.kind === "estimate"
-        ? `
-          <div class="inline-edit-grid">
-            <label data-per-person-group ${pricingMode === "per_person" ? "" : 'hidden'}>
-              Bedrag per persoon
-              <input data-field="perPersonAmount" type="text" inputmode="decimal" value="${perPersonAmount || ""}" />
-            </label>
-            <label data-per-person-group ${pricingMode === "per_person" ? "" : 'hidden'}>
-              Aantal deelnemers
-              <input data-field="participantCountSnapshot" type="number" min="1" step="1" value="${participantCountSnapshot || ""}" />
-            </label>
-          </div>
-          <p class="field-help" data-per-person-summary ${pricingMode === "per_person" ? "" : 'hidden'}>${renderEstimateSummaryText({ pricingMode, perPersonAmount, participantCountSnapshot, amount: record.amount })}</p>
-        `
-        : ""
-    }
-    <div class="inline-edit-grid">
-      <label>
-        Datum
-        <input data-field="date" type="date" value="${record.date}" />
+      <div class="category-chips" role="group" aria-label="Categorie">
+        ${Object.entries(categoryLabels)
+          .map(([value, label]) => `<button type="button" class="category-chip${record.category === value ? " is-active" : ""}" data-edit-category="${value}" title="${label}" aria-label="${label}"><span class="category-chip__icon" aria-hidden="true">${categoryEmoji[value] || categoryEmoji.overig}</span><span class="category-chip__label">${categoryShortLabels[value] || label}</span></button>`)
+          .join("")}
+      </div>
+      <input type="hidden" data-field="category" value="${record.category}" />
+      <div class="field-row field-row--date-receipt">
+        <label class="icon-field">
+          <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
+          <input data-field="date" type="date" value="${record.date}" aria-label="Datum" />
+        </label>
+        ${record.kind === "expense" ? `
+        <div class="receipt-actions">
+          <button type="button" class="ghost-button ghost-button--small" data-receipt-trigger="camera" title="Foto maken" aria-label="Foto maken"><span class="receipt-action-icon" aria-hidden="true">&#128247;</span><span class="receipt-action-label">${record.receiptImage ? "Nieuwe foto" : "Foto maken"}</span></button>
+          <button type="button" class="ghost-button ghost-button--small" data-receipt-trigger="upload" title="Uploaden" aria-label="Uploaden"><span class="receipt-action-icon" aria-hidden="true">&#128193;</span><span class="receipt-action-label">Uploaden</span></button>
+          <input data-field="receipt-file" data-receipt-input="camera" type="file" accept="image/*" capture="environment" hidden />
+          <input data-field="receipt-file" data-receipt-input="upload" type="file" accept="image/*" hidden />
+        </div>
+        ` : ""}
+      </div>
+      ${record.kind === "expense" ? `
+      <div class="inline-edit-receipt">
+        ${record.receiptImage ? `<img class="inline-edit-receipt__thumb" src="${escapeHtml(record.receiptImage)}" alt="Huidige bon" />` : ""}
+        <input data-field="receipt-data" type="hidden" value="" />
+      </div>
+      ` : ""}
+      <label class="icon-field">
+        <span class="icon-field__icon" aria-hidden="true">&#128221;</span>
+        <textarea data-field="note" rows="2" aria-label="Notitie" placeholder="Notitie (optioneel)">${escapeHtml(record.note || "")}</textarea>
       </label>
-      <label>
-        Notitie
-        <input data-field="note" type="text" value="${escapeHtml(record.note || "")}" />
-      </label>
+      <div class="edit-card__footer">
+        <button class="soft-button" type="button" ${actionAttr}="save" data-kind="${record.kind}" data-id="${record.id}">Opslaan</button>
+        <button class="ghost-button ghost-button--small" type="button" ${actionAttr}="cancel" data-kind="${record.kind}" data-id="${record.id}">Annuleer</button>
+      </div>
     </div>
-    ${record.kind === "expense" ? `
-    <div class="inline-edit-receipt">
-      ${record.receiptImage ? `<img class="inline-edit-receipt__thumb" src="${escapeHtml(record.receiptImage)}" alt="Huidige bon" />` : ""}
-      <label class="inline-edit-receipt__label">
-        ${record.receiptImage ? "Bon vervangen" : "Bon toevoegen"}
-        <input data-field="receipt-file" type="file" accept="image/*" capture="environment" />
-      </label>
-      <input data-field="receipt-data" type="hidden" value="" />
-    </div>
-    ` : ""}
   `;
 }
 
 export function renderTimelineEditCard(entry, participant) {
   const typeLabel = typeLabels[entry.kind];
-  const amountPrefix = entry.kind === "expense" || entry.kind === "estimate" ? "-" : "+";
-  const amountClass = entry.kind === "expense" || entry.kind === "estimate" ? "negative" : "positive";
 
   if (entry.kind === "contribution" || entry.kind === "contribution-estimate" || entry.kind === "topup" || entry.kind === "topup-estimate") {
-    const isTopupKind = entry.kind === "topup" || entry.kind === "topup-estimate";
     const isEstimateEntry = entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
     return `
       <article class="timeline-card timeline-card--editing${isEstimateEntry ? " timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
-        <div class="timeline-card__badge ${isTopupKind ? "" : "participant-logo"}" style="background:${isTopupKind ? "#2563EB" : participant?.color || "#0A1B36"}">${isTopupKind ? "&euro;" : "<span></span>"}</div>
         <div class="timeline-card__main">
-          <div class="inline-edit-grid">
-            <label>
-              Bedrag
-              <input data-field="amount" type="text" inputmode="decimal" value="${entry.amount}" />
+          <div class="edit-card">
+            <div class="field-row">
+              <label class="icon-field">
+                <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                <input data-field="note" type="text" value="${escapeHtml(entry.note || "")}" aria-label="Omschrijving" placeholder="Omschrijving (optioneel)" />
+              </label>
+              <div class="icon-field icon-field--amount">
+                <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                <input data-field="amount" type="text" inputmode="decimal" value="${entry.amount}" aria-label="Bedrag" />
+                <label class="inline-raming" title="Raming">
+                  <input data-field="isEstimate" type="checkbox" ${isEstimateEntry ? "checked" : ""} aria-label="Raming" />
+                  <span aria-hidden="true">&#128302;</span>
+                </label>
+              </div>
+            </div>
+            <label class="icon-field">
+              <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
+              <input data-field="date" type="date" value="${entry.date}" aria-label="Datum" />
             </label>
-            <label>
-              Datum
-              <input data-field="date" type="date" value="${entry.date}" />
-            </label>
+            <div class="edit-card__footer">
+              <span class="edit-card__footer-label">${typeLabel}</span>
+              <button class="soft-button" type="button" data-timeline-action="save" data-kind="${entry.kind}" data-id="${entry.id}">Opslaan</button>
+              <button class="ghost-button ghost-button--small" type="button" data-timeline-action="cancel" data-kind="${entry.kind}" data-id="${entry.id}">Annuleer</button>
+            </div>
           </div>
-          <label>
-            Notitie
-            <input data-field="note" type="text" value="${escapeHtml(entry.note || "")}" />
-          </label>
-          <label class="checkbox-label">
-            <input data-field="isEstimate" type="checkbox" ${isEstimateEntry ? "checked" : ""} />
-            Raming (nog niet ontvangen)
-          </label>
-        </div>
-        <span class="timeline-card__tag">${typeLabel}</span>
-        <div class="timeline-card__actions">
-          <button class="soft-button" type="button" data-timeline-action="save" data-kind="${entry.kind}" data-id="${entry.id}">Opslaan</button>
-          <button class="ghost-button ghost-button--small" type="button" data-timeline-action="cancel" data-kind="${entry.kind}" data-id="${entry.id}">Annuleer</button>
-          <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
         </div>
       </article>
     `;
@@ -673,15 +679,8 @@ export function renderTimelineEditCard(entry, participant) {
 
   return `
     <article class="timeline-card timeline-card--editing ${entry.kind === "estimate" ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
-      <div class="timeline-card__badge" style="background:${categoryColor(entry.category)}">${categoryEmoji[entry.category] || categoryEmoji.overig}</div>
       <div class="timeline-card__main">
-        ${renderRecordEditFields(entry)}
-      </div>
-      <span class="timeline-card__tag">${typeLabel}</span>
-      <div class="timeline-card__actions">
-        <button class="soft-button" type="button" data-timeline-action="save" data-kind="${entry.kind}" data-id="${entry.id}">Opslaan</button>
-        <button class="ghost-button ghost-button--small" type="button" data-timeline-action="cancel" data-kind="${entry.kind}" data-id="${entry.id}">Annuleer</button>
-        <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
+        ${renderRecordEditFields(entry, { actionAttr: "data-timeline-action" })}
       </div>
     </article>
   `;

@@ -1186,23 +1186,6 @@ label {
   color: var(--text);
 }
 
-.checkbox-label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 18px;
-  min-height: 18px;
-  height: 18px;
-  flex-shrink: 0;
-  cursor: pointer;
-}
-
 input,
 select,
 textarea {
@@ -1401,10 +1384,31 @@ textarea:focus {
   justify-content: flex-end;
 }
 
-.inline-edit-grid {
+/* Wijzig-formulieren (uitgave/inleg) - dezelfde field-row/icon-field
+   opbouw als het invoegformulier, zodat bewerken er identiek uitziet
+   als toevoegen i.p.v. een eigen, afwijkende layout. */
+.edit-card {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  width: 100%;
+}
+
+.edit-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edit-card__footer-label {
+  margin-right: auto;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: var(--olive-dark);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .toggle {
@@ -1794,8 +1798,21 @@ textarea:focus {
   border-color: rgba(28, 46, 31, 0.10);
 }
 
-.timeline-card--editing {
-  align-items: flex-start;
+/* Tijdens bewerken is er maar één kind (.timeline-card__main) i.p.v. de
+   normale badge/main/tag/actions-kolommen, dus het grid van hierboven
+   zou dat ene kind in de eerste (36px) kolom proppen. Daarom hier gewoon
+   een volle-breedte blok, op alle schermformaten. */
+.timeline-card--editing,
+.management-card--editing {
+  display: block;
+  background: var(--cyan-soft);
+  border-color: rgba(46, 125, 50, 0.35);
+}
+
+.person-card--editing {
+  display: block;
+  background: var(--cyan-soft);
+  border-color: rgba(46, 125, 50, 0.35);
 }
 
 .field-help[hidden],
@@ -1862,8 +1879,7 @@ textarea:focus {
 
 @media (max-width: 980px) {
   .layout,
-  .field-row,
-  .inline-edit-grid {
+  .field-row {
     grid-template-columns: 1fr;
   }
 
@@ -2025,6 +2041,7 @@ textarea:focus {
   .timeline-card__badge  { grid-area: badge; }
   .timeline-card__main   { grid-area: main; }
   .timeline-card__amount { grid-area: amount; align-self: center; }
+
   .timeline-card__actions {
     grid-area: actions;
     display: flex;
@@ -2657,7 +2674,11 @@ textarea:focus {
      7. PANELS / KAARTEN — voldoende padding voor touch
      -------------------------------------------------- */
   .panel {
-    padding: 18px 16px 20px;
+    /* Minder zijkanten-padding dan voorheen — anders eet elke genestelde
+       laag (panel → subpanel → group-lijst → kaart) hier nog een stuk
+       breedte weg, terwijl de balk onderin wél bijna de volle breedte
+       gebruikt. */
+    padding: 18px 10px 20px;
     border-radius: 20px;
   }
 
@@ -2673,8 +2694,12 @@ textarea:focus {
   }
 
   .subpanel {
-    padding: 18px 16px;
+    padding: 16px 10px;
     border-radius: 14px;
+  }
+
+  .timeline-inleg-group__list {
+    padding: 0 6px 10px;
   }
 
   .section-divider {
@@ -2794,13 +2819,6 @@ textarea:focus {
   }
 
   /* --------------------------------------------------
-     13. INLINE EDIT GRIDS — 1 kolom op mobiel
-     -------------------------------------------------- */
-  .inline-edit-grid {
-    grid-template-columns: 1fr;
-  }
-
-  /* --------------------------------------------------
      14. HEADER ACTIONS — knoppen minstens 48px
      -------------------------------------------------- */
   .header-actions .ghost-button {
@@ -2861,15 +2879,3 @@ textarea:focus {
   border: 1px solid var(--border);
   flex-shrink: 0;
 }
-.inline-edit-receipt__label {
-  font-size: 0.85rem;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.inline-edit-receipt__label input[type="file"] {
-  font-size: 0.8rem;
-}
-

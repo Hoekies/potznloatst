@@ -36,9 +36,17 @@ export const typeLabels = {
   estimate: "Raming",
 };
 
+export const categoryShortLabels = {
+  accommodatie: "Acc.",
+  eten: "Eten",
+  activiteit: "Act.",
+  vervoer: "Bood.",
+  overig: "Ov.",
+};
+
 export const categoryEmoji = {
   accommodatie: "\u{1F3E0}",
-  eten: "\u{1F37D}",
+  eten: "\u{1F355}",
   activiteit: "\u{1F3AF}",
   vervoer: "\u{1F6D2}",
   overig: "\u{1F9FE}",

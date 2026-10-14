@@ -758,17 +758,51 @@ function setupEventListeners() {
       });
   }
 
+  // Wijzig-formulieren gebruiken dezelfde categorie-chips en camera/upload-
+  // knoppen als het invoegformulier, maar dan dynamisch opnieuw gerenderd
+  // bij elke edit — daarom hier via delegatie i.p.v. de eenmalige binding
+  // die het statische invoegformulier gebruikt.
+  function handleEditCategoryClick(event) {
+    const chip = event.target.closest("[data-edit-category]");
+    if (!chip) return;
+    const editCard = chip.closest(".edit-card");
+    if (!editCard) return;
+    editCard.querySelectorAll(".category-chips .category-chip").forEach((c) => {
+      c.classList.toggle("is-active", c === chip);
+    });
+    const hidden = editCard.querySelector('[data-field="category"]');
+    if (hidden) hidden.value = chip.dataset.editCategory;
+  }
+
+  function handleReceiptTriggerClick(event) {
+    const trigger = event.target.closest("[data-receipt-trigger]");
+    if (!trigger) return;
+    const card = trigger.closest('[data-expense-card], [data-timeline-card]');
+    const input = card?.querySelector(`[data-receipt-input="${trigger.dataset.receiptTrigger}"]`);
+    input?.click();
+  }
+
+  function handleEditPerPersonChange(event) {
+    const checkbox = event.target.closest("[data-edit-per-person]");
+    if (!checkbox) return;
+    const editCard = checkbox.closest(".edit-card");
+    const hidden = editCard?.querySelector('[data-field="pricingMode"]');
+    if (hidden) hidden.value = checkbox.checked ? "per_person" : "total";
+    updateEstimateEditMode(checkbox.closest('[data-expense-card], [data-timeline-card]'));
+  }
+
+  dom.expenseList.addEventListener("click", handleEditCategoryClick);
+  dom.expenseList.addEventListener("click", handleReceiptTriggerClick);
+  dom.timeline.addEventListener("click", handleEditCategoryClick);
+  dom.timeline.addEventListener("click", handleReceiptTriggerClick);
+
   dom.expenseList.addEventListener("change", (event) => {
-    if (event.target.matches('[data-field="pricingMode"]')) {
-      updateEstimateEditMode(event.target.closest('[data-expense-card], [data-timeline-card]'));
-    }
+    handleEditPerPersonChange(event);
     handleReceiptFileChange(event);
   });
 
   dom.timeline.addEventListener("change", (event) => {
-    if (event.target.matches('[data-field="pricingMode"]')) {
-      updateEstimateEditMode(event.target.closest('[data-expense-card], [data-timeline-card]'));
-    }
+    handleEditPerPersonChange(event);
     handleReceiptFileChange(event);
   });
 
