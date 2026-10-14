@@ -3,10 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="theme-color" content="#1C1005" />
+<meta name="theme-color" content="#0B1F0F" />
     <title>Pot z'n Loatst | Op z'n Loatst</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="preconnect" href="https://vujjmbjvddnkvarfztpg.supabase.co" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/png" href="./assets/icons/favicon.png" />
     <link rel="apple-touch-icon" href="./assets/icons/favicon.png" />
@@ -22,7 +24,7 @@
           <div class="hero__bar">
             <div class="hero__brand">
               <h1 class="brand-heading">
-                <img class="brand-logo brand-logo--main" src="assets/branding/logo - breed.png" alt="Pot z'n Loatst" />
+                <img class="brand-logo brand-logo--main" src="assets/branding/logo breed.png" alt="Pot z'n Loatst" />
               </h1>
               <div id="shared-view-badge" class="shared-view-badge" hidden></div>
             </div>
@@ -41,6 +43,7 @@
                   <button id="account-login" class="account-menu__item" type="button">Inloggen</button>
                   <button id="open-profile" class="account-menu__item" type="button">Profiel</button>
                   <button id="open-admin-gebruikers" class="account-menu__item" type="button" hidden>Gebruikers beheren</button>
+                  <button id="share-balance-pdf" class="account-menu__item" type="button">Balans delen (PDF)</button>
                   <button id="export-state" class="account-menu__item" type="button">Exporteren</button>
                   <button id="import-state" class="account-menu__item" type="button">Importeren</button>
                   <input id="import-state-file" type="file" accept=".json" hidden>
@@ -81,10 +84,6 @@
                       </label>
                     </div>
                   </div>
-                  <label class="icon-field icon-field--color">
-                    <span class="icon-field__icon" aria-hidden="true">&#127912;</span>
-                    <input id="participant-color" name="participant-color" type="color" value="#7A8446" aria-label="Kleur" />
-                  </label>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>
 
@@ -96,21 +95,34 @@
                   <div id="participants-list" class="management-list"></div>
                 </details>
 
+                <details class="collapsible-panel" id="bulk-inleg-panel">
+                  <summary class="collapsible-panel__summary">
+                    <span>Startinleg snel invullen</span>
+                    <small class="collapsible-panel__state"></small>
+                  </summary>
+                  <form id="bulk-inleg-form" class="stack-form">
+                    <div id="bulk-inleg-list"></div>
+                    <button class="primary-button" type="submit">Alles opslaan</button>
+                  </form>
+                </details>
+
                 <hr class="section-divider" />
 
                 <form id="topup-form" class="stack-form" autocomplete="off">
-                  <div class="icon-field icon-field--amount">
-                    <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                    <input id="topup-amount" name="topup-amount" type="text" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
-                    <label class="inline-raming" title="Raming">
-                      <input id="topup-is-estimate" name="topup-is-estimate" type="checkbox" aria-label="Raming" />
-                      <span aria-hidden="true">&#128302;</span>
+                  <div class="field-row">
+                    <div class="icon-field icon-field--amount">
+                      <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                      <input id="topup-amount" name="topup-amount" type="text" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
+                      <label class="inline-raming" title="Raming">
+                        <input id="topup-is-estimate" name="topup-is-estimate" type="checkbox" aria-label="Raming" />
+                        <span aria-hidden="true">&#128302;</span>
+                      </label>
+                    </div>
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                      <input id="topup-note" name="topup-note" type="text" placeholder="Omschrijving (optioneel)" aria-label="Omschrijving" />
                     </label>
                   </div>
-                  <label class="icon-field">
-                    <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
-                    <input id="topup-note" name="topup-note" type="text" placeholder="Omschrijving (optioneel)" aria-label="Omschrijving" />
-                  </label>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>
             </section>
@@ -127,6 +139,13 @@
                   <h2>Bewegingen in de pot</h2>
                   <span class="section-collapsible__chevron" aria-hidden="true">&#9662;</span>
                 </summary>
+                <div class="kind-chips" role="group" aria-label="Filter op soort">
+                  <button type="button" class="category-chip kind-chip is-active" data-kind="all">Alles</button>
+                  <button type="button" class="category-chip kind-chip" data-kind="uitgave">Uitgave</button>
+                  <button type="button" class="category-chip kind-chip" data-kind="inleg">Inleg</button>
+                  <button type="button" class="category-chip kind-chip" data-kind="raming">Raming</button>
+                </div>
+                <input type="hidden" id="filter-kind" value="all" />
                 <div class="header-actions">
                   <label class="filter-select">
                     <select id="filter-category" aria-label="Filter overzicht op categorie">
@@ -135,7 +154,7 @@
                       <option value="eten">Eten</option>
                       <option value="drinken">Drinken</option>
                       <option value="activiteit">Activiteit</option>
-                      <option value="vervoer">Vervoer</option>
+                      <option value="vervoer">Boodschappen</option>
                       <option value="overig">Overig</option>
                     </select>
                   </label>
@@ -183,7 +202,7 @@
                     <button type="button" class="category-chip" data-category="eten">&#127869; Eten</button>
                     <button type="button" class="category-chip" data-category="drinken">&#127867; Drinken</button>
                     <button type="button" class="category-chip" data-category="activiteit">&#127919; Activiteit</button>
-                    <button type="button" class="category-chip" data-category="vervoer">&#128663; Vervoer</button>
+                    <button type="button" class="category-chip" data-category="vervoer">&#128722; Boodschappen</button>
                     <button type="button" class="category-chip" data-category="overig">&#129790; Overig</button>
                   </div>
                   <input type="hidden" id="expense-category" name="expense-category" value="accommodatie" />
@@ -359,7 +378,7 @@
     </div>
     <div id="login-overlay" class="login-overlay">
       <div class="login-overlay__card">
-        <img class="login-overlay__logo" src="assets/branding/logo - breed.png" alt="Pot z'n Loatst" />
+        <img class="login-overlay__logo" src="assets/branding/logo breed.png" alt="Pot z'n Loatst" />
         <div class="login-overlay__divider"></div>
         <p class="login-overlay__sub">Beheer de weekendpot</p>
         <form id="login-overlay-form" class="login-overlay__form" autocomplete="on" novalidate>

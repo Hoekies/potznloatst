@@ -18,6 +18,7 @@ export function render(dom) {
   renderTabs(dom);
   renderSummary(dom);
   renderParticipants(dom);
+  renderBulkInlegList(dom);
   renderTopups(dom);
   renderExpenses(dom);
   renderTimeline(dom);
@@ -211,10 +212,6 @@ export function renderParticipants(dom) {
                       <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" />
                     </label>
                   </div>
-                  <label>
-                    Kleur
-                    <input data-field="color" type="color" value="${participant.color}" />
-                  </label>
                   <label class="checkbox-label">
                     <input data-field="initialIsEstimate" type="checkbox" ${initialContribution?.isEstimate ? "checked" : ""} />
                     Startinleg is raming (nog niet ontvangen)
@@ -239,6 +236,37 @@ export function renderParticipants(dom) {
             }
           </div>
         </article>
+      `;
+    })
+    .join("");
+}
+
+export function renderBulkInlegList(dom) {
+  if (!dom.bulkInlegList) return;
+
+  if (!state.participants.length) {
+    dom.bulkInlegList.innerHTML = `<p class="muted management-empty">Voeg eerst deelnemers toe.</p>`;
+    return;
+  }
+
+  dom.bulkInlegList.innerHTML = getSortedParticipants(state)
+    .map((participant) => {
+      const initialContribution = state.contributions.find((item) => item.participantId === participant.id && item.type === "initial");
+      const amount = initialContribution?.amount ?? 0;
+      const isEstimate = Boolean(initialContribution?.isEstimate);
+
+      return `
+        <div class="bulk-inleg-row" data-participant-id="${participant.id}">
+          <span class="bulk-inleg-row__name">${escapeHtml(participant.name)}</span>
+          <div class="icon-field icon-field--amount">
+            <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+            <input type="text" inputmode="decimal" data-field="amount" value="${amount}" aria-label="Startinleg ${escapeHtml(participant.name)}" />
+            <label class="inline-raming" title="Nog een raming">
+              <input type="checkbox" data-field="isEstimate" ${isEstimate ? "checked" : ""} aria-label="Startinleg ${escapeHtml(participant.name)} is raming" />
+              <span aria-hidden="true">&#128302;</span>
+            </label>
+          </div>
+        </div>
       `;
     })
     .join("");
@@ -367,6 +395,7 @@ export function renderExpenses(dom) {
 
 export function renderTimeline(dom) {
   const categoryFilter = dom.filterCategory.value;
+  const kindFilter = dom.filterKind?.value || "all";
   const entries = [
     ...state.contributions.map((item) => ({
       id: item.id,
@@ -408,6 +437,15 @@ export function renderTimeline(dom) {
     })),
   ]
     .filter((entry) => categoryFilter === "all" || entry.category === categoryFilter)
+    .filter((entry) => {
+      if (kindFilter === "all") return true;
+      const isEstimateKindEntry = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
+      if (kindFilter === "raming") return isEstimateKindEntry;
+      if (isEstimateKindEntry) return false;
+      if (kindFilter === "uitgave") return entry.kind === "expense";
+      if (kindFilter === "inleg") return entry.kind === "contribution" || entry.kind === "topup";
+      return true;
+    })
     .sort((a, b) => {
       const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
       const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";

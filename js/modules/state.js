@@ -136,7 +136,7 @@ export function normalizeState(rawState) {
     participants: participants.map((participant, index) => ({
       id: participant.id || createId(),
       name: sanitizeText(participant.name) || `Deelnemer ${index + 1}`,
-      color: sanitizeColor(participant.color) || fallbackColor(index),
+      color: /^#[0-9a-fA-F]{6}$/.test(String(participant.color || "")) ? sanitizeColor(participant.color) : fallbackColor(index),
     })),
     contributions: contributions
       .filter((item) => item && typeof item === "object")

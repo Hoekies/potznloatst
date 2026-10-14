@@ -1,9 +1,10 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync, readBackupSnapshot } from './state.js';
-import { primaryStorageKey, CROP_SIZE } from './constants.js';
-import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount } from './utils.js';
+import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from './constants.js';
+import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
+import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
-  render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
+  render, renderWeekendLogo, renderParticipants, renderBulkInlegList, renderTopups, renderTimeline,
   renderAccountUi, renderTabs,
 } from './render.js';
 import {
@@ -14,7 +15,7 @@ import {
 } from './ui-state.js';
 import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
-  setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips,
+  setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips, syncKindChips,
   saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
   convertEstimateToExpense, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
@@ -209,6 +210,229 @@ async function exportStateToFile() {
   }
 }
 
+let jsPdfLoadPromise = null;
+
+// jsPDF wordt pas opgehaald zodra iemand echt op "Balans delen" klikt, zodat
+// de eerste paginalading niet wacht op een library die de meeste sessies
+// nooit gebruiken.
+function ensureJsPdfLoaded() {
+  if (window.jspdf?.jsPDF) {
+    return Promise.resolve(window.jspdf.jsPDF);
+  }
+  if (!jsPdfLoadPromise) {
+    jsPdfLoadPromise = new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+      script.onload = () => resolve(window.jspdf?.jsPDF || null);
+      script.onerror = () => reject(new Error("jsPDF kon niet geladen worden"));
+      document.head.appendChild(script);
+    }).catch((error) => {
+      jsPdfLoadPromise = null;
+      throw error;
+    });
+  }
+  return jsPdfLoadPromise;
+}
+
+function buildBalancePdfBlob(JsPdfCtor) {
+  if (!JsPdfCtor) {
+    return null;
+  }
+
+  const doc = new JsPdfCtor({ unit: "mm", format: "a4" });
+  const summary = calculateSummary(state);
+  const marginX = 18;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let y = 20;
+
+  const ensureSpace = (needed = 7) => {
+    if (y + needed > pageHeight - 16) {
+      doc.addPage();
+      y = 20;
+    }
+  };
+
+  const addSectionHeader = (text) => {
+    ensureSpace(14);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.setTextColor(27, 94, 32);
+    doc.text(text, marginX, y);
+    y += 5;
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(0.4);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    doc.setTextColor(20, 20, 20);
+    y += 6;
+  };
+
+  const addRow = (label, amount, opts = {}) => {
+    ensureSpace();
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(10);
+    const maxLabelWidth = pageWidth - marginX * 2 - 32;
+    const labelLines = doc.splitTextToSize(label, maxLabelWidth);
+    doc.text(labelLines, marginX, y);
+    if (typeof amount === "number") {
+      doc.text(currencyFormatter.format(amount), pageWidth - marginX, y, { align: "right" });
+    }
+    y += 5 * labelLines.length;
+  };
+
+  const addNote = (text) => {
+    ensureSpace();
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(9.5);
+    doc.setTextColor(90, 90, 90);
+    doc.text(text, marginX, y);
+    doc.setTextColor(20, 20, 20);
+    y += 6;
+  };
+
+  const addSpacer = (amount = 4) => { y += amount; };
+
+  // Titel
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(17);
+  doc.setTextColor(20, 20, 20);
+  doc.text(`Balans — ${state.weekend?.name || "Pot z'n Loatst"}`, marginX, y);
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text(`Gegenereerd op ${new Date().toLocaleDateString("nl-NL")}`, marginX, y);
+  doc.setTextColor(20, 20, 20);
+  y += 10;
+
+  // Samenvatting
+  addSectionHeader("Samenvatting");
+  addRow("Totaal ingelegd", summary.totalInitial + summary.totalTopups, { bold: true });
+  addRow("Uitgegeven", -summary.totalExpenses);
+  addRow("Resterend budget", summary.remaining, { bold: true });
+  if (summary.participantCount) {
+    addRow("Per persoon over", summary.remainingPerPerson);
+  }
+  addSpacer(6);
+
+  // Inleg per persoon
+  addSectionHeader("Inleg per persoon");
+  const participants = getSortedParticipants(state);
+  if (!participants.length) {
+    addNote("Nog geen deelnemers toegevoegd.");
+  } else {
+    let perPersonTotal = 0;
+    participants.forEach((participant) => {
+      const contribution = state.contributions.find((item) => item.participantId === participant.id && item.type === "initial");
+      const amount = contribution?.amount || 0;
+      perPersonTotal += amount;
+      addRow(`${participant.name}${contribution?.isEstimate ? " (raming)" : ""}`, amount);
+    });
+    addRow("Subtotaal inleg per persoon", perPersonTotal, { bold: true });
+  }
+  addSpacer(6);
+
+  // Extra inleg
+  addSectionHeader("Extra inleg");
+  const topups = state.contributions.filter((item) => item.type === "topup");
+  if (!topups.length) {
+    addNote("Geen extra inleg.");
+  } else {
+    let topupTotal = 0;
+    topups.forEach((topup) => {
+      topupTotal += topup.amount;
+      addRow(`${topup.note || "Extra inleg"}${topup.isEstimate ? " (raming)" : ""} — ${formatDate(topup.date)}`, topup.amount);
+    });
+    addRow("Subtotaal extra inleg", topupTotal, { bold: true });
+  }
+  addSpacer(6);
+
+  // Uitgaven per categorie
+  addSectionHeader("Uitgaven per categorie");
+  if (!state.expenses.length) {
+    addNote("Nog geen uitgaven geregistreerd.");
+  } else {
+    Object.entries(categoryLabels).forEach(([key, label]) => {
+      const items = state.expenses.filter((item) => item.category === key);
+      if (!items.length) return;
+      ensureSpace(10);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10.5);
+      doc.text(label, marginX, y);
+      y += 5.5;
+      let categoryTotal = 0;
+      items.forEach((item) => {
+        categoryTotal += item.amount;
+        addRow(`   ${item.description} — ${formatDate(item.date)}`, item.amount);
+      });
+      addRow(`   Subtotaal ${label.toLowerCase()}`, categoryTotal, { bold: true });
+      addSpacer(3);
+    });
+  }
+  addRow("Totaal uitgaven", summary.totalExpenses, { bold: true });
+  addSpacer(6);
+
+  // Ramingen (nog niet definitief)
+  if (state.estimates.length) {
+    addSectionHeader("Ramingen (nog niet definitief)");
+    let estimateTotal = 0;
+    state.estimates.forEach((item) => {
+      const amount = getEstimateAmount(item);
+      estimateTotal += amount;
+      addRow(`${item.description} (${categoryLabels[item.category] || "Overig"})`, amount);
+    });
+    addRow("Subtotaal ramingen", estimateTotal, { bold: true });
+  }
+
+  return doc.output("blob");
+}
+
+async function shareBalancePdf() {
+  let JsPdfCtor;
+  try {
+    JsPdfCtor = await ensureJsPdfLoaded();
+  } catch (error) {
+    showToast("PDF-bibliotheek kon niet geladen worden. Controleer je internetverbinding en probeer opnieuw.", "error");
+    return;
+  }
+
+  const blob = buildBalancePdfBlob(JsPdfCtor);
+  if (!blob) {
+    showToast("PDF-bibliotheek kon niet geladen worden. Controleer je internetverbinding en probeer opnieuw.", "error");
+    return;
+  }
+
+  const fileName = `pot-balans-${todayIso()}.pdf`;
+
+  if (typeof File === "function" && navigator.share && navigator.canShare) {
+    try {
+      const shareFile = new File([blob], fileName, { type: "application/pdf" });
+      if (navigator.canShare({ files: [shareFile] })) {
+        await navigator.share({
+          files: [shareFile],
+          title: "Balans van de pot",
+          text: "Hier is de balans van de weekendpot.",
+        });
+        return;
+      }
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.warn("Delen van PDF mislukt, probeer downloadfallback.", error);
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.rel = "noopener";
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast("PDF gedownload. Open 'm vanuit je downloads om te delen via WhatsApp.", "info");
+}
+
 async function importStateFromFile(event) {
   const file = event.target.files?.[0];
   if (!file) {
@@ -296,7 +520,7 @@ function setupEventListeners() {
     event.preventDefault();
     const name = dom.participantNameInput.value.trim();
     const amount = sanitizeAmount(dom.participantInitialInput.value);
-    const color = dom.participantColorInput.value;
+    const color = fallbackColor(state.participants.length);
     const initialIsEstimate = dom.participantInitialIsEstimateInput?.checked || false;
 
     if (!name || !Number.isFinite(amount) || amount < 0) {
@@ -325,12 +549,27 @@ function setupEventListeners() {
     });
 
     dom.participantForm.reset();
-    dom.participantColorInput.value = "#2563EB";
     persistAndRender();
 
     if (submitBtn) {
       setTimeout(() => { submitBtn.disabled = false; submitBtn.textContent = origText; }, 400);
     }
+  });
+
+  dom.bulkInlegForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const rows = dom.bulkInlegList?.querySelectorAll("[data-participant-id]") || [];
+    rows.forEach((row) => {
+      const participantId = row.dataset.participantId;
+      const contribution = state.contributions.find((item) => item.participantId === participantId && item.type === "initial");
+      if (!contribution) return;
+      const amount = sanitizeAmount(row.querySelector('[data-field="amount"]')?.value);
+      const isEstimateField = row.querySelector('[data-field="isEstimate"]');
+      contribution.amount = amount;
+      if (isEstimateField) contribution.isEstimate = isEstimateField.checked;
+    });
+    persistAndRender();
+    showToast("Startinleg bijgewerkt voor alle deelnemers.", "success");
   });
 
   dom.topupForm.addEventListener("submit", (event) => {
@@ -614,8 +853,15 @@ function setupEventListeners() {
   dom.receiptCameraButton?.addEventListener("click", () => dom.expenseReceiptInput.click());
   dom.receiptUploadButton?.addEventListener("click", () => dom.expenseReceiptUploadInput.click());
 
-  document.querySelectorAll(".category-chip").forEach((chip) => {
+  document.querySelectorAll(".category-chips .category-chip").forEach((chip) => {
     chip.addEventListener("click", () => syncCategoryChips(dom, chip.dataset.category));
+  });
+
+  document.querySelectorAll(".kind-chips .kind-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      syncKindChips(dom, chip.dataset.kind);
+      renderTimeline(getDomBundle());
+    });
   });
 
   dom.receiptPreview.addEventListener("click", () => {
@@ -631,6 +877,10 @@ function setupEventListeners() {
     }
   });
 
+  dom.shareBalancePdfButton?.addEventListener("click", () => {
+    closeAccountDropdown();
+    shareBalancePdf();
+  });
   dom.exportStateButton?.addEventListener("click", exportStateToFile);
   dom.importStateButton?.addEventListener("click", () => dom.importStateFileInput?.click());
   dom.importStateFileInput?.addEventListener("change", importStateFromFile);

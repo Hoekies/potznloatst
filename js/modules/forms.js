@@ -64,8 +64,15 @@ export async function collectExpenseForm(dom) {
 
 export function syncCategoryChips(dom, value) {
   dom.expenseCategoryInput.value = value;
-  document.querySelectorAll(".category-chip").forEach((chip) => {
+  document.querySelectorAll(".category-chips .category-chip").forEach((chip) => {
     chip.classList.toggle("is-active", chip.dataset.category === value);
+  });
+}
+
+export function syncKindChips(dom, value) {
+  if (dom.filterKind) dom.filterKind.value = value;
+  document.querySelectorAll(".kind-chips .kind-chip").forEach((chip) => {
+    chip.classList.toggle("is-active", chip.dataset.kind === value);
   });
 }
 
@@ -107,7 +114,6 @@ export function saveParticipantEdits(participantId, card) {
   }
 
   const name = card.querySelector('[data-field="name"]').value.trim();
-  const color = card.querySelector('[data-field="color"]').value;
   const initialAmount = sanitizeAmount(card.querySelector('[data-field="initial"]').value);
   const isEstimateField = card.querySelector('[data-field="initialIsEstimate"]');
 
@@ -116,7 +122,6 @@ export function saveParticipantEdits(participantId, card) {
   }
 
   participant.name = name;
-  participant.color = color;
   initialContribution.amount = initialAmount;
   if (isEstimateField) initialContribution.isEstimate = isEstimateField.checked;
   persistAndRender();

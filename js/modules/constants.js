@@ -24,7 +24,7 @@ export const categoryLabels = {
   eten: "Eten",
   drinken: "Drinken",
   activiteit: "Activiteit",
-  vervoer: "Vervoer",
+  vervoer: "Boodschappen",
   overig: "Overig",
 };
 
@@ -42,7 +42,7 @@ export const categoryEmoji = {
   eten: "\u{1F37D}",
   drinken: "\u{1F37B}",
   activiteit: "\u{1F3AF}",
-  vervoer: "\u{1F697}",
+  vervoer: "\u{1F6D2}",
   overig: "\u{1F9FE}",
 };
 
