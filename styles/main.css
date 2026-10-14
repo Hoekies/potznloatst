@@ -1057,18 +1057,38 @@ h3 {
   gap: 10px;
 }
 
-#expense-form input,
+#expense-form input:not([type="checkbox"]),
 #expense-form select,
 #expense-form textarea,
-#participant-form input,
+#participant-form input:not([type="checkbox"]),
 #participant-form select,
-#topup-form input,
+#topup-form input:not([type="checkbox"]),
 #topup-form select,
-.edit-card input,
+.edit-card input:not([type="checkbox"]),
 .edit-card select,
 .edit-card textarea {
   min-height: 40px;
   padding: 9px 12px;
+}
+
+/* Inleg: bedrag en namen in één raster. De namenlijst doet niet mee als
+   eigen blok (display: contents), dus op de pc staat de eerste naam naast
+   het bedrag en lopen extra namen door op de volgende regel. */
+.participant-entry {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: center;
+}
+
+.participant-entry .participant-name-rows {
+  display: contents;
+}
+
+@media (max-width: 680px) {
+  .participant-entry {
+    grid-template-columns: 1fr;
+  }
 }
 
 #expense-form textarea,
@@ -1508,18 +1528,6 @@ textarea:focus {
   gap: 8px;
 }
 
-.participant-name-rows {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 12px;
-}
-
-@media (max-width: 680px) {
-  .participant-name-rows {
-    grid-template-columns: 1fr;
-  }
-}
-
 .participant-name-row {
   display: flex;
   align-items: center;
@@ -1599,6 +1607,7 @@ textarea:focus {
   width: 16px;
   height: 16px;
   min-height: 0;
+  padding: 0;
   margin: 0;
   cursor: pointer;
 }
