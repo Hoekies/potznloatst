@@ -1710,11 +1710,44 @@ textarea:focus {
   white-space: nowrap;
 }
 
-.timeline-inleg-group__incl {
-  color: var(--muted);
-  font-weight: 600;
-  font-size: 0.8rem;
+.timeline-inleg-group__title {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.timeline-inleg-group__split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Definitief = groen, raming = blauw — overal dezelfde kleuren, zodat je
+   in totalen én kaarten in één oogopslag ziet wat al vastligt. */
+.amount-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
   white-space: nowrap;
+}
+
+.amount-pill--final {
+  background: rgba(46, 125, 50, 0.14);
+  color: #1B5E20;
+}
+
+.amount-pill--estimate {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1D4ED8;
+}
+
+article.timeline-card {
+  border-left: 4px solid #2E7D32;
+}
+
+article.timeline-card.timeline-card--estimate {
+  border-left-color: #2563EB;
 }
 
 .timeline-inleg-group__list {

@@ -454,12 +454,21 @@ export function renderTimeline(dom) {
 
   const isInlegKind = (kind) => kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate";
   const isEstimateKind = (kind) => kind === "estimate" || kind === "topup-estimate" || kind === "contribution-estimate";
-  const renderGroupTotal = (items) => {
+  const renderGroupTitle = (label, items) => {
     const total = items.reduce((sum, entry) => sum + entry.amount, 0);
     const estimateTotal = items.filter((entry) => isEstimateKind(entry.kind)).reduce((sum, entry) => sum + entry.amount, 0);
-    return estimateTotal > 0
-      ? `totaal ${currencyFormatter.format(total)} <small class="timeline-inleg-group__incl">(incl. ${currencyFormatter.format(estimateTotal)} raming)</small>`
-      : `totaal ${currencyFormatter.format(total)}`;
+    const finalTotal = total - estimateTotal;
+    return `
+      <span class="timeline-inleg-group__title">
+        <span>${label} &mdash; totaal ${currencyFormatter.format(total)}</span>
+        ${estimateTotal > 0 ? `
+          <span class="timeline-inleg-group__split">
+            <span class="amount-pill amount-pill--final">Definitief ${currencyFormatter.format(finalTotal)}</span>
+            <span class="amount-pill amount-pill--estimate">Raming ${currencyFormatter.format(estimateTotal)}</span>
+          </span>
+        ` : ""}
+      </span>
+    `;
   };
 
   // Inleg is minder belangrijk om in detail te zien in dit overzicht — alleen
@@ -489,7 +498,7 @@ export function renderTimeline(dom) {
       return `
         <details class="timeline-inleg-group" data-group-key="${groupKey}" ${isGroupOpen(groupKey, items) ? "open" : ""}>
           <summary class="timeline-inleg-group__summary">
-            <span>${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]} &mdash; ${renderGroupTotal(items)}</span>
+            ${renderGroupTitle(`${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]}`, items)}
             <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
           </summary>
           <div class="timeline-inleg-group__list">${items.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
@@ -503,7 +512,7 @@ export function renderTimeline(dom) {
     inlegHtml = `
       <details class="timeline-inleg-group" data-group-key="inleg" ${isGroupOpen("inleg", inlegEntries) ? "open" : ""}>
         <summary class="timeline-inleg-group__summary">
-          <span>&#128176; Inleg &mdash; ${renderGroupTotal(inlegEntries)}</span>
+          ${renderGroupTitle("&#128176; Inleg", inlegEntries)}
           <span class="timeline-inleg-group__count">${inlegEntries.length} ${inlegEntries.length === 1 ? "post" : "posten"}</span>
         </summary>
         <div class="timeline-inleg-group__list">${inlegEntries.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
