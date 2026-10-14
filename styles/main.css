@@ -745,9 +745,15 @@ h3 {
   padding: 28px 30px 32px;
 }
 
+/* Het tabs-blok heeft geen eigen kader meer, dus ook geen zijruimte: tabbalk
+   en inhoud zijn zo even breed als de header. Specifieker dan .panel, zodat
+   de padding van .panel (ook in de tablet-media-query) hier niet geldt. */
+.panel.panel--tabs {
+  padding: 10px 0 32px;
+}
+
 .panel--tabs {
   grid-column: 1 / -1;
-  padding-top: 10px;
   background: transparent;
   box-shadow: none;
   border: 0;
