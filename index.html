@@ -72,17 +72,19 @@
           <div class="tab-panel" data-tab-panel="inleg" role="tabpanel" hidden>
             <section class="subpanel">
                 <form id="participant-form" class="stack-form" autocomplete="off">
-                  <div class="icon-field icon-field--amount">
-                    <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                    <input id="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
+                  <div class="field-row">
+                    <div class="icon-field icon-field--amount">
+                      <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                      <input id="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
+                    </div>
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
+                      <select id="participant-amount-mode" aria-label="Bedrag hierboven is">
+                        <option value="per_person">Bedrag is per persoon</option>
+                        <option value="total">Bedrag is totaal, verdelen</option>
+                      </select>
+                    </label>
                   </div>
-                  <label class="icon-field">
-                    <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
-                    <select id="participant-amount-mode" aria-label="Bedrag hierboven is">
-                      <option value="per_person">Bedrag is per persoon</option>
-                      <option value="total">Bedrag is totaal, verdelen</option>
-                    </select>
-                  </label>
                   <div id="participant-name-rows" class="participant-name-rows">
                     <div class="participant-name-row">
                       <label class="icon-field">
@@ -105,8 +107,10 @@
                       </label>
                     </div>
                   </div>
-                  <button type="button" id="add-participant-row" class="ghost-button ghost-button--small">+ Nog een naam</button>
-                  <button class="primary-button" type="submit">Toevoegen</button>
+                  <div class="form-actions">
+                    <button type="button" id="add-participant-row" class="ghost-button ghost-button--small">+ Nog een naam</button>
+                    <button class="primary-button" type="submit">Toevoegen</button>
+                  </div>
                 </form>
 
                 <details class="collapsible-panel" id="participants-panel">
@@ -150,25 +154,6 @@
                   <h2>Bewegingen in de pot</h2>
                   <span class="section-collapsible__chevron" aria-hidden="true">&#9662;</span>
                 </summary>
-                <div class="kind-chips" role="group" aria-label="Filter op soort">
-                  <button type="button" class="category-chip kind-chip is-active" data-kind="all">Alles</button>
-                  <button type="button" class="category-chip kind-chip" data-kind="uitgave">Uitgave</button>
-                  <button type="button" class="category-chip kind-chip" data-kind="inleg">Inleg</button>
-                  <button type="button" class="category-chip kind-chip" data-kind="raming">Raming</button>
-                </div>
-                <input type="hidden" id="filter-kind" value="all" />
-                <div class="header-actions">
-                  <label class="filter-select">
-                    <select id="filter-category" aria-label="Filter overzicht op categorie">
-                      <option value="all">Alles</option>
-                      <option value="accommodatie">Accommodatie</option>
-                      <option value="eten">Eten en drinken</option>
-                      <option value="activiteit">Activiteit</option>
-                      <option value="vervoer">Boodschappen</option>
-                      <option value="overig">Overig</option>
-                    </select>
-                  </label>
-                </div>
                 <div id="timeline" class="timeline"></div>
               </details>
             </section>

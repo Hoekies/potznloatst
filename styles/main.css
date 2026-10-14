@@ -837,14 +837,6 @@ h3 {
   margin-bottom: 18px;
 }
 
-.header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
-}
-
 
 .summary-grid {
   display: grid;
@@ -967,6 +959,39 @@ h3 {
 .stack-form {
   display: grid;
   gap: 14px;
+}
+
+/* Invoer- en wijzigformulieren compact, op elk schermformaat. Op mobiel
+   blijft de lettergrootte 16px (zie mobiele input-regel) tegen iOS-zoom. */
+#expense-form.stack-form,
+#participant-form.stack-form,
+#topup-form.stack-form {
+  gap: 10px;
+}
+
+#expense-form input,
+#expense-form select,
+#expense-form textarea,
+#participant-form input,
+#participant-form select,
+#topup-form input,
+#topup-form select,
+.edit-card input,
+.edit-card select,
+.edit-card textarea {
+  min-height: 40px;
+  padding: 9px 12px;
+}
+
+#expense-form textarea,
+.edit-card textarea {
+  min-height: 0;
+}
+
+.form-actions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
 }
 
 .management-list {
@@ -1217,12 +1242,6 @@ textarea:focus {
   border-color: var(--cyan);
 }
 
-.header-actions .ghost-button {
-  min-height: 44px;
-  padding-inline: 20px;
-  box-shadow: 0 4px 14px rgba(28, 46, 31, 0.04);
-}
-
 .person-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -1401,16 +1420,16 @@ textarea:focus {
   gap: 8px;
 }
 
-.kind-chips {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
-  margin-bottom: 14px;
-}
-
 .participant-name-rows {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+
+@media (max-width: 680px) {
+  .participant-name-rows {
+    grid-template-columns: 1fr;
+  }
 }
 
 .participant-name-row {
@@ -1657,14 +1676,37 @@ article.timeline-card {
 }
 
 /* Ingeklapte regel: klikbaar om details en knoppen te tonen. */
-[data-timeline-toggle] {
+[data-timeline-toggle],
+[data-row-toggle] {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
 
-.timeline-card--expanded {
+.timeline-card--expanded,
+.management-card--expanded,
+.person-card--expanded {
   box-shadow: 0 4px 16px rgba(28, 46, 31, 0.1);
+}
+
+.person-card[data-row-toggle] {
+  gap: 4px 12px;
+  padding: 10px 14px;
+}
+
+.person-card[data-row-toggle] .person-card__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+}
+
+.person-card__amount {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.person-card[data-row-toggle] .person-card__actions {
+  grid-column: 1 / -1;
 }
 
 article.timeline-card.timeline-card--estimate {
@@ -1887,7 +1929,6 @@ article.timeline-card.timeline-card--estimate {
     flex-direction: column;
   }
 
-  .header-actions,
   .receipt-modal__header {
     width: 100%;
     justify-content: flex-start;
@@ -1931,15 +1972,6 @@ article.timeline-card.timeline-card--estimate {
 
   .summary-card__value {
     font-size: 1.3rem;
-  }
-
-  .header-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .header-actions .ghost-button {
-    width: 100%;
   }
 
 
@@ -2452,29 +2484,6 @@ article.timeline-card.timeline-card--estimate {
     gap: 16px;
   }
 
-  /* Formulieren compacter (Uitgaven, Inleg): kleinere velden (16px
-     lettergrootte blijft staan om iOS-autozoom te voorkomen, alleen
-     hoogte/padding krimpt) en een strakkere afstand tussen de velden. */
-  #expense-form.stack-form,
-  #participant-form.stack-form,
-  #topup-form.stack-form {
-    gap: 10px;
-  }
-
-  #expense-form input,
-  #expense-form select,
-  #expense-form textarea,
-  #participant-form input,
-  #participant-form select,
-  #topup-form input,
-  #topup-form select {
-    min-height: 40px;
-    padding: 9px 12px;
-  }
-
-  #expense-form textarea {
-    min-height: 0;
-  }
 
   /* Op mobiel: alleen pictogrammen, geen tekst, alle 5 naast elkaar en
      groter (makkelijker te raken met een duim). */
@@ -2758,13 +2767,6 @@ article.timeline-card.timeline-card--estimate {
     border-radius: 24px 24px 0 0;
     padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
     max-height: 90dvh;
-  }
-
-  /* --------------------------------------------------
-     14. HEADER ACTIONS — knoppen minstens 48px
-     -------------------------------------------------- */
-  .header-actions .ghost-button {
-    min-height: 48px;
   }
 
   /* --------------------------------------------------

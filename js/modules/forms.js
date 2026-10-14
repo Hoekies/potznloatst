@@ -68,13 +68,6 @@ export function syncCategoryChips(dom, value) {
   });
 }
 
-export function syncKindChips(dom, value) {
-  if (dom.filterKind) dom.filterKind.value = value;
-  document.querySelectorAll(".kind-chips .kind-chip").forEach((chip) => {
-    chip.classList.toggle("is-active", chip.dataset.kind === value);
-  });
-}
-
 export function resetExpenseComposer(dom) {
   dom.expenseForm.reset();
   dom.expenseKindInput.checked = false;

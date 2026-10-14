@@ -28,14 +28,14 @@ export function setTimelineGroupOpen(groupKey, isOpen) {
   }
 }
 
-// Regels in "Bewegingen in de pot" zijn ingeklapt (icoon, naam, bedrag);
-// één regel tegelijk kan uitgeklapt worden met details en knoppen.
-let expandedTimelineKey = null;
+// Lijstregels (overzicht, uitgaven, deelnemers) zijn ingeklapt: icoon, naam,
+// bedrag. Eén regel tegelijk klapt uit met details en knoppen.
+let expandedRowKey = null;
 
-const timelineEntryKey = (entry) => `${entry.kind}:${entry.id}`;
+const timelineEntryKey = (entry) => `timeline:${entry.kind}:${entry.id}`;
 
-export function toggleTimelineEntry(key) {
-  expandedTimelineKey = expandedTimelineKey === key ? null : key;
+export function toggleExpandedRow(key) {
+  expandedRowKey = expandedRowKey === key ? null : key;
 }
 
 export function render(dom) {
@@ -216,49 +216,53 @@ export function renderParticipants(dom) {
     .map((participant) => {
       const initialContribution = state.contributions.find((item) => item.participantId === participant.id && item.type === "initial");
       const isEditing = getEditingParticipantId() === participant.id;
+      const rowKey = `participant:${participant.id}`;
+      const isExpanded = !isEditing && expandedRowKey === rowKey;
+      const isEstimate = Boolean(initialContribution?.isEstimate);
+
+      if (!isEditing) {
+        return `
+          <article class="person-card${isEstimate ? " person-card--estimate" : ""}${isExpanded ? " person-card--expanded" : ""}" data-participant-card="${participant.id}" data-row-toggle="${rowKey}" aria-expanded="${isExpanded}">
+            ${participantLogo(participant, "person-card__avatar")}
+            <div class="person-card__meta">
+              <strong>${escapeHtml(participant.name)}${isEstimate ? ` ${ESTIMATE_PILL}` : ""}</strong>
+              ${isExpanded ? `<span>Startinleg ${isEstimate ? "verwacht, nog niet ontvangen" : "ingelegd"}</span>` : ""}
+            </div>
+            <span class="person-card__amount${isEstimate ? " estimate-amount" : ""}">${isEstimate ? "&asymp; " : ""}${currencyFormatter.format(initialContribution?.amount ?? 0)}</span>
+            ${isExpanded && !state.sharedView ? `
+            <div class="person-card__actions">
+              <button class="soft-button" type="button" data-action="edit-participant" data-id="${participant.id}">Wijzig</button>
+              <button class="icon-button" type="button" data-action="remove-participant" data-id="${participant.id}">Verwijder</button>
+            </div>
+            ` : ""}
+          </article>
+        `;
+      }
 
       return `
-        <article class="person-card ${isEditing ? "person-card--editing" : ""}${initialContribution?.isEstimate ? " person-card--estimate" : ""}" data-participant-card="${participant.id}">
-          ${isEditing ? "" : participantLogo(participant, "person-card__avatar")}
+        <article class="person-card person-card--editing${isEstimate ? " person-card--estimate" : ""}" data-participant-card="${participant.id}">
           <div class="person-card__meta">
-            ${
-              isEditing
-                ? `
-                  <div class="edit-card">
-                    <div class="field-row">
-                      <label class="icon-field">
-                        <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
-                        <input data-field="name" type="text" value="${escapeHtml(participant.name)}" aria-label="Naam" />
-                      </label>
-                      <div class="icon-field icon-field--amount">
-                        <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                        <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" aria-label="Startinleg" />
-                        <label class="inline-raming" title="Raming">
-                          <input data-field="initialIsEstimate" type="checkbox" ${initialContribution?.isEstimate ? "checked" : ""} aria-label="Raming" />
-                          <span aria-hidden="true">&#128302;</span>
-                        </label>
-                      </div>
-                    </div>
-                    <div class="edit-card__footer">
-                      <button class="soft-button" type="button" data-action="save-participant" data-id="${participant.id}">Opslaan</button>
-                      <button class="ghost-button ghost-button--small" type="button" data-action="cancel-participant" data-id="${participant.id}">Annuleer</button>
-                    </div>
-                  </div>
-                  `
-                  : `
-                  <strong>${escapeHtml(participant.name)}${initialContribution?.isEstimate ? ` ${ESTIMATE_PILL}` : ""}</strong>
-                  <span${initialContribution?.isEstimate ? ' class="estimate-amount"' : ""}>${initialContribution?.isEstimate ? "&asymp; " : ""}${currencyFormatter.format(initialContribution?.amount ?? 0)} ${initialContribution?.isEstimate ? "verwacht" : "ingelegd"}</span>
-                `
-            }
+            <div class="edit-card">
+              <div class="field-row">
+                <label class="icon-field">
+                  <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
+                  <input data-field="name" type="text" value="${escapeHtml(participant.name)}" aria-label="Naam" />
+                </label>
+                <div class="icon-field icon-field--amount">
+                  <span class="icon-field__icon" aria-hidden="true">&euro;</span>
+                  <input data-field="initial" type="text" inputmode="decimal" value="${initialContribution?.amount ?? 0}" aria-label="Startinleg" />
+                  <label class="inline-raming" title="Raming">
+                    <input data-field="initialIsEstimate" type="checkbox" ${isEstimate ? "checked" : ""} aria-label="Raming" />
+                    <span aria-hidden="true">&#128302;</span>
+                  </label>
+                </div>
+              </div>
+              <div class="edit-card__footer">
+                <button class="soft-button" type="button" data-action="save-participant" data-id="${participant.id}">Opslaan</button>
+                <button class="ghost-button ghost-button--small" type="button" data-action="cancel-participant" data-id="${participant.id}">Annuleer</button>
+              </div>
+            </div>
           </div>
-          ${isEditing ? "" : `
-          <div class="person-card__actions">
-            ${state.sharedView ? "" : `
-                  <button class="soft-button" type="button" data-action="edit-participant" data-id="${participant.id}">Wijzig</button>
-                  <button class="icon-button" type="button" data-action="remove-participant" data-id="${participant.id}">Verwijder</button>
-                `}
-          </div>
-          `}
         </article>
       `;
     })
@@ -286,36 +290,37 @@ export function renderExpenses(dom) {
       }
       if (record.note) detailBits.push(escapeHtml(record.note));
 
+      if (isEditing) {
+        return `
+          <article class="management-card management-card--expense management-card--editing${record.kind === "estimate" ? " management-card--estimate" : ""}" data-expense-card="${record.id}">
+            <div class="management-card__meta">${renderRecordEditFields(record)}</div>
+          </article>
+        `;
+      }
+
+      const rowKey = `expense:${record.kind}:${record.id}`;
+      const isExpanded = expandedRowKey === rowKey;
       return `
-        <article class="management-card management-card--expense ${record.kind === "estimate" ? "management-card--estimate" : ""}${isEditing ? " management-card--editing" : ""}" data-expense-card="${record.id}">
-          ${isEditing ? "" : `<div class="management-card__logo" aria-hidden="true">${categoryIcon}</div>`}
+        <article class="management-card management-card--expense${record.kind === "estimate" ? " management-card--estimate" : ""}${isExpanded ? " management-card--expanded" : ""}" data-expense-card="${record.id}" data-row-toggle="${rowKey}" aria-expanded="${isExpanded}">
+          <div class="management-card__logo" aria-hidden="true">${categoryIcon}</div>
           <div class="management-card__meta">
-            ${
-              isEditing
-                ? renderRecordEditFields(record)
-                : `
-                  <div class="management-card__top">
-                    <strong class="management-card__title">${escapeHtml(record.description)}${record.kind === "estimate" ? ` ${ESTIMATE_PILL}` : ""}</strong>
-                    <span class="management-card__amount-tag${record.kind === "estimate" ? " estimate-amount" : ""}">${record.kind === "estimate" ? "&asymp; " : ""}${currencyFormatter.format(record.amount)}</span>
-                  </div>
-                  <span class="management-card__detail">${detailBits.join(" · ")}</span>
-                  ${record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : ""}
-                `
-            }
+            <div class="management-card__top">
+              <strong class="management-card__title">${escapeHtml(record.description)}${record.kind === "estimate" ? ` ${ESTIMATE_PILL}` : ""}</strong>
+              <span class="management-card__amount-tag${record.kind === "estimate" ? " estimate-amount" : ""}">${record.kind === "estimate" ? "&asymp; " : ""}${currencyFormatter.format(record.amount)}</span>
+            </div>
+            ${isExpanded ? `
+              <span class="management-card__detail">${detailBits.join(" · ")}</span>
+              ${record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : ""}
+            ` : ""}
           </div>
-          ${isEditing ? "" : `
+          ${isExpanded && !state.sharedView ? `
           <div class="management-card__actions">
-            ${state.sharedView
-              ? ""
-              : `
-                  ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
-                  ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
-                  <button class="soft-button" type="button" data-expense-action="edit" data-kind="${record.kind}" data-id="${record.id}">Wijzig</button>
-                  <button class="icon-button" type="button" data-expense-action="remove" data-kind="${record.kind}" data-id="${record.id}">Verwijder</button>
-                `
-            }
+            ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
+            ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
+            <button class="soft-button" type="button" data-expense-action="edit" data-kind="${record.kind}" data-id="${record.id}">Wijzig</button>
+            <button class="icon-button" type="button" data-expense-action="remove" data-kind="${record.kind}" data-id="${record.id}">Verwijder</button>
           </div>
-          `}
+          ` : ""}
         </article>
       `;
     })
@@ -323,8 +328,6 @@ export function renderExpenses(dom) {
 }
 
 export function renderTimeline(dom) {
-  const categoryFilter = dom.filterCategory.value;
-  const kindFilter = dom.filterKind?.value || "all";
   const entries = [
     ...state.contributions.map((item) => ({
       id: item.id,
@@ -369,16 +372,6 @@ export function renderTimeline(dom) {
       note: record.note,
     })),
   ]
-    .filter((entry) => categoryFilter === "all" || entry.category === categoryFilter)
-    .filter((entry) => {
-      if (kindFilter === "all") return true;
-      const isEstimateKindEntry = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
-      if (kindFilter === "raming") return isEstimateKindEntry;
-      if (isEstimateKindEntry) return false;
-      if (kindFilter === "uitgave") return entry.kind === "expense";
-      if (kindFilter === "inleg") return entry.kind === "contribution" || entry.kind === "topup";
-      return true;
-    })
     .sort((a, b) => {
       // Per categorie (inleg heeft er geen), daarbinnen ramingen bovenaan,
       // dan op datum.
@@ -395,7 +388,7 @@ export function renderTimeline(dom) {
     });
 
   if (!entries.length) {
-    dom.timeline.innerHTML = `<p class="muted">Nog geen bewegingen die bij deze filter passen.</p>`;
+    dom.timeline.innerHTML = `<p class="muted">Nog geen bewegingen in de pot.</p>`;
     return;
   }
 
@@ -417,14 +410,6 @@ export function renderTimeline(dom) {
       </span>
     `;
   };
-
-  // Inleg is minder belangrijk om in detail te zien in dit overzicht — alleen
-  // groeperen/inklappen als de gebruiker niet al specifiek op "Inleg" filtert
-  // (dan wil hij ze juist wél stuk voor stuk zien).
-  if (kindFilter === "inleg") {
-    dom.timeline.innerHTML = entries.map((entry) => renderTimelineEntryCard(entry)).join("");
-    return;
-  }
 
   const otherEntries = entries.filter((entry) => !isInlegKind(entry.kind));
   const inlegEntries = entries.filter((entry) => isInlegKind(entry.kind));
@@ -501,7 +486,7 @@ function renderTimelineEntryCard(entry) {
   }
   detailBits.push(formatDate(entry.date));
   if (entry.note) detailBits.push(escapeHtml(entry.note));
-  const isExpanded = expandedTimelineKey === timelineEntryKey(entry);
+  const isExpanded = expandedRowKey === timelineEntryKey(entry);
 
   return `
     <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}${isExpanded ? " timeline-card--expanded" : ""}" data-timeline-card="${entry.id}" data-timeline-toggle="${timelineEntryKey(entry)}" aria-expanded="${isExpanded}">

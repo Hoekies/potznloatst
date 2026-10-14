@@ -4,8 +4,8 @@ import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from 
 import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressImageToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
-  render, renderWeekendLogo, renderParticipants, renderTimeline,
-  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleTimelineEntry,
+  render, renderWeekendLogo, renderParticipants, renderExpenses, renderTimeline,
+  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleExpandedRow,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
@@ -14,7 +14,7 @@ import {
 } from './ui-state.js';
 import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
-  setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips, syncKindChips,
+  setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips,
   saveParticipantEdits, saveExpenseEdits, saveTimelineEdits,
   convertEstimateToExpense, convertExpenseToEstimate, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
@@ -649,7 +649,14 @@ function setupEventListeners() {
 
   dom.participantsList.addEventListener("click", (event) => {
     const target = event.target.closest("[data-action]");
-    if (!target) return;
+    if (!target) {
+      const row = event.target.closest("[data-row-toggle]");
+      if (row) {
+        toggleExpandedRow(row.dataset.rowToggle);
+        renderParticipants(getDomBundle());
+      }
+      return;
+    }
 
     const participantId = target.dataset.id;
 
@@ -764,7 +771,14 @@ function setupEventListeners() {
 
   dom.expenseList.addEventListener("click", (event) => {
     const target = event.target.closest("[data-expense-action]");
-    if (!target) return;
+    if (!target) {
+      const row = event.target.closest("[data-row-toggle]");
+      if (row) {
+        toggleExpandedRow(row.dataset.rowToggle);
+        renderExpenses(getDomBundle());
+      }
+      return;
+    }
 
     const expenseId = target.dataset.id;
     const expenseKind = target.dataset.kind || "expense";
@@ -833,7 +847,7 @@ function setupEventListeners() {
     if (!target) {
       const card = event.target.closest("[data-timeline-toggle]");
       if (card) {
-        toggleTimelineEntry(card.dataset.timelineToggle);
+        toggleExpandedRow(card.dataset.timelineToggle);
         renderTimeline(getDomBundle());
       }
       return;
@@ -892,8 +906,6 @@ function setupEventListeners() {
     }
   });
 
-  dom.filterCategory.addEventListener("change", () => renderTimeline(getDomBundle()));
-
   const handleReceiptPickerChange = async (fileInput) => {
     const file = fileInput.files[0];
     if (!file) return;
@@ -915,12 +927,6 @@ function setupEventListeners() {
     chip.addEventListener("click", () => syncCategoryChips(dom, chip.dataset.category));
   });
 
-  document.querySelectorAll(".kind-chips .kind-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      syncKindChips(dom, chip.dataset.kind);
-      renderTimeline(getDomBundle());
-    });
-  });
 
   dom.receiptPreview.addEventListener("click", () => {
     if (getPendingReceiptImage()) {
