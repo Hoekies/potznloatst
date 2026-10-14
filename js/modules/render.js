@@ -406,7 +406,7 @@ export function renderTimeline(dom) {
       category: null,
       title: item.type === "initial"
         ? `${state.participants.find((person) => person.id === item.participantId)?.name || "Onbekend"} — ${item.isEstimate ? "raming startinleg" : "startinleg"}`
-        : (item.isEstimate ? "Raming inleg" : "Extra inleg"),
+        : `${item.isEstimate ? "Raming inleg" : "Extra inleg"}${item.note?.trim() ? ` — ${item.note.trim()}` : ""}`,
       amount: item.amount,
       personId: item.type === "initial" ? item.participantId : "",
       paidBy: "",
@@ -519,7 +519,9 @@ function renderTimelineEntryCard(entry) {
     }
   }
   detailBits.push(formatDate(entry.date));
-  if (entry.note && entry.note !== "Startinleg") detailBits.push(escapeHtml(entry.note));
+  // Bij extra inleg staat de omschrijving al in de titel.
+  const isTopupKind = entry.kind === "topup" || entry.kind === "topup-estimate";
+  if (entry.note && entry.note !== "Startinleg" && !isTopupKind) detailBits.push(escapeHtml(entry.note));
   const isExpanded = expandedRowKey === timelineEntryKey(entry);
 
   return `
