@@ -5,7 +5,7 @@ import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressI
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderExpenses, renderTimeline,
-  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleExpandedRow,
+  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleExpandedRow, collapseTimeline,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
@@ -507,7 +507,15 @@ function addParticipantNameRow() {
 
 function resetParticipantNameRows() {
   if (!dom.participantNameRows) return;
-  dom.participantNameRows.innerHTML = participantNameRowHtml() + participantNameRowHtml();
+  dom.participantNameRows.innerHTML = participantNameRowHtml();
+  syncParticipantAmountMode();
+}
+
+function syncParticipantAmountMode() {
+  if (!dom.participantInitialInput) return;
+  dom.participantInitialInput.placeholder = dom.participantAmountModeInput?.checked
+    ? "Totaalbedrag, wordt verdeeld"
+    : "Startinleg per persoon";
 }
 
 function setupEventListeners() {
@@ -553,7 +561,7 @@ function setupEventListeners() {
       return;
     }
 
-    const isTotalMode = dom.participantAmountModeInput?.value === "total";
+    const isTotalMode = Boolean(dom.participantAmountModeInput?.checked);
     const amountPerPerson = isTotalMode ? sanitizeAmount(amount / entries.length) : amount;
 
     const submitBtn = dom.participantForm.querySelector('[type="submit"]');
@@ -588,6 +596,7 @@ function setupEventListeners() {
   });
 
   dom.addParticipantRowButton?.addEventListener("click", () => addParticipantNameRow());
+  dom.participantAmountModeInput?.addEventListener("change", syncParticipantAmountMode);
 
   dom.topupForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -659,6 +668,12 @@ function setupEventListeners() {
     }
 
     const participantId = target.dataset.id;
+
+    if (target.dataset.action === "convert-participant") {
+      const initial = state.contributions.find((item) => item.participantId === participantId && item.type === "initial");
+      if (initial) convertInlegEstimate(initial.id);
+      return;
+    }
 
     if (target.dataset.action === "edit-participant") {
       setEditingParticipantId(participantId);
@@ -831,6 +846,13 @@ function setupEventListeners() {
   // op een voorouder om bij te houden welke groep (categorie/inleg) de
   // gebruiker open heeft staan. Zonder dit zou elke her-render (bv. na een
   // andere wijziging) alle groepen weer dichtklappen.
+  const timelinePanel = dom.timeline.closest("details");
+  timelinePanel?.addEventListener("toggle", (event) => {
+    if (event.target !== timelinePanel || timelinePanel.open) return;
+    collapseTimeline();
+    renderTimeline(getDomBundle());
+  });
+
   dom.timeline.addEventListener("toggle", (event) => {
     const details = event.target.closest?.("[data-group-key]");
     if (!details) return;

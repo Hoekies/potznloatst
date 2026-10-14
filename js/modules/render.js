@@ -38,6 +38,14 @@ export function toggleExpandedRow(key) {
   expandedRowKey = expandedRowKey === key ? null : key;
 }
 
+// "Bewegingen in de pot" dichtklappen sluit ook alle groepen en regels
+// eronder, zodat je bij opnieuw openen alleen de categorieën ziet.
+export function collapseTimeline() {
+  openTimelineGroups.clear();
+  if (expandedRowKey?.startsWith("timeline:")) expandedRowKey = null;
+  if (getEditingRecord()?.scope === "timeline") setEditingRecord(null);
+}
+
 export function render(dom) {
   renderLoginGate(dom);
   renderTabs(dom);
@@ -205,6 +213,11 @@ export function renderSettlements(stateRef) {
 }
 
 export function renderParticipants(dom) {
+  const countLabel = document.querySelector("#participants-count");
+  if (countLabel) {
+    const count = state.participants.length;
+    countLabel.textContent = `${count} ${count === 1 ? "deelnemer" : "deelnemers"}`;
+  }
   if (!state.participants.length) {
     dom.participantsList.innerHTML = `<p class="muted">Voeg je eerste weekendgenoot toe om te starten.</p>`;
     return;
@@ -226,11 +239,16 @@ export function renderParticipants(dom) {
             ${participantLogo(participant, "person-card__avatar")}
             <div class="person-card__meta">
               <strong>${escapeHtml(participant.name)}${isEstimate ? ` ${ESTIMATE_PILL}` : ""}</strong>
-              ${isExpanded ? `<span>Startinleg ${isEstimate ? "verwacht, nog niet ontvangen" : "ingelegd"}</span>` : ""}
+              ${isExpanded ? renderDetailBits([
+                isEstimate ? "Startinleg verwacht, nog niet ontvangen" : "Startinleg ingelegd",
+                initialContribution?.date ? formatDate(initialContribution.date) : "",
+                initialContribution?.note && initialContribution.note !== "Startinleg" ? escapeHtml(initialContribution.note) : "",
+              ]) : ""}
             </div>
             <span class="person-card__amount${isEstimate ? " estimate-amount" : ""}">${isEstimate ? "&asymp; " : ""}${currencyFormatter.format(initialContribution?.amount ?? 0)}</span>
             ${isExpanded && !state.sharedView ? `
-            <div class="person-card__actions">
+            <div class="person-card__actions row-actions">
+              ${isEstimate ? `<button class="ghost-button ghost-button--small" type="button" data-action="convert-participant" data-id="${participant.id}">Definitief</button>` : ""}
               <button class="soft-button" type="button" data-action="edit-participant" data-id="${participant.id}">Wijzig</button>
               <button class="icon-button" type="button" data-action="remove-participant" data-id="${participant.id}">Verwijder</button>
             </div>
@@ -308,14 +326,11 @@ export function renderExpenses(dom) {
               <strong class="management-card__title">${escapeHtml(record.description)}${record.kind === "estimate" ? ` ${ESTIMATE_PILL}` : ""}</strong>
               <span class="management-card__amount-tag${record.kind === "estimate" ? " estimate-amount" : ""}">${record.kind === "estimate" ? "&asymp; " : ""}${currencyFormatter.format(record.amount)}</span>
             </div>
-            ${isExpanded ? `
-              <span class="management-card__detail">${detailBits.join(" · ")}</span>
-              ${record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : ""}
-            ` : ""}
+            ${isExpanded ? renderDetailBits(detailBits, record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : "") : ""}
           </div>
           ${isExpanded && !state.sharedView ? `
-          <div class="management-card__actions">
-            ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
+          <div class="management-card__actions row-actions">
+            ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Definitief</button>` : ""}
             ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
             <button class="soft-button" type="button" data-expense-action="edit" data-kind="${record.kind}" data-id="${record.id}">Wijzig</button>
             <button class="icon-button" type="button" data-expense-action="remove" data-kind="${record.kind}" data-id="${record.id}">Verwijder</button>
@@ -336,7 +351,7 @@ export function renderTimeline(dom) {
         : (item.isEstimate ? "topup-estimate" : "topup"),
       category: null,
       title: item.type === "initial"
-        ? (item.isEstimate ? "Raming startinleg" : "Startinleg")
+        ? `${state.participants.find((person) => person.id === item.participantId)?.name || "Onbekend"} — ${item.isEstimate ? "raming startinleg" : "startinleg"}`
         : (item.isEstimate ? "Raming inleg" : "Extra inleg"),
       amount: item.amount,
       personId: item.type === "initial" ? item.participantId : "",
@@ -457,6 +472,11 @@ export function renderTimeline(dom) {
 
 const ESTIMATE_PILL = `<span class="amount-pill amount-pill--estimate estimate-flag">Nog niet definitief</span>`;
 
+// Zelfde detailregel (met • ertussen) voor overzicht, uitgaven en deelnemers.
+function renderDetailBits(bits, extraHtml = "") {
+  return `<div class="timeline-card__details">${bits.filter(Boolean).map((bit) => `<span>${bit}</span>`).join("")}${extraHtml}</div>`;
+}
+
 // Een bon met receiptPath (en geen lokale data-URL meer) staat in Supabase
 // Storage; een data-URL zonder pad is alleen nog lokaal en wacht op upload.
 function renderReceiptBadge(record, actionAttr) {
@@ -477,7 +497,6 @@ function renderTimelineEntryCard(entry) {
   const amountClass = isExpenseKind ? "negative" : "positive";
   const amountPrefix = isExpenseKind ? "-" : "+";
   const detailBits = [];
-  if ((entry.kind === "contribution" || entry.kind === "contribution-estimate") && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
   if (isExpenseKind) {
     detailBits.push(categoryLabels[entry.category] || "Uitgave");
     if (entry.kind === "estimate" && entry.pricingMode === "per_person") {
@@ -485,7 +504,7 @@ function renderTimelineEntryCard(entry) {
     }
   }
   detailBits.push(formatDate(entry.date));
-  if (entry.note) detailBits.push(escapeHtml(entry.note));
+  if (entry.note && entry.note !== "Startinleg") detailBits.push(escapeHtml(entry.note));
   const isExpanded = expandedRowKey === timelineEntryKey(entry);
 
   return `
@@ -493,7 +512,7 @@ function renderTimelineEntryCard(entry) {
       <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
       <div class="timeline-card__main">
         <strong>${escapeHtml(entry.title)}${isEstimateKind ? ` ${ESTIMATE_PILL}` : ""}</strong>
-        ${isExpanded ? `<div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}${entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : ""}</div>` : ""}
+        ${isExpanded ? renderDetailBits(detailBits, entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : "") : ""}
       </div>
       <span class="timeline-card__amount ${isEstimateKind ? "is-estimate" : amountClass}">${isEstimateKind ? "&asymp; " : ""}${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
       ${isExpanded && !state.sharedView ? `

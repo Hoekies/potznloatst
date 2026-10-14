@@ -1709,6 +1709,30 @@ article.timeline-card {
   grid-column: 1 / -1;
 }
 
+/* Knoppen van een uitgeklapte regel: overal gelijk aan "Bewegingen in de
+   pot" (één rij naast elkaar, zelfde afstand). Specifieker dan de oude
+   management-/person-card-regels, die op mobiel nog onder elkaar stapelden. */
+.management-card .row-actions,
+.person-card .row-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 680px) {
+  .management-card .row-actions,
+  .person-card .row-actions {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    flex-basis: 100%;
+    width: 100%;
+    min-width: 0;
+    padding-left: 0;
+  }
+}
+
 article.timeline-card.timeline-card--estimate {
   border-left-color: #2563EB;
 }
