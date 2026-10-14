@@ -1,5 +1,5 @@
 import { primaryStorageKey, storageKey, migrationStorageKey, backupStorageKey, categoryLabels } from './constants.js';
-import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, sanitizeColor, fallbackColor, cloneData, createId, todayIso } from './utils.js';
+import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, sanitizeColor, fallbackColor, cloneData, createId, todayIso, remapCategory } from './utils.js';
 
 function buildDemoState() {
   const participants = [
@@ -100,7 +100,7 @@ export function normalizeEstimate(item, participantCount) {
     id: item.id || createId(),
     description: sanitizeText(item.description) || "Raming",
     amount,
-    category: categoryLabels[item.category] ? item.category : "overig",
+    category: categoryLabels[remapCategory(item.category)] ? remapCategory(item.category) : "overig",
     paidBy: sanitizeText(item.paidBy),
     date: sanitizeDate(item.date),
     note: sanitizeText(item.note),
@@ -155,7 +155,7 @@ export function normalizeState(rawState) {
         id: item.id || createId(),
         description: sanitizeText(item.description) || "Uitgave",
         amount: sanitizeAmount(item.amount),
-        category: categoryLabels[item.category] ? item.category : "overig",
+        category: categoryLabels[remapCategory(item.category)] ? remapCategory(item.category) : "overig",
         paidBy: sanitizeText(item.paidBy),
         date: sanitizeDate(item.date),
         note: sanitizeText(item.note),

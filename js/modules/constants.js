@@ -21,8 +21,7 @@ export const dateFormatter = new Intl.DateTimeFormat("nl-NL", {
 
 export const categoryLabels = {
   accommodatie: "Accommodatie",
-  eten: "Eten",
-  drinken: "Drinken",
+  eten: "Eten en drinken",
   activiteit: "Activiteit",
   vervoer: "Boodschappen",
   overig: "Overig",
@@ -40,7 +39,6 @@ export const typeLabels = {
 export const categoryEmoji = {
   accommodatie: "\u{1F3E0}",
   eten: "\u{1F37D}",
-  drinken: "\u{1F37B}",
   activiteit: "\u{1F3AF}",
   vervoer: "\u{1F6D2}",
   overig: "\u{1F9FE}",

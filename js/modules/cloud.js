@@ -1,5 +1,5 @@
 import { primaryStorageKey } from './constants.js';
-import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbackColor, showToast } from './utils.js';
+import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbackColor, showToast, remapCategory } from './utils.js';
 import { categoryLabels } from './constants.js';
 import {
   state, setState, normalizeState, normalizeEstimate, createEmptyState, hasMeaningfulState,
@@ -265,7 +265,7 @@ export async function buildCloudStateForUser(user) {
       id: item.id,
       description: sanitizeText(item.omschrijving) || (item.is_raming ? "Raming" : "Uitgave"),
       amount: sanitizeAmount(item.bedrag),
-      category: categoryLabels[item.categorie] ? item.categorie : "overig",
+      category: categoryLabels[remapCategory(item.categorie)] ? remapCategory(item.categorie) : "overig",
       paidBy: sanitizeText(item.betaald_door),
       date: sanitizeDate(String(item.datum || "").slice(0, 10)),
       note: sanitizeText(item.notitie),

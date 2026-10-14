@@ -15,16 +15,16 @@ export async function collectExpenseForm(dom) {
   const category = dom.expenseCategoryInput.value;
   const date = dom.expenseDateInput.value;
   const note = dom.expenseNoteInput.value.trim();
-  const pricingMode = kind === "estimate" ? dom.estimatePricingModeInput.value : "total";
-  const participantCountSnapshot = kind === "estimate" && pricingMode === "per_person" ? state.participants.length : 0;
+  const pricingMode = dom.estimatePricingModeInput.value;
+  const participantCountSnapshot = pricingMode === "per_person" ? state.participants.length : 0;
   const typedAmount = sanitizeAmount(dom.expenseAmountInput.value);
-  const perPersonAmount = kind === "estimate" && pricingMode === "per_person" ? typedAmount : 0;
-  const amount = kind === "estimate" && pricingMode === "per_person"
+  const perPersonAmount = pricingMode === "per_person" ? typedAmount : 0;
+  const amount = pricingMode === "per_person"
     ? sanitizeAmount(perPersonAmount * participantCountSnapshot)
     : typedAmount;
 
-  if (kind === "estimate" && pricingMode === "per_person" && participantCountSnapshot < 1) {
-    showToast("Voeg eerst minimaal 1 deelnemer toe voordat je een raming per persoon opslaat.", "info");
+  if (pricingMode === "per_person" && participantCountSnapshot < 1) {
+    showToast("Voeg eerst minimaal 1 deelnemer toe voordat je een bedrag per persoon opslaat.", "info");
     return null;
   }
 
@@ -255,9 +255,11 @@ export function convertExpenseToEstimate(id) {
 
 export function renderExpenseComposerState(dom, stateRef) {
   const isEstimate = dom.expenseKindInput.checked;
-  const perPersonMode = isEstimate && dom.estimatePricingModeInput.value === "per_person";
+  const perPersonMode = dom.estimatePricingModeInput.value === "per_person";
 
-  dom.estimatePerPersonWrap.hidden = !isEstimate;
+  // Per persoon/totaal is altijd beschikbaar, ook voor een definitieve
+  // uitgave — niet alleen voor een raming.
+  dom.estimatePerPersonWrap.hidden = false;
   if (dom.estimateCalculation) dom.estimateCalculation.hidden = !perPersonMode;
 
   dom.expenseForm.querySelector('button[type="submit"]').textContent = isEstimate ? "Raming opslaan" : "Uitgave opslaan";

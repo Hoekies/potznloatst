@@ -72,11 +72,17 @@ export function categoryColor(category) {
   return {
     accommodatie: "#0A1B36",
     eten: "#7C3AED",
-    drinken: "#06B6D4",
     activiteit: "#2563EB",
     vervoer: "#1E3A8A",
     overig: "#2563EB",
-  }[category] || "#2563EB";
+  }[remapCategory(category)] || "#2563EB";
+}
+
+// "Drinken" is samengevoegd met "Eten" tot één categorie ("Eten en drinken").
+// Bestaande uitgaven die nog op de oude "drinken"-sleutel staan, blijven zo
+// gewoon correct gecategoriseerd i.p.v. stilletjes naar "Overig" te vallen.
+export function remapCategory(category) {
+  return category === "drinken" ? "eten" : category;
 }
 
 export function fileToDataUrl(file) {
