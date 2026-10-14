@@ -12,21 +12,58 @@ import {
 
 export { getActiveTab, setActiveTab, getEditingParticipantId, setEditingParticipantId, getEditingRecord, setEditingRecord };
 
-// Welke timeline-groepen (per categorie + inleg) open staan. De lijst wordt
-// bij elke actie volledig opnieuw opgebouwd (innerHTML), dus zonder dit zou
-// een open groep telkens weer dichtklappen - ook als je net op Wijzig had
-// geklikt op een regel erin.
-const openTimelineGroups = new Set();
+// Welke inklapbare groepen open staan, per lijst ("timeline:…", "expenses:…").
+// De lijsten worden bij elke actie opnieuw opgebouwd (innerHTML), dus zonder
+// dit zou een open groep telkens weer dichtklappen.
+const openListGroups = new Set();
 
-// Accordeon: er staat maar één groep tegelijk open.
-export function setTimelineGroupOpen(groupKey, isOpen) {
+const groupScope = (groupKey) => groupKey.split(":")[0];
+
+// Accordeon: per lijst staat maar één groep tegelijk open.
+export function setGroupOpen(groupKey, isOpen) {
   if (isOpen) {
-    openTimelineGroups.clear();
-    openTimelineGroups.add(groupKey);
+    for (const key of [...openListGroups]) {
+      if (groupScope(key) === groupScope(groupKey)) openListGroups.delete(key);
+    }
+    openListGroups.add(groupKey);
   } else {
-    openTimelineGroups.delete(groupKey);
+    openListGroups.delete(groupKey);
   }
 }
+
+const isEstimateKindValue = (kind) => kind === "estimate" || kind === "topup-estimate" || kind === "contribution-estimate";
+
+function renderGroupTitle(label, items) {
+  const total = items.reduce((sum, entry) => sum + entry.amount, 0);
+  const estimateTotal = items.filter((entry) => isEstimateKindValue(entry.kind)).reduce((sum, entry) => sum + entry.amount, 0);
+  const finalTotal = total - estimateTotal;
+  return `
+    <span class="timeline-inleg-group__title">
+      <span>${label} &mdash; totaal ${currencyFormatter.format(total)}</span>
+      ${estimateTotal > 0 ? `
+        <span class="timeline-inleg-group__split">
+          <span class="amount-pill amount-pill--estimate">Raming ${currencyFormatter.format(estimateTotal)}</span>
+          <span class="amount-pill amount-pill--final">Definitief ${currencyFormatter.format(finalTotal)}</span>
+        </span>
+      ` : ""}
+    </span>
+  `;
+}
+
+// Eén inklapbare groep, gelijk voor "Bewegingen in de pot" en Uitgaven.
+function renderListGroup({ groupKey, label, items, isOpen, renderItem }) {
+  return `
+    <details class="timeline-inleg-group" data-group-key="${groupKey}" ${isOpen ? "open" : ""}>
+      <summary class="timeline-inleg-group__summary">
+        ${renderGroupTitle(label, items)}
+        <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
+      </summary>
+      <div class="timeline-inleg-group__list">${items.map(renderItem).join("")}</div>
+    </details>
+  `;
+}
+
+const categoryGroupLabel = (categoryKey) => `${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]}`;
 
 // Lijstregels (overzicht, uitgaven, deelnemers) zijn ingeklapt: icoon, naam,
 // bedrag. Eén regel tegelijk klapt uit met details en knoppen.
@@ -41,7 +78,9 @@ export function toggleExpandedRow(key) {
 // "Bewegingen in de pot" dichtklappen sluit ook alle groepen en regels
 // eronder, zodat je bij opnieuw openen alleen de categorieën ziet.
 export function collapseTimeline() {
-  openTimelineGroups.clear();
+  for (const key of [...openListGroups]) {
+    if (groupScope(key) === "timeline") openListGroups.delete(key);
+  }
   if (expandedRowKey?.startsWith("timeline:")) expandedRowKey = null;
   if (getEditingRecord()?.scope === "timeline") setEditingRecord(null);
 }
@@ -298,9 +337,26 @@ export function renderExpenses(dom) {
     return;
   }
 
-  dom.expenseList.innerHTML = records
-    .map((record) => {
-      const isEditing = getEditingRecord()?.scope === "management" && getEditingRecord().id === record.id && getEditingRecord().kind === record.kind;
+  const editingRecord = getEditingRecord();
+  const isEditingRecord = (record) => editingRecord?.scope === "management" && editingRecord.id === record.id && editingRecord.kind === record.kind;
+
+  dom.expenseList.innerHTML = Object.keys(categoryLabels)
+    .map((categoryKey) => {
+      const items = records.filter((record) => record.category === categoryKey);
+      if (!items.length) return "";
+      const groupKey = `expenses:category:${categoryKey}`;
+      return renderListGroup({
+        groupKey,
+        label: categoryGroupLabel(categoryKey),
+        items,
+        isOpen: openListGroups.has(groupKey) || items.some(isEditingRecord),
+        renderItem: (record) => renderExpenseCard(record, isEditingRecord(record)),
+      });
+    })
+    .join("");
+}
+
+function renderExpenseCard(record, isEditing) {
       const categoryIcon = categoryEmoji[record.category] || categoryEmoji.overig;
       const detailBits = [categoryLabels[record.category], formatDate(record.date)];
       if (record.kind === "estimate" && record.pricingMode === "per_person") {
@@ -338,8 +394,6 @@ export function renderExpenses(dom) {
           ` : ""}
         </article>
       `;
-    })
-    .join("");
 }
 
 export function renderTimeline(dom) {
@@ -408,64 +462,25 @@ export function renderTimeline(dom) {
   }
 
   const isInlegKind = (kind) => kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate";
-  const isEstimateKind = (kind) => kind === "estimate" || kind === "topup-estimate" || kind === "contribution-estimate";
-  const renderGroupTitle = (label, items) => {
-    const total = items.reduce((sum, entry) => sum + entry.amount, 0);
-    const estimateTotal = items.filter((entry) => isEstimateKind(entry.kind)).reduce((sum, entry) => sum + entry.amount, 0);
-    const finalTotal = total - estimateTotal;
-    return `
-      <span class="timeline-inleg-group__title">
-        <span>${label} &mdash; totaal ${currencyFormatter.format(total)}</span>
-        ${estimateTotal > 0 ? `
-          <span class="timeline-inleg-group__split">
-            <span class="amount-pill amount-pill--estimate">Raming ${currencyFormatter.format(estimateTotal)}</span>
-            <span class="amount-pill amount-pill--final">Definitief ${currencyFormatter.format(finalTotal)}</span>
-          </span>
-        ` : ""}
-      </span>
-    `;
-  };
-
   const otherEntries = entries.filter((entry) => !isInlegKind(entry.kind));
   const inlegEntries = entries.filter((entry) => isInlegKind(entry.kind));
 
-  // Net als inleg: per categorie ingeklapt met alleen het totaalbedrag,
-  // zodat de lijst compact blijft totdat je een categorie openklikt.
   const editingRecord = getEditingRecord();
-  const groupContainsEditingEntry = (items) => editingRecord?.scope === "timeline"
-    && items.some((entry) => entry.id === editingRecord.id && entry.kind === editingRecord.kind);
-  const isGroupOpen = (groupKey, items) => openTimelineGroups.has(groupKey) || groupContainsEditingEntry(items);
+  const isGroupOpen = (groupKey, items) => openListGroups.has(groupKey)
+    || (editingRecord?.scope === "timeline" && items.some((entry) => entry.id === editingRecord.id && entry.kind === editingRecord.kind));
 
-  const categoryOrder = Object.keys(categoryLabels);
-  const otherHtml = categoryOrder
+  const otherHtml = Object.keys(categoryLabels)
     .map((categoryKey) => {
       const items = otherEntries.filter((entry) => entry.category === categoryKey);
       if (!items.length) return "";
-      const groupKey = `category:${categoryKey}`;
-      return `
-        <details class="timeline-inleg-group" data-group-key="${groupKey}" ${isGroupOpen(groupKey, items) ? "open" : ""}>
-          <summary class="timeline-inleg-group__summary">
-            ${renderGroupTitle(`${categoryEmoji[categoryKey] || categoryEmoji.overig} ${categoryLabels[categoryKey]}`, items)}
-            <span class="timeline-inleg-group__count">${items.length} ${items.length === 1 ? "post" : "posten"}</span>
-          </summary>
-          <div class="timeline-inleg-group__list">${items.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
-        </details>
-      `;
+      const groupKey = `timeline:category:${categoryKey}`;
+      return renderListGroup({ groupKey, label: categoryGroupLabel(categoryKey), items, isOpen: isGroupOpen(groupKey, items), renderItem: renderTimelineEntryCard });
     })
     .join("");
 
-  let inlegHtml = "";
-  if (inlegEntries.length) {
-    inlegHtml = `
-      <details class="timeline-inleg-group" data-group-key="inleg" ${isGroupOpen("inleg", inlegEntries) ? "open" : ""}>
-        <summary class="timeline-inleg-group__summary">
-          ${renderGroupTitle("&#128176; Inleg", inlegEntries)}
-          <span class="timeline-inleg-group__count">${inlegEntries.length} ${inlegEntries.length === 1 ? "post" : "posten"}</span>
-        </summary>
-        <div class="timeline-inleg-group__list">${inlegEntries.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
-      </details>
-    `;
-  }
+  const inlegHtml = inlegEntries.length
+    ? renderListGroup({ groupKey: "timeline:inleg", label: "&#128176; Inleg", items: inlegEntries, isOpen: isGroupOpen("timeline:inleg", inlegEntries), renderItem: renderTimelineEntryCard })
+    : "";
 
   dom.timeline.innerHTML = otherHtml + inlegHtml;
 }

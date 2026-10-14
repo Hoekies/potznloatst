@@ -5,7 +5,7 @@ import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressI
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderExpenses, renderTimeline,
-  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleExpandedRow, collapseTimeline,
+  renderAccountUi, renderTabs, setGroupOpen, toggleExpandedRow, collapseTimeline,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
@@ -889,16 +889,20 @@ function setupEventListeners() {
     renderTimeline(getDomBundle());
   });
 
-  dom.timeline.addEventListener("toggle", (event) => {
-    const details = event.target.closest?.("[data-group-key]");
-    if (!details) return;
-    setTimelineGroupOpen(details.dataset.groupKey, details.open);
-    if (details.open) {
-      dom.timeline.querySelectorAll("details[data-group-key][open]").forEach((other) => {
-        if (other !== details) other.open = false;
-      });
-    }
-  }, true);
+  const trackGroupToggles = (container) => {
+    container.addEventListener("toggle", (event) => {
+      const details = event.target.closest?.("[data-group-key]");
+      if (!details) return;
+      setGroupOpen(details.dataset.groupKey, details.open);
+      if (details.open) {
+        container.querySelectorAll("details[data-group-key][open]").forEach((other) => {
+          if (other !== details) other.open = false;
+        });
+      }
+    }, true);
+  };
+  trackGroupToggles(dom.timeline);
+  trackGroupToggles(dom.expenseList);
 
   dom.timeline.addEventListener("click", (event) => {
     const target = event.target.closest("[data-timeline-action]");
