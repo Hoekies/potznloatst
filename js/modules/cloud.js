@@ -363,7 +363,10 @@ export async function syncStateToCloud(reason = "auto") {
     && !normalized.contributions.length
     && !normalized.expenses.length
     && !normalized.estimates.length;
-  if (hasNothingToSync) {
+  // "reset-confirmed" komt alleen van een expliciete, door de gebruiker
+  // bevestigde actie (nieuwe lege balans beginnen) — dan mag de cloud wel
+  // echt leeggemaakt worden.
+  if (hasNothingToSync && reason !== "reset-confirmed") {
     console.warn("Cloud-sync overgeslagen: lokale staat is volledig leeg — dit voorkomt het per ongeluk wissen van clouddata.");
     return;
   }

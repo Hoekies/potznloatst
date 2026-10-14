@@ -20,6 +20,7 @@ export const exportStateButton = document.querySelector("#export-state");
 export const importStateButton = document.querySelector("#import-state");
 export const importStateFileInput = document.querySelector("#import-state-file");
 export const restoreBackupButton = document.querySelector("#restore-backup");
+export const startFreshBalanceButton = document.querySelector("#start-fresh-balance");
 
 export const participantNameInput = document.querySelector("#participant-name");
 export const participantInitialInput = document.querySelector("#participant-initial");

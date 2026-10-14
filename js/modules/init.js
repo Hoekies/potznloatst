@@ -480,6 +480,39 @@ function restoreFromLocalBackup() {
   showToast("Back-up hersteld.", "success");
 }
 
+function startFreshBalance() {
+  const newName = prompt("Naam voor de nieuwe balans:", state.weekend?.name || "");
+  if (newName === null) return;
+
+  const trimmedName = newName.trim();
+  if (!trimmedName) {
+    showToast("Vul een naam in voor de nieuwe balans.", "error");
+    return;
+  }
+
+  const confirmed = confirm(
+    `Nieuwe, lege balans "${trimmedName}" beginnen?\n\n`
+    + "Alle huidige deelnemers, inleg en uitgaven worden gewist (lokaal én in de cloud als je bent ingelogd).\n\n"
+    + "Er is automatisch een lokale back-up van de huidige balans bewaard — die kun je via \"Herstel back-up\" terugzetten als dit een vergissing was."
+  );
+  if (!confirmed) return;
+
+  const preservedAuth = { ...state.auth };
+  const preservedProfile = { ...state.profile };
+  setState(createEmptyState());
+  state.auth = preservedAuth;
+  state.profile = preservedProfile;
+  state.weekend = { name: trimmedName, appName: state.weekend?.appName || "Pot z,n Loatst" };
+
+  resetUiState();
+  persistAndRender();
+  // Expliciete bevestigde reset: mag de cloud ook echt leegmaken (anders
+  // weigert syncStateToCloud een volledig lege staat te synchroniseren —
+  // dat vangnet is er juist om een *onbedoelde* lege staat tegen te houden).
+  queueCloudSync("reset-confirmed");
+  showToast(`Nieuwe balans "${trimmedName}" gestart.`, "success");
+}
+
 function setupEventListeners() {
   dom.tabButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -885,6 +918,10 @@ function setupEventListeners() {
   dom.importStateButton?.addEventListener("click", () => dom.importStateFileInput?.click());
   dom.importStateFileInput?.addEventListener("change", importStateFromFile);
   dom.restoreBackupButton?.addEventListener("click", restoreFromLocalBackup);
+  dom.startFreshBalanceButton?.addEventListener("click", () => {
+    closeAccountDropdown();
+    startFreshBalance();
+  });
   dom.accountToggleButton?.addEventListener("click", toggleAccountDropdown);
   dom.accountLoginButton?.addEventListener("click", () => {
     closeAccountDropdown();

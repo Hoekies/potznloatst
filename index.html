@@ -48,6 +48,7 @@
                   <button id="import-state" class="account-menu__item" type="button">Importeren</button>
                   <input id="import-state-file" type="file" accept=".json" hidden>
                   <button id="restore-backup" class="account-menu__item" type="button" hidden>Herstel back-up</button>
+                  <button id="start-fresh-balance" class="account-menu__item account-menu__item--danger" type="button">Nieuwe lege balans</button>
                 </div>
               </div>
             </div>
@@ -110,6 +111,10 @@
 
                 <form id="topup-form" class="stack-form" autocomplete="off">
                   <div class="field-row">
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
+                      <input id="topup-note" name="topup-note" type="text" placeholder="Omschrijving (optioneel)" aria-label="Omschrijving" />
+                    </label>
                     <div class="icon-field icon-field--amount">
                       <span class="icon-field__icon" aria-hidden="true">&euro;</span>
                       <input id="topup-amount" name="topup-amount" type="text" inputmode="decimal" placeholder="Extra inleg" aria-label="Extra inleg" required />
@@ -118,10 +123,6 @@
                         <span aria-hidden="true">&#128302;</span>
                       </label>
                     </div>
-                    <label class="icon-field">
-                      <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
-                      <input id="topup-note" name="topup-note" type="text" placeholder="Omschrijving (optioneel)" aria-label="Omschrijving" />
-                    </label>
                   </div>
                   <button class="primary-button" type="submit">Toevoegen</button>
                 </form>

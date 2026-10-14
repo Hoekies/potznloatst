@@ -148,8 +148,8 @@ textarea {
 }
 
 .account-menu__avatar {
-  width: 52px;
-  height: 52px;
+  width: 104px;
+  height: 104px;
   border-radius: 999px;
   overflow: hidden;
   background: linear-gradient(135deg, #1B5E20, #2E7D32);
@@ -157,7 +157,7 @@ textarea {
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 19px;
+  font-size: 36px;
   pointer-events: none;
 }
 
@@ -259,6 +259,14 @@ textarea {
 
 .account-menu__item:hover {
   background: var(--cyan-soft);
+}
+
+.account-menu__item--danger {
+  color: var(--terracotta);
+}
+
+.account-menu__item--danger:hover {
+  background: var(--red-soft);
 }
 
 .login-wall { display: none; }
@@ -575,9 +583,9 @@ textarea {
 
 .hero__content {
   position: relative;
-  padding: 10px 24px;
+  padding: 6px 24px;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   overflow: visible;
   isolation: auto;
@@ -652,8 +660,8 @@ h1 {
 
 .brand-logo--main {
   width: 100%;
-  max-width: min(600px, 80vw);
-  max-height: min(22vh, 160px);
+  max-width: min(360px, 48vw);
+  max-height: min(12vh, 90px);
   object-position: center;
 }
 
@@ -2556,6 +2564,12 @@ textarea:focus {
   .brand-logo--main {
     max-width: min(360px, 62vw);
     max-height: min(12vh, 72px);
+  }
+
+  .account-menu__avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 26px;
   }
 
   /* Sync-badge: verberg label-tekst, toon alleen icoon */
