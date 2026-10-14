@@ -1,4 +1,4 @@
-const CACHE_NAME = "potzloats-cache-v87";
+const CACHE_NAME = "potzloats-cache-v88";
 
 // Alleen statische assets worden gecachet (afbeeldingen, manifest)
 // JS en CSS worden altijd vers opgehaald zodat updates direct werken

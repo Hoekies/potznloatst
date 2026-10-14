@@ -904,6 +904,25 @@ h3 {
   word-break: break-word;
 }
 
+.wa-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+#share-form .primary-button,
+.share-whatsapp-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.share-whatsapp-button .wa-icon {
+  fill: #25D366;
+}
+
 .share-whatsapp-button {
   width: 100%;
   margin-top: 14px;
