@@ -28,7 +28,7 @@ import {
   openAdminGebruikersModal, submitAuth,
 } from './auth.js';
 import {
-  bootstrapCloudFeatures, handleCloudSync, queueCloudSync, setRenderFn as setCloudRenderFn,
+  bootstrapCloudFeatures, handleCloudSync, queueCloudSync, syncStateToCloud, setRenderFn as setCloudRenderFn,
   warmUpSupabase,
 } from './cloud.js';
 
@@ -480,7 +480,7 @@ function restoreFromLocalBackup() {
   showToast("Back-up hersteld.", "success");
 }
 
-function startFreshBalance() {
+async function startFreshBalance() {
   const newName = prompt("Naam voor de nieuwe balans:", state.weekend?.name || "");
   if (newName === null) return;
 
@@ -506,10 +506,23 @@ function startFreshBalance() {
 
   resetUiState();
   persistAndRender();
-  // Expliciete bevestigde reset: mag de cloud ook echt leegmaken (anders
-  // weigert syncStateToCloud een volledig lege staat te synchroniseren —
-  // dat vangnet is er juist om een *onbedoelde* lege staat tegen te houden).
-  queueCloudSync("reset-confirmed");
+
+  // Direct en bewust aanroepen i.p.v. via queueCloudSync(): die wachtrij kan
+  // een lopende sync samenvoegen tot één vervolg-aanroep met reason "queued",
+  // waardoor "reset-confirmed" verloren gaat en de cloud-wipe (het
+  // vangnet in syncStateToCloud weigert normaal een lege staat te
+  // synchroniseren) stilletjes wordt overgeslagen — en de oude clouddata
+  // bij de volgende hydration gewoon terugkomt.
+  if (state.auth?.loggedIn) {
+    try {
+      await syncStateToCloud("reset-confirmed");
+    } catch (error) {
+      console.warn("Cloud-reset mislukte:", error);
+      showToast(`Lokaal gereset naar "${trimmedName}", maar synchroniseren met de cloud is mislukt. Probeer het later opnieuw.`, "error");
+      return;
+    }
+  }
+
   showToast(`Nieuwe balans "${trimmedName}" gestart.`, "success");
 }
 
