@@ -637,8 +637,8 @@ h1 {
 
 .brand-logo--main {
   width: 100%;
-  max-width: min(360px, 48vw);
-  max-height: min(12vh, 90px);
+  max-width: min(620px, 55vw);
+  max-height: min(22vh, 200px);
   object-position: center;
 }
 
