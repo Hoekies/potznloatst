@@ -148,8 +148,8 @@ textarea {
 }
 
 .account-menu__avatar {
-  width: 104px;
-  height: 104px;
+  width: 64px;
+  height: 64px;
   border-radius: 999px;
   overflow: hidden;
   background: linear-gradient(135deg, #1B5E20, #2E7D32);
@@ -157,7 +157,7 @@ textarea {
   display: grid;
   place-items: center;
   font-weight: 700;
-  font-size: 36px;
+  font-size: 22px;
   pointer-events: none;
 }
 
@@ -583,7 +583,7 @@ textarea {
 
 .hero__content {
   position: relative;
-  padding: 6px 24px;
+  padding: 12px 24px;
   display: grid;
   gap: 8px;
   align-items: center;
@@ -2557,7 +2557,7 @@ textarea:focus {
   }
 
   .hero__content {
-    padding: 8px 16px;
+    padding: 12px 16px;
     gap: 6px;
   }
 
@@ -2567,9 +2567,9 @@ textarea:focus {
   }
 
   .account-menu__avatar {
-    width: 72px;
-    height: 72px;
-    font-size: 26px;
+    width: 48px;
+    height: 48px;
+    font-size: 17px;
   }
 
   /* Sync-badge: verberg label-tekst, toon alleen icoon */
