@@ -843,6 +843,14 @@ h3 {
   gap: 16px;
 }
 
+.share-whatsapp-button {
+  width: 100%;
+  margin-top: 14px;
+  color: #075E54;
+  border-color: rgba(37, 211, 102, 0.45);
+  background: rgba(37, 211, 102, 0.12);
+}
+
 .summary-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

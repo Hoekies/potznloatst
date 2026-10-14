@@ -12,6 +12,7 @@ export const addParticipantRowButton = document.querySelector("#add-participant-
 export const expenseList = document.querySelector("#expense-list");
 export const timeline = document.querySelector("#timeline");
 export const shareBalancePdfButton = document.querySelector("#share-balance-pdf");
+export const shareWhatsappButton = document.querySelector("#share-whatsapp");
 export const exportStateButton = document.querySelector("#export-state");
 export const importStateButton = document.querySelector("#import-state");
 export const importStateFileInput = document.querySelector("#import-state-file");

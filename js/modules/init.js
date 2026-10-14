@@ -346,6 +346,42 @@ function buildBalancePdfBlob(JsPdfCtor) {
   return doc.output("blob");
 }
 
+// Tekst met *vet* in WhatsApp-opmaak. Volgorde: wat is er nu (ingelegd,
+// uitgegeven, in de pot, per persoon), dan wat er nog in de raming staat,
+// en tot slot wat er na de ramingen overblijft.
+function buildBalanceWhatsappText() {
+  const s = calculateSummary(state);
+  const eur = (value) => currencyFormatter.format(value);
+  const title = state.weekend?.name || "Pot z'n Loatst";
+  const lines = [
+    `*${title} — stand van de pot*`,
+    `_${formatDate(todayIso())}_`,
+    "",
+    `💰 Ingelegd: *${eur(s.totalInitial + s.totalTopups)}*`,
+    `🧾 Uitgegeven: *${eur(s.totalExpenses)}*`,
+    `🏦 Nu in de pot: *${eur(s.remaining)}*`,
+    `👤 Per persoon over: *${eur(s.remainingPerPerson)}*${s.participantCount ? ` (${s.participantCount} ${s.participantCount === 1 ? "deelnemer" : "deelnemers"})` : ""}`,
+  ];
+
+  if (s.totalEstimates > 0 || s.totalInlegEstimates > 0) {
+    lines.push("", "🔮 *Nog in de raming (niet definitief)*");
+    if (s.totalEstimates > 0) lines.push(`• Nog uit te geven: ${eur(s.totalEstimates)}`);
+    if (s.totalInlegEstimates > 0) lines.push(`• Nog te ontvangen inleg: ${eur(s.totalInlegEstimates)}`);
+    lines.push(
+      "",
+      `➡️ Na ramingen in de pot: *${eur(s.remainingAfterEstimates)}*`,
+      `➡️ Per persoon na ramingen: *${eur(s.remainingAfterEstimatesPerPerson)}*`,
+    );
+  }
+
+  return lines.join("\n");
+}
+
+function shareBalanceWhatsapp() {
+  const text = buildBalanceWhatsappText();
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+}
+
 async function shareBalancePdf() {
   let JsPdfCtor;
   try {
@@ -963,6 +999,7 @@ function setupEventListeners() {
     }
   });
 
+  dom.shareWhatsappButton?.addEventListener("click", shareBalanceWhatsapp);
   dom.shareBalancePdfButton?.addEventListener("click", () => {
     closeAccountDropdown();
     shareBalancePdf();
