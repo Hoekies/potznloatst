@@ -1,5 +1,5 @@
 import { primaryStorageKey } from './constants.js';
-import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbackColor } from './utils.js';
+import { sanitizeText, sanitizeAmount, sanitizeDate, sanitizeImageValue, fallbackColor, showToast } from './utils.js';
 import { categoryLabels } from './constants.js';
 import {
   state, setState, normalizeState, normalizeEstimate, createEmptyState, hasMeaningfulState,
@@ -350,6 +350,23 @@ export async function syncStateToCloud(reason = "auto") {
   }
 
   const normalized = normalizeState(state);
+
+  // Veiligheidsklep: deze functie verwijdert eerst alle cloudrijen van deze
+  // gebruiker voordat ze de lokale staat terugzet (delete-then-insert, geen
+  // transactie). Als de lokale staat per ongeluk leeg is geraakt (bv. een
+  // mislukte hydration, een bug, of een corrupte localStorage), zou dit alle
+  // echte data in Supabase onherstelbaar wissen zonder iets terug te zetten.
+  // Weiger daarom een sync die alles zou wissen zonder dat er iets is om
+  // terug te zetten.
+  const hasNothingToSync = !normalized.participants.length
+    && !normalized.contributions.length
+    && !normalized.expenses.length
+    && !normalized.estimates.length;
+  if (hasNothingToSync) {
+    console.warn("Cloud-sync overgeslagen: lokale staat is volledig leeg — dit voorkomt het per ongeluk wissen van clouddata.");
+    return;
+  }
+
   const uploadedExpenses = [];
   for (const expense of normalized.expenses) {
     uploadedExpenses.push(await ensureReceiptUploaded(expense, user.id));
@@ -528,8 +545,22 @@ export async function bootstrapCloudFeatures(bindAuthModal, renderAccountUi, onP
           hydrateFromSupabaseSession(user)
             .then(() => onAutoLogin?.())
             .catch((err) => {
-              console.warn("Hydration mislukt, gebruik lokale staat:", err);
-              applyCloudState(createEmptyState(), user);
+              // NOOIT hier overschakelen naar een lege staat: dat zou bij de
+              // eerstvolgende sync de echte clouddata (delete-then-insert)
+              // wissen. Bij een mislukte hydration blijft de huidige lokale
+              // staat gewoon staan; de gebruiker ziet een foutmelding en kan
+              // het opnieuw proberen i.p.v. dat zijn data verdwijnt.
+              console.warn("Hydration mislukt, lokale staat blijft behouden:", err);
+              state.auth = {
+                ...(state.auth || {}),
+                loggedIn: true,
+                provider: "supabase",
+                email: user.email || "",
+                userId: user.id,
+              };
+              writeToStorage(primaryStorageKey, JSON.stringify(state));
+              _render();
+              showToast("Synchroniseren met de cloud is mislukt. Probeer het later opnieuw — je gegevens zijn niet aangepast.", "error");
               onAutoLogin?.();
             });
         }, 0);
