@@ -1656,6 +1656,17 @@ article.timeline-card {
   border-left: 4px solid #2E7D32;
 }
 
+/* Ingeklapte regel: klikbaar om details en knoppen te tonen. */
+[data-timeline-toggle] {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.timeline-card--expanded {
+  box-shadow: 0 4px 16px rgba(28, 46, 31, 0.1);
+}
+
 article.timeline-card.timeline-card--estimate {
   border-left-color: #2563EB;
 }
@@ -1971,10 +1982,14 @@ article.timeline-card.timeline-card--estimate {
 
   .timeline-card {
     grid-template-columns: 36px minmax(0, 1fr) auto;
+    grid-template-areas: "badge main amount";
+    align-items: center;
+  }
+
+  .timeline-card--expanded {
     grid-template-areas:
       "badge main amount"
       "actions actions actions";
-    align-items: center;
   }
 
   .timeline-card__badge  { grid-area: badge; }

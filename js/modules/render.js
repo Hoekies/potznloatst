@@ -18,12 +18,24 @@ export { getActiveTab, setActiveTab, getEditingParticipantId, setEditingParticip
 // geklikt op een regel erin.
 const openTimelineGroups = new Set();
 
+// Accordeon: er staat maar één groep tegelijk open.
 export function setTimelineGroupOpen(groupKey, isOpen) {
   if (isOpen) {
+    openTimelineGroups.clear();
     openTimelineGroups.add(groupKey);
   } else {
     openTimelineGroups.delete(groupKey);
   }
+}
+
+// Regels in "Bewegingen in de pot" zijn ingeklapt (icoon, naam, bedrag);
+// één regel tegelijk kan uitgeklapt worden met details en knoppen.
+let expandedTimelineKey = null;
+
+const timelineEntryKey = (entry) => `${entry.kind}:${entry.id}`;
+
+export function toggleTimelineEntry(key) {
+  expandedTimelineKey = expandedTimelineKey === key ? null : key;
 }
 
 export function render(dom) {
@@ -489,24 +501,25 @@ function renderTimelineEntryCard(entry) {
   }
   detailBits.push(formatDate(entry.date));
   if (entry.note) detailBits.push(escapeHtml(entry.note));
+  const isExpanded = expandedTimelineKey === timelineEntryKey(entry);
 
   return `
-    <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+    <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}${isExpanded ? " timeline-card--expanded" : ""}" data-timeline-card="${entry.id}" data-timeline-toggle="${timelineEntryKey(entry)}" aria-expanded="${isExpanded}">
       <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
       <div class="timeline-card__main">
         <strong>${escapeHtml(entry.title)}${isEstimateKind ? ` ${ESTIMATE_PILL}` : ""}</strong>
-        <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}${entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : ""}</div>
+        ${isExpanded ? `<div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}${entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : ""}</div>` : ""}
       </div>
       <span class="timeline-card__amount ${isEstimateKind ? "is-estimate" : amountClass}">${isEstimateKind ? "&asymp; " : ""}${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
+      ${isExpanded && !state.sharedView ? `
       <div class="timeline-card__actions">
-        ${state.sharedView ? "" : `
           ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
           ${entry.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-to-estimate" data-kind="expense" data-id="${entry.id}">Maak raming</button>` : ""}
           ${entry.kind === "contribution-estimate" || entry.kind === "topup-estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-inleg" data-kind="${entry.kind}" data-id="${entry.id}">Definitief</button>` : ""}
           <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
           <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
-        `}
       </div>
+      ` : ""}
     </article>
   `;
 }

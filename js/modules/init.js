@@ -5,7 +5,7 @@ import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressI
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
   render, renderWeekendLogo, renderParticipants, renderTimeline,
-  renderAccountUi, renderTabs, setTimelineGroupOpen,
+  renderAccountUi, renderTabs, setTimelineGroupOpen, toggleTimelineEntry,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
@@ -821,11 +821,23 @@ function setupEventListeners() {
     const details = event.target.closest?.("[data-group-key]");
     if (!details) return;
     setTimelineGroupOpen(details.dataset.groupKey, details.open);
+    if (details.open) {
+      dom.timeline.querySelectorAll("details[data-group-key][open]").forEach((other) => {
+        if (other !== details) other.open = false;
+      });
+    }
   }, true);
 
   dom.timeline.addEventListener("click", (event) => {
     const target = event.target.closest("[data-timeline-action]");
-    if (!target) return;
+    if (!target) {
+      const card = event.target.closest("[data-timeline-toggle]");
+      if (card) {
+        toggleTimelineEntry(card.dataset.timelineToggle);
+        renderTimeline(getDomBundle());
+      }
+      return;
+    }
 
     const kind = target.dataset.kind;
     const id = target.dataset.id;
