@@ -729,6 +729,7 @@ function setupEventListeners() {
     }
 
     if (target.dataset.action === "remove-participant") {
+      if (!confirm("Deze deelnemer én zijn/haar inleg verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
       state.participants = state.participants.filter((p) => p.id !== participantId);
       state.contributions = state.contributions.filter((item) => item.participantId !== participantId);
       if (getEditingParticipantId() === participantId) {
@@ -809,6 +810,7 @@ function setupEventListeners() {
     }
 
     if (target.dataset.topupAction === "remove") {
+      if (!confirm("Deze extra inleg verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
       state.contributions = state.contributions.filter((item) => item.id !== topupId);
       if (getEditingTopupId() === topupId) {
         setEditingTopupId(null);
@@ -844,6 +846,7 @@ function setupEventListeners() {
     }
 
     if (target.dataset.expenseAction === "remove") {
+      if (!confirm("Deze uitgave verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
       removeRecord(expenseKind, expenseId);
       persistAndRender();
       return;
@@ -905,6 +908,7 @@ function setupEventListeners() {
     }
 
     if (action === "remove") {
+      if (!confirm("Deze regel verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
       removeRecord(kind, id);
       persistAndRender();
       return;
