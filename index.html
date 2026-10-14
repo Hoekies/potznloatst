@@ -184,6 +184,10 @@
                     <div id="expense-amount-wrap" class="icon-field icon-field--amount">
                       <span class="icon-field__icon" id="expense-amount-label" aria-hidden="true">&euro;</span>
                       <input id="expense-amount" name="expense-amount" type="text" inputmode="decimal" placeholder="0,00" aria-label="Bedrag totaal" required />
+                      <label class="inline-raming" title="Bedrag is per persoon, niet totaal">
+                        <input id="estimate-pricing-mode" name="estimate-pricing-mode" type="checkbox" aria-label="Bedrag is per persoon, niet totaal" />
+                        <span aria-hidden="true">&#128101;</span>
+                      </label>
                       <label class="inline-raming" title="Nog een raming">
                         <input id="expense-kind" name="expense-kind" type="checkbox" aria-label="Nog een raming" />
                         <span aria-hidden="true">&#128302;</span>
@@ -191,36 +195,28 @@
                     </div>
                   </div>
 
-                  <div id="estimate-per-person-wrap">
-                    <label class="icon-field">
-                      <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
-                      <select id="estimate-pricing-mode" name="estimate-pricing-mode" aria-label="Bedrag hierboven is">
-                        <option value="total">Bedrag is totaal</option>
-                        <option value="per_person">Bedrag is per persoon</option>
-                      </select>
-                    </label>
-                    <span id="estimate-calculation" class="field-help"></span>
-                  </div>
+                  <span id="estimate-calculation" class="field-help"></span>
 
                   <div class="category-chips" role="group" aria-label="Categorie">
-                    <button type="button" class="category-chip is-active" data-category="accommodatie">&#127968; Accommodatie</button>
-                    <button type="button" class="category-chip" data-category="eten">&#127869; Eten en drinken</button>
-                    <button type="button" class="category-chip" data-category="activiteit">&#127919; Activiteit</button>
-                    <button type="button" class="category-chip" data-category="vervoer">&#128722; Boodschappen</button>
-                    <button type="button" class="category-chip" data-category="overig">&#129790; Overig</button>
+                    <button type="button" class="category-chip is-active" data-category="accommodatie" title="Accommodatie" aria-label="Accommodatie">&#127968; Acc.</button>
+                    <button type="button" class="category-chip" data-category="eten" title="Eten en drinken" aria-label="Eten en drinken">&#127869; Eten</button>
+                    <button type="button" class="category-chip" data-category="activiteit" title="Activiteit" aria-label="Activiteit">&#127919; Act.</button>
+                    <button type="button" class="category-chip" data-category="vervoer" title="Boodschappen" aria-label="Boodschappen">&#128722; Bood.</button>
+                    <button type="button" class="category-chip" data-category="overig" title="Overig" aria-label="Overig">&#129790; Ov.</button>
                   </div>
                   <input type="hidden" id="expense-category" name="expense-category" value="accommodatie" />
 
-                  <label class="icon-field">
-                    <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
-                    <input id="expense-date" name="expense-date" type="date" aria-label="Datum" required />
-                  </label>
-
-                  <div class="receipt-actions">
-                    <button type="button" id="receipt-camera-btn" class="ghost-button ghost-button--small">&#128247; Foto maken</button>
-                    <button type="button" id="receipt-upload-btn" class="ghost-button ghost-button--small">&#128193; Uploaden</button>
-                    <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" hidden />
-                    <input id="expense-receipt-upload" name="expense-receipt-upload" type="file" accept="image/*" hidden />
+                  <div class="field-row field-row--date-receipt">
+                    <label class="icon-field">
+                      <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
+                      <input id="expense-date" name="expense-date" type="date" aria-label="Datum" required />
+                    </label>
+                    <div class="receipt-actions">
+                      <button type="button" id="receipt-camera-btn" class="ghost-button ghost-button--small">&#128247; Foto maken</button>
+                      <button type="button" id="receipt-upload-btn" class="ghost-button ghost-button--small">&#128193; Uploaden</button>
+                      <input id="expense-receipt" name="expense-receipt" type="file" accept="image/*" capture="environment" hidden />
+                      <input id="expense-receipt-upload" name="expense-receipt-upload" type="file" accept="image/*" hidden />
+                    </div>
                   </div>
                   <div id="receipt-review" class="receipt-review" hidden>
                     <button id="receipt-preview" class="receipt-thumb" type="button">

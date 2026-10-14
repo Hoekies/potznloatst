@@ -701,7 +701,6 @@ function setupEventListeners() {
   dom.expenseKindInput.addEventListener("change", () => renderExpenseComposerState(getDomBundle(), state));
   dom.estimatePricingModeInput.addEventListener("change", () => renderExpenseComposerState(getDomBundle(), state));
   dom.expenseAmountInput.addEventListener("input", () => renderExpenseComposerState(getDomBundle(), state));
-  dom.estimatePerPersonAmountInput?.addEventListener("input", () => renderExpenseComposerState(getDomBundle(), state));
 
 
   dom.participantsList.addEventListener("click", (event) => {

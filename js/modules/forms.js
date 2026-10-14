@@ -15,7 +15,7 @@ export async function collectExpenseForm(dom) {
   const category = dom.expenseCategoryInput.value;
   const date = dom.expenseDateInput.value;
   const note = dom.expenseNoteInput.value.trim();
-  const pricingMode = dom.estimatePricingModeInput.value;
+  const pricingMode = dom.estimatePricingModeInput.checked ? "per_person" : "total";
   const participantCountSnapshot = pricingMode === "per_person" ? state.participants.length : 0;
   const typedAmount = sanitizeAmount(dom.expenseAmountInput.value);
   const perPersonAmount = pricingMode === "per_person" ? typedAmount : 0;
@@ -78,7 +78,7 @@ export function syncKindChips(dom, value) {
 export function resetExpenseComposer(dom) {
   dom.expenseForm.reset();
   dom.expenseKindInput.checked = false;
-  dom.estimatePricingModeInput.value = "total";
+  dom.estimatePricingModeInput.checked = false;
   dom.expenseDateInput.value = todayIso();
   pendingReceiptImage = "";
   dom.receiptReview.hidden = true;
@@ -255,11 +255,8 @@ export function convertExpenseToEstimate(id) {
 
 export function renderExpenseComposerState(dom, stateRef) {
   const isEstimate = dom.expenseKindInput.checked;
-  const perPersonMode = dom.estimatePricingModeInput.value === "per_person";
+  const perPersonMode = dom.estimatePricingModeInput.checked;
 
-  // Per persoon/totaal is altijd beschikbaar, ook voor een definitieve
-  // uitgave — niet alleen voor een raming.
-  dom.estimatePerPersonWrap.hidden = false;
   if (dom.estimateCalculation) dom.estimateCalculation.hidden = !perPersonMode;
 
   dom.expenseForm.querySelector('button[type="submit"]').textContent = isEstimate ? "Raming opslaan" : "Uitgave opslaan";

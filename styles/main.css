@@ -1153,9 +1153,11 @@ h3 {
 
 .management-card__actions {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
   flex-shrink: 0;
 }
 
@@ -1495,7 +1497,7 @@ textarea:focus {
 
 .category-chips {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -2506,6 +2508,7 @@ textarea:focus {
   }
 
   .category-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 
