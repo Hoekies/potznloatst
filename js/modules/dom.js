@@ -9,12 +9,10 @@ export const expenseForm = document.querySelector("#expense-form");
 export const participantsList = document.querySelector("#participants-list");
 export const participantNameRows = document.querySelector("#participant-name-rows");
 export const addParticipantRowButton = document.querySelector("#add-participant-row");
-export const topupList = document.querySelector("#topup-list");
 export const expenseList = document.querySelector("#expense-list");
 export const timeline = document.querySelector("#timeline");
 export const filterCategory = document.querySelector("#filter-category");
 export const filterKind = document.querySelector("#filter-kind");
-export const resetDemoButton = document.querySelector("#reset-demo");
 export const shareBalancePdfButton = document.querySelector("#share-balance-pdf");
 export const exportStateButton = document.querySelector("#export-state");
 export const importStateButton = document.querySelector("#import-state");
@@ -38,8 +36,6 @@ export const receiptCameraButton = document.querySelector("#receipt-camera-btn")
 export const receiptUploadButton = document.querySelector("#receipt-upload-btn");
 export const expenseNoteInput = document.querySelector("#expense-note");
 export const estimatePricingModeInput = document.querySelector("#estimate-pricing-mode");
-export const estimateAmountWrap = document.querySelector("#expense-amount-wrap");
-export const estimateAmountLabel = document.querySelector("#expense-amount-label");
 export const estimateCalculation = document.querySelector("#estimate-calculation");
 export const receiptReview = document.querySelector("#receipt-review");
 export const receiptPreview = document.querySelector("#receipt-preview");
@@ -53,13 +49,9 @@ export const weekendName = document.querySelector("#weekend-name");
 export const accountName = document.querySelector("#account-name");
 export const accountStatus = document.querySelector("#account-status");
 export const accountAvatar = document.querySelector("#account-avatar");
-export const menuPanel = document.querySelector(".menu-panel");
-export const menuPanelTrigger = document.querySelector(".menu-panel__trigger");
-export const menuPanelContent = document.querySelector(".menu-panel__content");
 export const accountToggleButton = document.querySelector("#account-toggle");
 export const accountDropdown = document.querySelector("#account-dropdown");
 export const accountLoginButton = document.querySelector("#account-login");
-export const accountToggleHint = document.querySelector("#account-toggle-hint");
 export const openProfileButton = document.querySelector("#open-profile");
 export const syncCloudButton = document.querySelector("#sync-cloud");
 export const profileModal = document.querySelector("#profile-modal");
@@ -71,21 +63,8 @@ export const profileAvatarFileInput = document.querySelector("#profile-avatar-fi
 export const profileResetAvatarButton = document.querySelector("#profile-reset-avatar");
 export const profilePreviewAvatar = document.querySelector("#profile-preview-avatar");
 export const profilePreviewName = document.querySelector("#profile-preview-name");
-export const profilePreviewState = document.querySelector("#profile-preview-state");
 export const cropStage = document.querySelector("#avatar-crop-stage");
 export const cropZoom = document.querySelector("#avatar-crop-zoom");
 
-export const menuBackdrop = document.createElement("div");
-menuBackdrop.className = "menu-panel-backdrop";
-menuBackdrop.hidden = true;
-document.body.appendChild(menuBackdrop);
-
-if (menuPanelContent) {
-  menuPanelContent.hidden = true;
-  menuBackdrop.appendChild(menuPanelContent);
-  menuPanelContent.addEventListener("click", (event) => {
-    event.stopPropagation();
-  });
-}
 
 export { dateFormatter };

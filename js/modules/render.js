@@ -7,11 +7,10 @@ import { emailNaarLogin, isAdmin } from './auth.js';
 import {
   getActiveTab, setActiveTab,
   getEditingParticipantId, setEditingParticipantId,
-  getEditingTopupId, setEditingTopupId,
   getEditingRecord, setEditingRecord,
 } from './ui-state.js';
 
-export { getActiveTab, setActiveTab, getEditingParticipantId, setEditingParticipantId, getEditingTopupId, setEditingTopupId, getEditingRecord, setEditingRecord };
+export { getActiveTab, setActiveTab, getEditingParticipantId, setEditingParticipantId, getEditingRecord, setEditingRecord };
 
 // Welke timeline-groepen (per categorie + inleg) open staan. De lijst wordt
 // bij elke actie volledig opnieuw opgebouwd (innerHTML), dus zonder dit zou
@@ -32,12 +31,10 @@ export function render(dom) {
   renderTabs(dom);
   renderSummary(dom);
   renderParticipants(dom);
-  renderTopups(dom);
   renderExpenses(dom);
   renderTimeline(dom);
   renderWeekendLogo(dom);
   renderSharedViewBadge(dom);
-  if (dom.positionMenuPanel) dom.positionMenuPanel();
 }
 
 export function renderSharedViewBadge(dom) {
@@ -201,11 +198,11 @@ export function renderParticipants(dom) {
     return;
   }
 
+  const isEstimateParticipant = (participant) => Boolean(state.contributions.find((item) => item.participantId === participant.id && item.type === "initial")?.isEstimate);
   dom.participantsList.innerHTML = getSortedParticipants(state)
+    .sort((a, b) => Number(isEstimateParticipant(b)) - Number(isEstimateParticipant(a)))
     .map((participant) => {
-      const contributions = state.contributions.filter((item) => item.participantId === participant.id);
-      const initialContribution = contributions.find((item) => item.type === "initial");
-      const total = contributions.reduce((sum, item) => sum + item.amount, 0);
+      const initialContribution = state.contributions.find((item) => item.participantId === participant.id && item.type === "initial");
       const isEditing = getEditingParticipantId() === participant.id;
 
       return `
@@ -237,8 +234,8 @@ export function renderParticipants(dom) {
                   </div>
                   `
                   : `
-                  <strong>${escapeHtml(participant.name)}${initialContribution?.isEstimate ? " <small>(raming)</small>" : ""}</strong>
-                  <span>${currencyFormatter.format(initialContribution?.amount ?? 0)} ${initialContribution?.isEstimate ? "verwacht" : "ingelegd"}</span>
+                  <strong>${escapeHtml(participant.name)}${initialContribution?.isEstimate ? ` ${ESTIMATE_PILL}` : ""}</strong>
+                  <span${initialContribution?.isEstimate ? ' class="estimate-amount"' : ""}>${initialContribution?.isEstimate ? "&asymp; " : ""}${currencyFormatter.format(initialContribution?.amount ?? 0)} ${initialContribution?.isEstimate ? "verwacht" : "ingelegd"}</span>
                 `
             }
           </div>
@@ -256,78 +253,11 @@ export function renderParticipants(dom) {
     .join("");
 }
 
-export function renderTopups(dom) {
-  if (!dom.topupList) return;
-  const topups = state.contributions
-    .filter((item) => item.type === "topup")
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-  if (!topups.length) {
-    dom.topupList.innerHTML = `<p class="muted management-empty">Nog geen extra inleg toegevoegd.</p>`;
-    return;
-  }
-
-  dom.topupList.innerHTML = topups
-    .map((topup) => {
-      const isEditing = getEditingTopupId() === topup.id;
-
-      return `
-          <article class="management-card${topup.isEstimate ? " management-card--estimate" : ""}${isEditing ? " management-card--editing" : ""}" data-topup-card="${topup.id}">
-            ${isEditing ? "" : `<div class="management-card__logo money-logo" aria-hidden="true">&euro;</div>`}
-            <div class="management-card__meta">
-              ${
-                isEditing
-                  ? `
-                    <div class="edit-card">
-                      <div class="field-row">
-                        <label class="icon-field">
-                          <span class="icon-field__icon" aria-hidden="true">&#9999;&#65039;</span>
-                          <input data-field="note" type="text" value="${escapeHtml(topup.note || "")}" aria-label="Omschrijving" placeholder="Omschrijving (optioneel)" />
-                        </label>
-                        <div class="icon-field icon-field--amount">
-                          <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                          <input data-field="amount" type="text" inputmode="decimal" value="${topup.amount}" aria-label="Bedrag" />
-                          <label class="inline-raming" title="Raming">
-                            <input data-field="isEstimate" type="checkbox" ${topup.isEstimate ? "checked" : ""} aria-label="Raming" />
-                            <span aria-hidden="true">&#128302;</span>
-                          </label>
-                        </div>
-                      </div>
-                      <label class="icon-field">
-                        <span class="icon-field__icon" aria-hidden="true">&#128197;</span>
-                        <input data-field="date" type="date" value="${topup.date}" aria-label="Datum" />
-                      </label>
-                      <div class="edit-card__footer">
-                        <button class="soft-button" type="button" data-topup-action="save" data-id="${topup.id}">Opslaan</button>
-                        <button class="ghost-button ghost-button--small" type="button" data-topup-action="cancel" data-id="${topup.id}">Annuleer</button>
-                      </div>
-                    </div>
-                  `
-                  : `
-                  <strong>${topup.isEstimate ? "Raming inleg" : "Extra inleg"} ${currencyFormatter.format(topup.amount)}</strong>
-                  <span>${formatDate(topup.date)}${topup.note ? ` - ${escapeHtml(topup.note)}` : ""}${topup.isEstimate ? " · Raming" : ""}</span>
-                `
-              }
-          </div>
-          ${isEditing ? "" : `
-          <div class="management-card__actions">
-            ${state.sharedView ? "" : `
-              <button class="soft-button" type="button" data-topup-action="edit" data-id="${topup.id}">Wijzig</button>
-              <button class="icon-button" type="button" data-topup-action="remove" data-id="${topup.id}">Verwijder</button>
-            `}
-          </div>
-          `}
-        </article>
-      `;
-    })
-    .join("");
-}
-
 export function renderExpenses(dom) {
   const records = [
     ...state.expenses.map((item) => ({ ...item, kind: "expense" })),
     ...state.estimates.map((item) => ({ ...item, amount: getEstimateAmount(item), kind: "estimate" })),
-  ].sort((a, b) => new Date(b.date) - new Date(a.date));
+  ].sort((a, b) => (Number(b.kind === "estimate") - Number(a.kind === "estimate")) || (new Date(b.date) - new Date(a.date)));
 
   if (!records.length) {
     dom.expenseList.innerHTML = `<p class="muted management-empty">Nog geen uitgaven of ramingen toegevoegd.</p>`;
@@ -338,7 +268,6 @@ export function renderExpenses(dom) {
     .map((record) => {
       const isEditing = getEditingRecord()?.scope === "management" && getEditingRecord().id === record.id && getEditingRecord().kind === record.kind;
       const categoryIcon = categoryEmoji[record.category] || categoryEmoji.overig;
-      const itemLabel = record.kind === "estimate" ? "Raming" : "Uitgave";
       const detailBits = [categoryLabels[record.category], formatDate(record.date)];
       if (record.kind === "estimate" && record.pricingMode === "per_person") {
         detailBits.push(renderEstimateSummaryText(record));
@@ -354,8 +283,8 @@ export function renderExpenses(dom) {
                 ? renderRecordEditFields(record)
                 : `
                   <div class="management-card__top">
-                    <strong class="management-card__title">${escapeHtml(record.description)}</strong>
-                    <span class="management-card__amount-tag">${currencyFormatter.format(record.amount)}</span>
+                    <strong class="management-card__title">${escapeHtml(record.description)}${record.kind === "estimate" ? ` ${ESTIMATE_PILL}` : ""}</strong>
+                    <span class="management-card__amount-tag${record.kind === "estimate" ? " estimate-amount" : ""}">${record.kind === "estimate" ? "&asymp; " : ""}${currencyFormatter.format(record.amount)}</span>
                   </div>
                   <span class="management-card__detail">${detailBits.join(" · ")}</span>
                   ${record.kind === "expense" ? renderReceiptBadge(record, "data-expense-action") : ""}
@@ -439,12 +368,16 @@ export function renderTimeline(dom) {
       return true;
     })
     .sort((a, b) => {
-      // Ramingen staan gewoon tussen de definitieve posten van hun
-      // categorie (op datum); inleg heeft geen categorie.
+      // Per categorie (inleg heeft er geen), daarbinnen ramingen bovenaan,
+      // dan op datum.
       const categoryOrder = Object.keys(categoryLabels);
       const aCategoryIndex = a.category ? categoryOrder.indexOf(a.category) : -1;
       const bCategoryIndex = b.category ? categoryOrder.indexOf(b.category) : -1;
       if (aCategoryIndex !== bCategoryIndex) return aCategoryIndex - bCategoryIndex;
+
+      const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
+      const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";
+      if (aIsEstimate !== bIsEstimate) return aIsEstimate ? -1 : 1;
 
       return new Date(b.date) - new Date(a.date);
     });
@@ -465,8 +398,8 @@ export function renderTimeline(dom) {
         <span>${label} &mdash; totaal ${currencyFormatter.format(total)}</span>
         ${estimateTotal > 0 ? `
           <span class="timeline-inleg-group__split">
-            <span class="amount-pill amount-pill--final">Definitief ${currencyFormatter.format(finalTotal)}</span>
             <span class="amount-pill amount-pill--estimate">Raming ${currencyFormatter.format(estimateTotal)}</span>
+            <span class="amount-pill amount-pill--final">Definitief ${currencyFormatter.format(finalTotal)}</span>
           </span>
         ` : ""}
       </span>
@@ -525,6 +458,8 @@ export function renderTimeline(dom) {
   dom.timeline.innerHTML = otherHtml + inlegHtml;
 }
 
+const ESTIMATE_PILL = `<span class="amount-pill amount-pill--estimate estimate-flag">Nog niet definitief</span>`;
+
 // Een bon met receiptPath (en geen lokale data-URL meer) staat in Supabase
 // Storage; een data-URL zonder pad is alleen nog lokaal en wacht op upload.
 function renderReceiptBadge(record, actionAttr) {
@@ -537,7 +472,7 @@ function renderTimelineEntryCard(entry) {
   const participant = state.participants.find((person) => person.id === entry.personId);
   const isEditing = getEditingRecord()?.scope === "timeline" && getEditingRecord().id === entry.id && getEditingRecord().kind === entry.kind;
   if (isEditing) {
-    return renderTimelineEditCard(entry, participant);
+    return renderTimelineEditCard(entry);
   }
   const isExpenseKind = entry.kind === "expense" || entry.kind === "estimate";
   const isEstimateKind = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
@@ -559,10 +494,10 @@ function renderTimelineEntryCard(entry) {
     <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
       <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
       <div class="timeline-card__main">
-        <strong>${escapeHtml(entry.title)}</strong>
+        <strong>${escapeHtml(entry.title)}${isEstimateKind ? ` ${ESTIMATE_PILL}` : ""}</strong>
         <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}${entry.kind === "expense" ? renderReceiptBadge(entry, "data-timeline-action") : ""}</div>
       </div>
-      <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
+      <span class="timeline-card__amount ${isEstimateKind ? "is-estimate" : amountClass}">${isEstimateKind ? "&asymp; " : ""}${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
       <div class="timeline-card__actions">
         ${state.sharedView ? "" : `
           ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
@@ -660,7 +595,7 @@ export function renderRecordEditFields(record, { actionAttr = "data-expense-acti
   `;
 }
 
-export function renderTimelineEditCard(entry, participant) {
+export function renderTimelineEditCard(entry) {
   const typeLabel = typeLabels[entry.kind];
 
   if (entry.kind === "contribution" || entry.kind === "contribution-estimate" || entry.kind === "topup" || entry.kind === "topup-estimate") {
@@ -788,13 +723,6 @@ export function renderAccountUi(dom, getProfileName, getProfileAvatarSource) {
   }
   if (dom.profilePreviewName) {
     dom.profilePreviewName.textContent = profileName;
-  }
-  if (dom.profilePreviewState) {
-    dom.profilePreviewState.textContent = state.auth?.loggedIn
-      ? "Ingelogd profiel, wijzigingen worden ook met je account gesynchroniseerd"
-      : cloudReady
-        ? "Nog niet ingelogd, maar online sync staat klaar"
-        : "Nog niet ingelogd, lokale modus blijft beschikbaar";
   }
 
   const authStatus = document.querySelector("#auth-status");

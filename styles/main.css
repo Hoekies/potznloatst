@@ -1,4 +1,4 @@
-﻿/* Zorg dat [hidden] altijd werkt, ook als display: grid/flex via een klasse is gezet */
+/* Zorg dat [hidden] altijd werkt, ook als display: grid/flex via een klasse is gezet */
 [hidden] { display: none !important; }
 
 :root {
@@ -222,19 +222,6 @@ textarea {
   transition: background 0.15s;
 }
 .close-btn:hover { background: var(--cyan-soft); transform: none; }
-
-.link-button {
-  background: none;
-  border: none;
-  padding: 6px 0 0;
-  margin: 0;
-  color: var(--cyan);
-  font-size: 0.9rem;
-  text-decoration: underline;
-  cursor: pointer;
-  align-self: flex-start;
-}
-.link-button:hover { color: var(--cyan-dark); }
 
 .account-menu__item {
   display: block;
@@ -616,16 +603,6 @@ textarea {
   gap: 12px;
 }
 
-.eyebrow,
-.section-label {
-  margin: 0 0 10px;
-  color: var(--cyan-dark);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-}
-
 h1,
 h2,
 h3 {
@@ -721,8 +698,7 @@ h3 {
   color: var(--muted);
 }
 
-.button-row,
-.filter-row {
+.button-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -738,11 +714,6 @@ h3 {
   border: 1px solid var(--line);
   font-size: 0.92rem;
   font-weight: 700;
-}
-
-.pill--accent {
-  background: var(--info-soft);
-  color: var(--info);
 }
 
 .layout {
@@ -768,14 +739,6 @@ h3 {
 .site-footer__credit {
   margin: 0;
   font-size: 0.92rem;
-}
-
-.site-footer__note {
-  margin: 0;
-  max-width: 56ch;
-  font-size: 0.88rem;
-  line-height: 1.5;
-  text-align: right;
 }
 
 .panel {
@@ -972,13 +935,6 @@ h3 {
   font-family: Georgia, "Times New Roman", serif;
 }
 
-.summary-card__hint {
-  margin-top: 8px;
-  color: var(--muted);
-  line-height: 1.4;
-  font-size: 0.85rem;
-}
-
 .summary-card--negative .summary-card__value {
   color: var(--terracotta);
 }
@@ -989,10 +945,6 @@ h3 {
 
 .summary-card--estimate .summary-card__value {
   color: #1B2B4B;
-}
-
-.summary-card--estimate .summary-card__hint {
-  color: var(--muted);
 }
 
 .summary-card--forecast {
@@ -1010,10 +962,6 @@ h3 {
 
 .summary-card--forecast .summary-card__value {
   color: #166534;
-}
-
-.summary-card--forecast .summary-card__hint {
-  color: #16A34A;
 }
 
 .stack-form {
@@ -1057,12 +1005,6 @@ h3 {
   border-radius: 14px;
   background: var(--gold-soft);
   font-size: 1.4rem;
-}
-
-.money-logo {
-  color: var(--ink);
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 800;
 }
 
 .participant-logo {
@@ -1279,56 +1221,6 @@ textarea:focus {
   min-height: 44px;
   padding-inline: 20px;
   box-shadow: 0 4px 14px rgba(28, 46, 31, 0.04);
-}
-
-.person-grid {
-  display: grid;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.participants-drawer {
-  margin-top: 16px;
-  border-top: 1px solid var(--line);
-  padding-top: 14px;
-}
-
-.participants-drawer__summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  cursor: pointer;
-  list-style: none;
-  color: var(--text);
-  font-weight: 800;
-}
-
-.participants-drawer__summary::-webkit-details-marker {
-  display: none;
-}
-
-.participants-drawer__state {
-  padding: 6px 11px;
-  border-radius: 999px;
-  background: var(--gold-soft);
-  color: var(--olive-dark);
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.participants-drawer[open] .participants-drawer__state {
-  font-size: 0;
-}
-
-.participants-drawer[open] .participants-drawer__state::before {
-  content: "Inklappen";
-  font-size: 0.78rem;
-}
-
-.participants-drawer__content {
-  margin-top: 14px;
 }
 
 .person-card {
@@ -1644,35 +1536,6 @@ textarea:focus {
   display: block;
 }
 
-.receipt-review__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.receipt-help {
-  margin: 0 0 12px;
-  color: var(--olive);
-  font-weight: 700;
-}
-
-.receipt-preview-wrap {
-  margin-top: 16px;
-  border-radius: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(28, 46, 31, 0.1);
-  background: rgba(255, 255, 255, 0.9);
-}
-
-.receipt-preview-wrap img {
-  display: block;
-  width: 100%;
-  max-height: 280px;
-  object-fit: contain;
-  cursor: zoom-in;
-  background: repeating-linear-gradient(45deg, rgba(255, 250, 243, 0.9), rgba(255, 250, 243, 0.9) 12px, rgba(247, 251, 255, 0.9) 12px, rgba(247, 251, 255, 0.9) 24px);
-}
-
 .timeline {
   display: grid;
   gap: 12px;
@@ -1767,6 +1630,28 @@ textarea:focus {
   color: #1D4ED8;
 }
 
+/* Ramingen: blauw label + blauw bedrag met ≈, overal hetzelfde. De
+   display-regel wint van ".management-card__meta span { display:block }". */
+.estimate-flag,
+.management-card__meta .estimate-flag,
+.management-card__meta .estimate-amount {
+  display: inline-block;
+}
+
+.estimate-flag {
+  margin-left: 6px;
+  vertical-align: middle;
+  font-size: 0.72rem;
+  padding: 2px 8px;
+}
+
+.estimate-amount,
+.timeline-card__amount.is-estimate,
+.management-card__amount-tag.estimate-amount {
+  color: #1D4ED8;
+  font-style: italic;
+}
+
 article.timeline-card {
   border-left: 4px solid #2E7D32;
 }
@@ -1807,16 +1692,6 @@ article.timeline-card.timeline-card--estimate {
   font-size: 1rem;
   color: white;
   overflow: hidden;
-}
-
-.timeline-card__tag {
-  justify-self: start;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: var(--gold-soft);
-  color: var(--olive-dark);
-  font-size: 0.82rem;
-  font-weight: 800;
 }
 
 .timeline-card__amount {
@@ -1997,8 +1872,7 @@ article.timeline-card.timeline-card--estimate {
   }
 
   .panel__header,
-  .receipt-review__header,
-  .panel__header--tabs {
+.panel__header--tabs {
     flex-direction: column;
   }
 
@@ -2126,10 +2000,6 @@ article.timeline-card.timeline-card--estimate {
     margin-bottom: 0;
   }
 
-  .site-footer__note {
-    text-align: left;
-  }
-
   h1 {
     font-size: 3.5rem;
   }
@@ -2150,17 +2020,6 @@ article.timeline-card.timeline-card--estimate {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   font-size: 0.72rem;
-}
-
-.settlements-empty {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.92rem;
-  padding: 14px 18px;
-  background: var(--success-soft);
-  border-radius: var(--radius-md);
-  border: 1px solid rgba(22, 163, 74, 0.18);
-  font-weight: 600;
 }
 
 .settlements-grid {

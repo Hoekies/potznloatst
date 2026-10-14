@@ -126,28 +126,6 @@ export function saveParticipantEdits(participantId, card) {
   persistAndRender();
 }
 
-export function saveTopupEdits(topupId, row) {
-  const topup = state.contributions.find((item) => item.id === topupId && item.type === "topup");
-  if (!topup || !row) {
-    return;
-  }
-
-  const amount = sanitizeAmount(row.querySelector('[data-field="amount"]').value);
-  const note = row.querySelector('[data-field="note"]').value.trim();
-  const dateField = row.querySelector('[data-field="date"]');
-  const isEstimateField = row.querySelector('[data-field="isEstimate"]');
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return;
-  }
-
-  topup.participantId = "";
-  topup.amount = amount;
-  topup.note = note;
-  if (dateField && dateField.value) topup.date = dateField.value;
-  if (isEstimateField) topup.isEstimate = isEstimateField.checked;
-  persistAndRender();
-}
 
 export function saveExpenseEdits(expenseId, kind, row) {
   const collection = kind === "estimate" ? state.estimates : state.expenses;

@@ -129,6 +129,7 @@ export async function ensureReceiptUploaded(expense, userId) {
 
     if (error) {
       console.warn("Bon uploaden naar Supabase mislukte:", error);
+      warnReceiptUploadFailed(error);
       return expense;
     }
 
@@ -140,8 +141,18 @@ export async function ensureReceiptUploaded(expense, userId) {
     };
   } catch (error) {
     console.warn("Bon uploaden naar Supabase mislukte (netwerkfout), uitgave wordt wel opgeslagen zonder bijgewerkte bon:", error);
+    warnReceiptUploadFailed(error);
     return expense;
   }
+}
+
+// Eén melding per sessie: anders komt er bij elke sync per bon een toast.
+let receiptUploadWarned = false;
+function warnReceiptUploadFailed(error) {
+  if (receiptUploadWarned) return;
+  receiptUploadWarned = true;
+  const message = String(error?.message || error || "onbekende fout");
+  showToast(`Bon uploaden mislukt (${message}). De uitgave is wel opgeslagen; de foto staat nog alleen op dit apparaat.`, "error");
 }
 
 export async function fetchExistingReceiptPaths(userId) {

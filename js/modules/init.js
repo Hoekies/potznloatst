@@ -4,19 +4,18 @@ import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from 
 import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressImageToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
-  render, renderWeekendLogo, renderParticipants, renderTopups, renderTimeline,
+  render, renderWeekendLogo, renderParticipants, renderTimeline,
   renderAccountUi, renderTabs, setTimelineGroupOpen,
 } from './render.js';
 import {
   setActiveTab, getActiveTab,
   setEditingParticipantId, getEditingParticipantId,
-  setEditingTopupId, getEditingTopupId,
   setEditingRecord, getEditingRecord,
 } from './ui-state.js';
 import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
   setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips, syncKindChips,
-  saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
+  saveParticipantEdits, saveExpenseEdits, saveTimelineEdits,
   convertEstimateToExpense, convertExpenseToEstimate, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
 import {
@@ -67,7 +66,6 @@ export function initializeApp() {
   renderWeekendLogo(getDomBundle());
   try { renderExpenseComposerState(getDomBundle(), state); } catch (e) { console.warn('renderExpenseComposerState:', e); }
   renderAccountUiNow();
-  positionMenuPanel();
 
   renderAll();
 
@@ -87,10 +85,7 @@ export function initializeApp() {
 }
 
 function getDomBundle() {
-  return {
-    ...dom,
-    positionMenuPanel,
-  };
+  return { ...dom };
 }
 
 function renderAll() {
@@ -104,41 +99,6 @@ function renderAccountUiNow() {
     () => getProfileName(dom.profileNameInput),
     () => getProfileAvatarSource(dom.profileAvatarFileInput, dom.profileAvatarUrlInput),
   );
-}
-
-function positionMenuPanel() {
-  if (!dom.menuPanelContent || !dom.menuPanelTrigger || !dom.menuPanel?.classList.contains("is-open")) {
-    if (dom.menuPanelContent) {
-      dom.menuPanelContent.hidden = true;
-    }
-    dom.menuBackdrop.hidden = true;
-    return;
-  }
-
-  dom.menuBackdrop.hidden = false;
-  dom.menuPanelContent.hidden = false;
-}
-
-function toggleMenuPanel() {
-  if (!dom.menuPanel) return;
-  const nextOpen = !dom.menuPanel.classList.contains("is-open");
-  dom.menuPanel.classList.toggle("is-open", nextOpen);
-  if (dom.menuPanelTrigger) {
-    dom.menuPanelTrigger.setAttribute("aria-expanded", nextOpen ? "true" : "false");
-  }
-  positionMenuPanel();
-}
-
-function closeMenuPanel() {
-  if (!dom.menuPanel) return;
-  dom.menuPanel.classList.remove("is-open");
-  if (dom.menuPanelTrigger) {
-    dom.menuPanelTrigger.setAttribute("aria-expanded", "false");
-  }
-  dom.menuBackdrop.hidden = true;
-  if (dom.menuPanelContent) {
-    dom.menuPanelContent.hidden = true;
-  }
 }
 
 function toggleAccountDropdown() {
@@ -160,7 +120,6 @@ function closeAccountDropdown() {
 function resetUiState() {
   setPendingReceiptImage("");
   setEditingParticipantId(null);
-  setEditingTopupId(null);
   setEditingRecord(null);
   setActiveTab("overzicht");
   closeReceiptModal(dom);
@@ -559,31 +518,16 @@ function setupEventListeners() {
     });
   });
 
-  dom.menuPanelTrigger?.addEventListener("click", toggleMenuPanel);
-  window.addEventListener("resize", positionMenuPanel);
-  window.addEventListener("scroll", positionMenuPanel, { passive: true });
-  dom.menuBackdrop.addEventListener("click", (event) => {
-    if (event.target === dom.menuBackdrop) {
-      closeMenuPanel();
-    }
-  });
   document.addEventListener("click", (event) => {
     if (dom.accountDropdown && !dom.accountDropdown.hidden) {
       if (!dom.accountToggleButton?.contains(event.target) && !dom.accountDropdown.contains(event.target)) {
         closeAccountDropdown();
       }
     }
-    if (!dom.menuPanel?.classList?.contains("is-open")) {
-      return;
-    }
-    if (dom.menuPanel?.contains(event.target) || dom.menuPanelContent?.contains(event.target)) {
-      return;
-    }
-    closeMenuPanel();
   });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeMenuPanel();
+      closeAccountDropdown();
     }
   });
 
@@ -818,41 +762,6 @@ function setupEventListeners() {
     }
   });
 
-  dom.topupList?.addEventListener("click", (event) => {
-    const target = event.target.closest("[data-topup-action]");
-    if (!target) return;
-
-    const topupId = target.dataset.id;
-
-    if (target.dataset.topupAction === "edit") {
-      setEditingTopupId(topupId);
-      renderTopups(getDomBundle());
-      return;
-    }
-
-    if (target.dataset.topupAction === "cancel") {
-      setEditingTopupId(null);
-      renderTopups(getDomBundle());
-      return;
-    }
-
-    if (target.dataset.topupAction === "save") {
-      const row = target.closest("[data-topup-card]");
-      saveTopupEdits(topupId, row);
-      setEditingTopupId(null);
-      return;
-    }
-
-    if (target.dataset.topupAction === "remove") {
-      if (!confirm("Deze extra inleg verwijderen? Dit kan niet ongedaan worden gemaakt.")) return;
-      state.contributions = state.contributions.filter((item) => item.id !== topupId);
-      if (getEditingTopupId() === topupId) {
-        setEditingTopupId(null);
-      }
-      persistAndRender();
-    }
-  });
-
   dom.expenseList.addEventListener("click", (event) => {
     const target = event.target.closest("[data-expense-action]");
     if (!target) return;
@@ -972,12 +881,6 @@ function setupEventListeners() {
   });
 
   dom.filterCategory.addEventListener("change", () => renderTimeline(getDomBundle()));
-
-  dom.resetDemoButton?.addEventListener("click", () => {
-    setState(createEmptyState());
-    resetUiState();
-    persistAndRender();
-  });
 
   const handleReceiptPickerChange = async (fileInput) => {
     const file = fileInput.files[0];
