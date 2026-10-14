@@ -17,7 +17,7 @@ import {
   collectExpenseForm, resetExpenseComposer, showReceiptReview, openReceiptModal, closeReceiptModal,
   setPendingReceiptImage, getPendingReceiptImage, syncCategoryChips, syncKindChips,
   saveParticipantEdits, saveTopupEdits, saveExpenseEdits, saveTimelineEdits,
-  convertEstimateToExpense, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
+  convertEstimateToExpense, convertExpenseToEstimate, convertInlegEstimate, removeRecord, renderExpenseComposerState, updateEstimateEditMode,
 } from './forms.js';
 import {
   openAuthModal, closeAuthModal, bindAuthModal, toggleLocalLoginState,
@@ -609,6 +609,9 @@ function setupEventListeners() {
       return;
     }
 
+    const isTotalMode = dom.participantAmountModeInput?.value === "total";
+    const amountPerPerson = isTotalMode ? sanitizeAmount(amount / entries.length) : amount;
+
     const submitBtn = dom.participantForm.querySelector('[type="submit"]');
     const origText = submitBtn?.textContent;
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Toevoegen…"; }
@@ -623,7 +626,7 @@ function setupEventListeners() {
       state.contributions.push({
         id: createId(),
         participantId,
-        amount,
+        amount: amountPerPerson,
         type: "initial",
         isEstimate: entry.isEstimate,
         note: "Startinleg",
@@ -689,10 +692,6 @@ function setupEventListeners() {
     const targetCollection = payload.kind === "estimate" ? state.estimates : state.expenses;
     const { kind, ...record } = payload;
     targetCollection.unshift(record);
-    if (kind === "estimate") {
-      setActiveTab("overzicht");
-      dom.filterCategory.value = "all";
-    }
     resetExpenseComposer(dom);
     persistAndRender();
 
@@ -853,6 +852,11 @@ function setupEventListeners() {
       return;
     }
 
+    if (target.dataset.expenseAction === "convert-to-estimate") {
+      convertExpenseToEstimate(expenseId);
+      return;
+    }
+
     if (target.dataset.expenseAction === "view-receipt") {
       const expense = state.expenses.find((item) => item.id === expenseId);
       if (expense?.receiptImage) {
@@ -901,6 +905,11 @@ function setupEventListeners() {
 
     if (action === "convert-inleg") {
       convertInlegEstimate(id);
+      return;
+    }
+
+    if (action === "convert-to-estimate") {
+      convertExpenseToEstimate(id);
     }
   });
 

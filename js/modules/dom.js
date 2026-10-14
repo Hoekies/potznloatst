@@ -23,6 +23,7 @@ export const restoreBackupButton = document.querySelector("#restore-backup");
 export const startFreshBalanceButton = document.querySelector("#start-fresh-balance");
 
 export const participantInitialInput = document.querySelector("#participant-initial");
+export const participantAmountModeInput = document.querySelector("#participant-amount-mode");
 export const topupAmountInput = document.querySelector("#topup-amount");
 export const topupNoteInput = document.querySelector("#topup-note");
 export const topupIsEstimateInput = document.querySelector("#topup-is-estimate");

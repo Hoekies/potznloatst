@@ -349,6 +349,7 @@ export function renderExpenses(dom) {
                 `
                 : `
                   ${record.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert" data-kind="estimate" data-id="${record.id}">Maak definitief</button>` : ""}
+                  ${record.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="convert-to-estimate" data-kind="expense" data-id="${record.id}">Maak raming</button>` : ""}
                   ${record.kind === "expense" && record.receiptImage ? `<button class="ghost-button ghost-button--small" type="button" data-expense-action="view-receipt" data-kind="expense" data-id="${record.id}">Bon</button>` : ""}
                   <button class="soft-button" type="button" data-expense-action="edit" data-kind="${record.kind}" data-id="${record.id}">Wijzig</button>
                   <button class="icon-button" type="button" data-expense-action="remove" data-kind="${record.kind}" data-id="${record.id}">Verwijder</button>
@@ -426,50 +427,79 @@ export function renderTimeline(dom) {
     return;
   }
 
-  dom.timeline.innerHTML = entries
-    .map((entry) => {
-      const participant = state.participants.find((person) => person.id === entry.personId);
-      const isEditing = getEditingRecord()?.scope === "timeline" && getEditingRecord().id === entry.id && getEditingRecord().kind === entry.kind;
-      if (isEditing) {
-        return renderTimelineEditCard(entry, participant);
-      }
-      const typeLabel = typeLabels[entry.kind];
-      const isExpenseKind = entry.kind === "expense" || entry.kind === "estimate";
-      const isEstimateKind = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
-      const badgeText = isExpenseKind ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
-      const amountClass = isExpenseKind ? "negative" : "positive";
-      const amountPrefix = isExpenseKind ? "-" : "+";
-      const detailBits = [];
-      if ((entry.kind === "contribution" || entry.kind === "contribution-estimate") && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
-      if (isExpenseKind) {
-        detailBits.push(categoryLabels[entry.category] || "Uitgave");
-        if (entry.kind === "estimate" && entry.pricingMode === "per_person") {
-          detailBits.push(renderEstimateSummaryText(entry));
-        }
-      }
-      detailBits.push(formatDate(entry.date));
-      if (entry.note) detailBits.push(escapeHtml(entry.note));
+  const isInlegKind = (kind) => kind === "contribution" || kind === "contribution-estimate" || kind === "topup" || kind === "topup-estimate";
 
-      return `
-        <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
-          <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
-          <div class="timeline-card__main">
-            <strong>${escapeHtml(entry.title)}</strong>
-            <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
-          </div>
-          <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
-          <div class="timeline-card__actions">
-            ${state.sharedView ? "" : `
-              ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
-              ${entry.kind === "contribution-estimate" || entry.kind === "topup-estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-inleg" data-kind="${entry.kind}" data-id="${entry.id}">Definitief</button>` : ""}
-              <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
-              <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
-            `}
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+  // Inleg is minder belangrijk om in detail te zien in dit overzicht — alleen
+  // groeperen/inklappen als de gebruiker niet al specifiek op "Inleg" filtert
+  // (dan wil hij ze juist wél stuk voor stuk zien).
+  if (kindFilter === "inleg") {
+    dom.timeline.innerHTML = entries.map((entry) => renderTimelineEntryCard(entry)).join("");
+    return;
+  }
+
+  const otherEntries = entries.filter((entry) => !isInlegKind(entry.kind));
+  const inlegEntries = entries.filter((entry) => isInlegKind(entry.kind));
+
+  const otherHtml = otherEntries.map((entry) => renderTimelineEntryCard(entry)).join("");
+
+  let inlegHtml = "";
+  if (inlegEntries.length) {
+    const inlegTotal = inlegEntries.reduce((sum, entry) => sum + entry.amount, 0);
+    inlegHtml = `
+      <details class="timeline-inleg-group">
+        <summary class="timeline-inleg-group__summary">
+          <span>&#128176; Inleg &mdash; totaal ${currencyFormatter.format(inlegTotal)}</span>
+          <span class="timeline-inleg-group__count">${inlegEntries.length} ${inlegEntries.length === 1 ? "post" : "posten"}</span>
+        </summary>
+        <div class="timeline-inleg-group__list">${inlegEntries.map((entry) => renderTimelineEntryCard(entry)).join("")}</div>
+      </details>
+    `;
+  }
+
+  dom.timeline.innerHTML = otherHtml + inlegHtml;
+}
+
+function renderTimelineEntryCard(entry) {
+  const participant = state.participants.find((person) => person.id === entry.personId);
+  const isEditing = getEditingRecord()?.scope === "timeline" && getEditingRecord().id === entry.id && getEditingRecord().kind === entry.kind;
+  if (isEditing) {
+    return renderTimelineEditCard(entry, participant);
+  }
+  const isExpenseKind = entry.kind === "expense" || entry.kind === "estimate";
+  const isEstimateKind = entry.kind === "estimate" || entry.kind === "topup-estimate" || entry.kind === "contribution-estimate";
+  const badgeText = isExpenseKind ? categoryEmoji[entry.category] || categoryEmoji.overig : "\u{1F4B8}";
+  const amountClass = isExpenseKind ? "negative" : "positive";
+  const amountPrefix = isExpenseKind ? "-" : "+";
+  const detailBits = [];
+  if ((entry.kind === "contribution" || entry.kind === "contribution-estimate") && participant) detailBits.push(`Door ${escapeHtml(participant.name)}`);
+  if (isExpenseKind) {
+    detailBits.push(categoryLabels[entry.category] || "Uitgave");
+    if (entry.kind === "estimate" && entry.pricingMode === "per_person") {
+      detailBits.push(renderEstimateSummaryText(entry));
+    }
+  }
+  detailBits.push(formatDate(entry.date));
+  if (entry.note) detailBits.push(escapeHtml(entry.note));
+
+  return `
+    <article class="timeline-card ${isEstimateKind ? "timeline-card--estimate" : ""}" data-timeline-card="${entry.id}">
+      <div class="timeline-card__badge ${isExpenseKind ? "" : "participant-logo"}" style="background:${isExpenseKind ? categoryColor(entry.category) : participant?.color || "#0A1B36"}">${isExpenseKind ? badgeText : "<span></span>"}</div>
+      <div class="timeline-card__main">
+        <strong>${escapeHtml(entry.title)}</strong>
+        <div class="timeline-card__details">${detailBits.map((bit) => `<span>${bit}</span>`).join("")}</div>
+      </div>
+      <span class="timeline-card__amount ${amountClass}">${amountPrefix}${currencyFormatter.format(entry.amount)}</span>
+      <div class="timeline-card__actions">
+        ${state.sharedView ? "" : `
+          ${entry.kind === "estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert" data-kind="estimate" data-id="${entry.id}">Definitief</button>` : ""}
+          ${entry.kind === "expense" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-to-estimate" data-kind="expense" data-id="${entry.id}">Maak raming</button>` : ""}
+          ${entry.kind === "contribution-estimate" || entry.kind === "topup-estimate" ? `<button class="ghost-button ghost-button--small" type="button" data-timeline-action="convert-inleg" data-kind="${entry.kind}" data-id="${entry.id}">Definitief</button>` : ""}
+          <button class="soft-button" type="button" data-timeline-action="edit" data-kind="${entry.kind}" data-id="${entry.id}">Wijzig</button>
+          <button class="icon-button" type="button" data-timeline-action="remove" data-kind="${entry.kind}" data-id="${entry.id}">Verwijder</button>
+        `}
+      </div>
+    </article>
+  `;
 }
 
 export function renderRecordEditFields(record) {

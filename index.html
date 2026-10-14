@@ -73,8 +73,15 @@
                 <form id="participant-form" class="stack-form" autocomplete="off">
                   <div class="icon-field icon-field--amount">
                     <span class="icon-field__icon" aria-hidden="true">&euro;</span>
-                    <input id="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg voor iedereen" aria-label="Startinleg voor iedereen" required />
+                    <input id="participant-initial" type="text" inputmode="decimal" placeholder="Startinleg" aria-label="Startinleg" required />
                   </div>
+                  <label class="icon-field">
+                    <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
+                    <select id="participant-amount-mode" aria-label="Bedrag hierboven is">
+                      <option value="per_person">Bedrag is per persoon</option>
+                      <option value="total">Bedrag is totaal, verdelen</option>
+                    </select>
+                  </label>
                   <div id="participant-name-rows" class="participant-name-rows">
                     <div class="participant-name-row">
                       <label class="icon-field">
@@ -188,14 +195,10 @@
                   <div id="estimate-per-person-wrap" hidden>
                     <label class="icon-field">
                       <span class="icon-field__icon" aria-hidden="true">&#8942;</span>
-                      <select id="estimate-pricing-mode" name="estimate-pricing-mode" aria-label="Raming berekenen als">
-                        <option value="total">Totaalbedrag</option>
-                        <option value="per_person">Per persoon</option>
+                      <select id="estimate-pricing-mode" name="estimate-pricing-mode" aria-label="Bedrag hierboven is">
+                        <option value="total">Bedrag is totaal</option>
+                        <option value="per_person">Bedrag is per persoon</option>
                       </select>
-                    </label>
-                    <label class="icon-field">
-                      <span class="icon-field__icon" aria-hidden="true">&#128100;</span>
-                      <input id="estimate-per-person-amount" name="estimate-per-person-amount" type="text" inputmode="decimal" placeholder="Bedrag per persoon" aria-label="Bedrag per persoon" />
                     </label>
                     <span id="estimate-calculation" class="field-help"></span>
                   </div>

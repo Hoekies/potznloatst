@@ -1660,6 +1660,44 @@ textarea:focus {
   gap: 12px;
 }
 
+/* Inleg is minder belangrijk in dit overzicht: ingeklapt onderaan, alleen
+   het totaalbedrag zichtbaar totdat je 'm openklikt. */
+.timeline-inleg-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 253, 248, 0.9);
+  overflow: hidden;
+}
+
+.timeline-inleg-group__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--ink);
+  list-style: none;
+}
+
+.timeline-inleg-group__summary::-webkit-details-marker {
+  display: none;
+}
+
+.timeline-inleg-group__count {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.timeline-inleg-group__list {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
 .timeline-card {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) auto auto;

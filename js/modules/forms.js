@@ -1,6 +1,6 @@
 ﻿import { sanitizeAmount, sanitizeText, fileToDataUrl, todayIso, createId, showToast } from './utils.js';
 import { currencyFormatter } from './constants.js';
-import { state, persistAndRender } from './state.js';
+import { state, persistAndRender, normalizeEstimate } from './state.js';
 import { getEstimateAmount } from './calculations.js';
 import { setEditingRecord, getEditingRecord, renderEstimateSummaryText } from './render.js';
 
@@ -17,12 +17,11 @@ export async function collectExpenseForm(dom) {
   const note = dom.expenseNoteInput.value.trim();
   const pricingMode = kind === "estimate" ? dom.estimatePricingModeInput.value : "total";
   const participantCountSnapshot = kind === "estimate" && pricingMode === "per_person" ? state.participants.length : 0;
-  const perPersonAmount = kind === "estimate" && pricingMode === "per_person"
-    ? sanitizeAmount(dom.estimatePerPersonAmountInput?.value)
-    : 0;
+  const typedAmount = sanitizeAmount(dom.expenseAmountInput.value);
+  const perPersonAmount = kind === "estimate" && pricingMode === "per_person" ? typedAmount : 0;
   const amount = kind === "estimate" && pricingMode === "per_person"
     ? sanitizeAmount(perPersonAmount * participantCountSnapshot)
-    : sanitizeAmount(dom.expenseAmountInput.value);
+    : typedAmount;
 
   if (kind === "estimate" && pricingMode === "per_person" && participantCountSnapshot < 1) {
     showToast("Voeg eerst minimaal 1 deelnemer toe voordat je een raming per persoon opslaat.", "info");
@@ -233,14 +232,32 @@ export function convertEstimateToExpense(id) {
   persistAndRender();
 }
 
+export function convertExpenseToEstimate(id) {
+  const expense = state.expenses.find((item) => item.id === id);
+  if (!expense) return;
+
+  state.estimates.unshift(normalizeEstimate({
+    id: createId(),
+    description: expense.description,
+    amount: expense.amount,
+    category: expense.category,
+    date: expense.date,
+    note: expense.note,
+    pricingMode: "total",
+  }, state.participants.length));
+  state.expenses = state.expenses.filter((item) => item.id !== id);
+  const editingRecord = getEditingRecord();
+  if (editingRecord?.id === id && editingRecord?.kind === "expense") {
+    setEditingRecord(null);
+  }
+  persistAndRender();
+}
+
 export function renderExpenseComposerState(dom, stateRef) {
   const isEstimate = dom.expenseKindInput.checked;
   const perPersonMode = isEstimate && dom.estimatePricingModeInput.value === "per_person";
 
   dom.estimatePerPersonWrap.hidden = !isEstimate;
-
-  const perPersonAmountLabel = dom.estimatePerPersonAmountInput?.closest("label");
-  if (perPersonAmountLabel) perPersonAmountLabel.hidden = !perPersonMode;
   if (dom.estimateCalculation) dom.estimateCalculation.hidden = !perPersonMode;
 
   dom.expenseForm.querySelector('button[type="submit"]').textContent = isEstimate ? "Raming opslaan" : "Uitgave opslaan";
@@ -250,18 +267,15 @@ export function renderExpenseComposerState(dom, stateRef) {
 
   if (perPersonMode) {
     const participantCount = Math.max(0, stateRef.participants.length);
-    const perPersonAmount = sanitizeAmount(dom.estimatePerPersonAmountInput?.value);
-    dom.expenseAmountInput.placeholder = "Wordt automatisch berekend";
-    dom.expenseAmountInput.readOnly = true;
-    dom.expenseAmountInput.value = participantCount ? String(sanitizeAmount(perPersonAmount * participantCount)) : "";
+    const perPersonAmount = sanitizeAmount(dom.expenseAmountInput.value);
+    dom.expenseAmountInput.placeholder = "Bedrag per persoon";
     if (dom.estimateCalculation) {
       dom.estimateCalculation.textContent = participantCount
-        ? `${currencyFormatter.format(perPersonAmount)} p.p. Ã— ${participantCount} deelnemers = ${currencyFormatter.format(perPersonAmount * participantCount)}`
+        ? `${currencyFormatter.format(perPersonAmount)} p.p. × ${participantCount} deelnemers = ${currencyFormatter.format(perPersonAmount * participantCount)} totaal`
         : "Voeg eerst deelnemers toe om per persoon te berekenen.";
     }
   } else {
-    dom.expenseAmountInput.readOnly = false;
-    dom.expenseAmountInput.placeholder = "125";
+    dom.expenseAmountInput.placeholder = "0,00";
   }
 }
 
