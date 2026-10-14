@@ -98,38 +98,50 @@ export async function ensureReceiptUploaded(expense, userId) {
     return expense;
   }
 
-  if (!/^data:image\//.test(expense.receiptImage || "")) {
-    if (expense.receiptPath && !expense.receiptImage) {
-      return {
-        ...expense,
-        receiptImage: await getSignedReceiptUrl(expense.receiptPath),
-      };
+  // Een foto-upload (vaak meerdere MB vanaf een telefooncamera) kan op een
+  // wankele mobiele verbinding een echte netwerkfout gooien (niet alleen een
+  // { error }-resultaat). Zonder try/catch liet dat de hele cloud-sync
+  // mislukken — inclusief de gewone uitgave-data die niets met de foto te
+  // maken heeft. Bij een mislukte upload slaan we de uitgave nu gewoon op
+  // zonder bijgewerkte bon; de lokale foto blijft bewaard en een latere
+  // sync probeert de upload opnieuw.
+  try {
+    if (!/^data:image\//.test(expense.receiptImage || "")) {
+      if (expense.receiptPath && !expense.receiptImage) {
+        return {
+          ...expense,
+          receiptImage: await getSignedReceiptUrl(expense.receiptPath),
+        };
+      }
+      return expense;
     }
+
+    const blob = await fetch(expense.receiptImage).then((response) => response.blob());
+    const extension = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
+    const path = `receipts/${userId}/${expense.id}.${extension}`;
+
+    const { error } = await client.storage
+      .from(getSupabaseConfig().mediaBucket)
+      .upload(path, blob, {
+        upsert: true,
+        contentType: blob.type || "image/jpeg",
+      });
+
+    if (error) {
+      console.warn("Bon uploaden naar Supabase mislukte:", error);
+      return expense;
+    }
+
+    return {
+      ...expense,
+      receiptPath: path,
+      receiptImage: await getSignedReceiptUrl(path),
+      ocrStatus: "reviewed",
+    };
+  } catch (error) {
+    console.warn("Bon uploaden naar Supabase mislukte (netwerkfout), uitgave wordt wel opgeslagen zonder bijgewerkte bon:", error);
     return expense;
   }
-
-  const blob = await fetch(expense.receiptImage).then((response) => response.blob());
-  const extension = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
-  const path = `receipts/${userId}/${expense.id}.${extension}`;
-
-  const { error } = await client.storage
-    .from(getSupabaseConfig().mediaBucket)
-    .upload(path, blob, {
-      upsert: true,
-      contentType: blob.type || "image/jpeg",
-    });
-
-  if (error) {
-    console.warn("Bon uploaden naar Supabase mislukte:", error);
-    return expense;
-  }
-
-  return {
-    ...expense,
-    receiptPath: path,
-    receiptImage: await getSignedReceiptUrl(path),
-    ocrStatus: "reviewed",
-  };
 }
 
 export async function fetchExistingReceiptPaths(userId) {
