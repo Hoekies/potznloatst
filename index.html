@@ -338,6 +338,30 @@
           <p class="site-footer__credit">Ontwerp: Hoekies 2026</p>
         </footer>
       </div>
+    <div id="share-modal" class="profile-modal" hidden>
+      <div class="profile-modal__backdrop" data-close-share="true"></div>
+      <div class="profile-modal__dialog share-dialog" role="dialog" aria-modal="true" aria-labelledby="share-title">
+        <div class="profile-modal__header">
+          <h3 id="share-title">Stand delen via WhatsApp</h3>
+          <button id="close-share" class="close-btn" type="button" aria-label="Sluiten">&#x2715;</button>
+        </div>
+        <form id="share-form" class="stack-form">
+          <fieldset class="share-options">
+            <legend>Wat wil je meesturen?</legend>
+            <div id="share-summary-options" class="share-options__list"></div>
+          </fieldset>
+          <fieldset id="share-category-fieldset" class="share-options">
+            <legend>Uitgaven per categorie</legend>
+            <div id="share-category-options" class="share-options__list"></div>
+          </fieldset>
+          <pre id="share-preview" class="share-preview" aria-label="Voorbeeld van het bericht"></pre>
+          <div class="form-actions">
+            <button id="cancel-share" class="ghost-button ghost-button--small" type="button">Annuleer</button>
+            <button class="primary-button" type="submit">&#128172; Delen via WhatsApp</button>
+          </div>
+        </form>
+      </div>
+    </div>
     <div id="receipt-modal" class="receipt-modal" hidden>
       <div class="receipt-modal__backdrop" data-close-receipt-modal="true"></div>
       <div class="receipt-modal__dialog">

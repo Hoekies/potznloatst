@@ -1,6 +1,6 @@
 import * as dom from './dom.js';
 import { state, setState, loadState, persistAndRender, createEmptyState, normalizeState, writeToStorage, setRenderFn, setQueueCloudSync, readBackupSnapshot } from './state.js';
-import { primaryStorageKey, CROP_SIZE, categoryLabels, currencyFormatter } from './constants.js';
+import { primaryStorageKey, CROP_SIZE, categoryLabels, categoryEmoji, currencyFormatter } from './constants.js';
 import { todayIso, createId, readFileAsText, showToast, fileToDataUrl, compressImageToDataUrl, updateSyncStatus, registerServiceWorker, sanitizeAmount, fallbackColor, formatDate } from './utils.js';
 import { calculateSummary, getSortedParticipants, getEstimateAmount } from './calculations.js';
 import {
@@ -346,27 +346,82 @@ function buildBalancePdfBlob(JsPdfCtor) {
   return doc.output("blob");
 }
 
-// Tekst met *vet* in WhatsApp-opmaak. Volgorde: wat is er nu (ingelegd,
-// uitgegeven, in de pot, per persoon), dan wat er nog in de raming staat,
-// en tot slot wat er na de ramingen overblijft.
-function buildBalanceWhatsappText() {
+// Keuzes voor het WhatsApp-bericht. Opgeslagen als lijst van UITgevinkte
+// sleutels, zodat nieuwe categorieën standaard wel meegaan.
+const SHARE_OPTIONS_KEY = "potzloats-share-options-v1";
+
+function readShareExclusions() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SHARE_OPTIONS_KEY) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeShareExclusions(excluded) {
+  try {
+    localStorage.setItem(SHARE_OPTIONS_KEY, JSON.stringify([...excluded]));
+  } catch {
+    // Opslag niet beschikbaar (privévenster): keuze geldt dan alleen nu.
+  }
+}
+
+function getShareCategoryTotals() {
+  return Object.keys(categoryLabels)
+    .map((key) => {
+      const spent = state.expenses.filter((item) => item.category === key).reduce((sum, item) => sum + item.amount, 0);
+      const estimated = state.estimates.filter((item) => item.category === key).reduce((sum, item) => sum + getEstimateAmount(item), 0);
+      return { key, spent, estimated };
+    })
+    .filter((item) => item.spent > 0 || item.estimated > 0);
+}
+
+function getShareSummaryOptions(s) {
+  const eur = (value) => currencyFormatter.format(value);
+  const hasEstimates = s.totalEstimates > 0 || s.totalInlegEstimates > 0;
+  return [
+    { key: "ingelegd", label: `Ingelegd (${eur(s.totalInitial + s.totalTopups)})` },
+    { key: "uitgegeven", label: `Uitgegeven (${eur(s.totalExpenses)})` },
+    { key: "pot", label: `Nu in de pot (${eur(s.remaining)})` },
+    { key: "perPersoon", label: `Per persoon over (${eur(s.remainingPerPerson)})` },
+    hasEstimates && { key: "ramingen", label: "Nog in de raming" },
+    hasEstimates && { key: "naRamingen", label: `Na ramingen (${eur(s.remainingAfterEstimates)})` },
+  ].filter(Boolean);
+}
+
+// Tekst met *vet* in WhatsApp-opmaak. Volgorde: ingelegd, uitgegeven (met
+// gekozen categorieën), in de pot, per persoon, ramingen, na ramingen.
+function buildBalanceWhatsappText(excluded) {
   const s = calculateSummary(state);
   const eur = (value) => currencyFormatter.format(value);
+  const include = (key) => !excluded.has(key);
   const title = state.weekend?.name || "Pot z'n Loatst";
-  const lines = [
-    `*${title} — stand van de pot*`,
-    `_${formatDate(todayIso())}_`,
-    "",
-    `💰 Ingelegd: *${eur(s.totalInitial + s.totalTopups)}*`,
-    `🧾 Uitgegeven: *${eur(s.totalExpenses)}*`,
-    `🏦 Nu in de pot: *${eur(s.remaining)}*`,
-    `👤 Per persoon over: *${eur(s.remainingPerPerson)}*${s.participantCount ? ` (${s.participantCount} ${s.participantCount === 1 ? "deelnemer" : "deelnemers"})` : ""}`,
-  ];
+  const lines = [`*${title} — stand van de pot*`, `_${formatDate(todayIso())}_`, ""];
 
-  if (s.totalEstimates > 0 || s.totalInlegEstimates > 0) {
+  if (include("ingelegd")) lines.push(`💰 Ingelegd: *${eur(s.totalInitial + s.totalTopups)}*`);
+  if (include("uitgegeven")) lines.push(`🧾 Uitgegeven: *${eur(s.totalExpenses)}*`);
+
+  const categories = getShareCategoryTotals().filter((item) => include(`categorie:${item.key}`));
+  categories.forEach((item) => {
+    const icon = categoryEmoji[item.key] || categoryEmoji.overig;
+    const estimatePart = item.estimated > 0 ? ` (+ ${eur(item.estimated)} raming)` : "";
+    lines.push(`   ${icon} ${categoryLabels[item.key]}: ${eur(item.spent)}${estimatePart}`);
+  });
+
+  if (include("pot")) lines.push(`🏦 Nu in de pot: *${eur(s.remaining)}*`);
+  if (include("perPersoon")) {
+    const count = s.participantCount ? ` (${s.participantCount} ${s.participantCount === 1 ? "deelnemer" : "deelnemers"})` : "";
+    lines.push(`👤 Per persoon over: *${eur(s.remainingPerPerson)}*${count}`);
+  }
+
+  const hasEstimates = s.totalEstimates > 0 || s.totalInlegEstimates > 0;
+  if (hasEstimates && include("ramingen")) {
     lines.push("", "🔮 *Nog in de raming (niet definitief)*");
     if (s.totalEstimates > 0) lines.push(`• Nog uit te geven: ${eur(s.totalEstimates)}`);
     if (s.totalInlegEstimates > 0) lines.push(`• Nog te ontvangen inleg: ${eur(s.totalInlegEstimates)}`);
+  }
+  if (hasEstimates && include("naRamingen")) {
     lines.push(
       "",
       `➡️ Na ramingen in de pot: *${eur(s.remainingAfterEstimates)}*`,
@@ -374,12 +429,66 @@ function buildBalanceWhatsappText() {
     );
   }
 
-  return lines.join("\n");
+  return lines.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd();
+}
+
+function shareOptionHtml(key, label, excluded) {
+  return `
+    <label class="share-option">
+      <input type="checkbox" data-share-key="${key}" ${excluded.has(key) ? "" : "checked"} />
+      <span>${label}</span>
+    </label>
+  `;
+}
+
+function getShareExclusionsFromForm() {
+  const excluded = readShareExclusions();
+  document.querySelectorAll("#share-form [data-share-key]").forEach((box) => {
+    if (box.checked) excluded.delete(box.dataset.shareKey);
+    else excluded.add(box.dataset.shareKey);
+  });
+  return excluded;
+}
+
+function updateSharePreview() {
+  const preview = document.querySelector("#share-preview");
+  if (preview) preview.textContent = buildBalanceWhatsappText(getShareExclusionsFromForm());
+}
+
+function openShareModal() {
+  const modal = document.querySelector("#share-modal");
+  if (!modal) return;
+  const excluded = readShareExclusions();
+  const s = calculateSummary(state);
+  document.querySelector("#share-summary-options").innerHTML = getShareSummaryOptions(s)
+    .map((option) => shareOptionHtml(option.key, option.label, excluded))
+    .join("");
+
+  const categories = getShareCategoryTotals();
+  document.querySelector("#share-category-fieldset").hidden = !categories.length;
+  document.querySelector("#share-category-options").innerHTML = categories
+    .map((item) => {
+      const icon = categoryEmoji[item.key] || categoryEmoji.overig;
+      const estimatePart = item.estimated > 0 ? ` + ${currencyFormatter.format(item.estimated)} raming` : "";
+      return shareOptionHtml(`categorie:${item.key}`, `${icon} ${categoryLabels[item.key]} (${currencyFormatter.format(item.spent)}${estimatePart})`, excluded);
+    })
+    .join("");
+
+  updateSharePreview();
+  modal.hidden = false;
+}
+
+function closeShareModal() {
+  const modal = document.querySelector("#share-modal");
+  if (modal) modal.hidden = true;
 }
 
 function shareBalanceWhatsapp() {
-  const text = buildBalanceWhatsappText();
+  const excluded = getShareExclusionsFromForm();
+  writeShareExclusions(excluded);
+  const text = buildBalanceWhatsappText(excluded);
   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  closeShareModal();
 }
 
 async function shareBalancePdf() {
@@ -572,6 +681,7 @@ function setupEventListeners() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeAccountDropdown();
+      closeShareModal();
     }
   });
 
@@ -1003,7 +1113,18 @@ function setupEventListeners() {
     }
   });
 
-  dom.shareWhatsappButton?.addEventListener("click", shareBalanceWhatsapp);
+  dom.shareWhatsappButton?.addEventListener("click", openShareModal);
+  const shareForm = document.querySelector("#share-form");
+  shareForm?.addEventListener("change", updateSharePreview);
+  shareForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    shareBalanceWhatsapp();
+  });
+  document.querySelector("#close-share")?.addEventListener("click", closeShareModal);
+  document.querySelector("#cancel-share")?.addEventListener("click", closeShareModal);
+  document.querySelector("#share-modal")?.addEventListener("click", (event) => {
+    if (event.target.dataset?.closeShare === "true") closeShareModal();
+  });
   dom.shareBalancePdfButton?.addEventListener("click", () => {
     closeAccountDropdown();
     shareBalancePdf();

@@ -843,6 +843,60 @@ h3 {
   gap: 16px;
 }
 
+.share-dialog {
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
+.share-options {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.share-options legend {
+  padding: 0 6px;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+.share-options__list {
+  display: grid;
+  gap: 6px;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.share-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--olive);
+}
+
+.share-preview {
+  margin: 0;
+  padding: 12px 14px;
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+  background: rgba(37, 211, 102, 0.08);
+  border: 1px solid rgba(37, 211, 102, 0.3);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .share-whatsapp-button {
   width: 100%;
   margin-top: 14px;
