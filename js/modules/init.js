@@ -405,8 +405,10 @@ function buildBalanceWhatsappText(excluded) {
   const categories = getShareCategoryTotals().filter((item) => include(`categorie:${item.key}`));
   categories.forEach((item) => {
     const icon = categoryEmoji[item.key] || categoryEmoji.overig;
-    const estimatePart = item.estimated > 0 ? ` (+ ${eur(item.estimated)} raming)` : "";
-    lines.push(`   ${icon} ${categoryLabels[item.key]}: ${eur(item.spent)}${estimatePart}`);
+    lines.push(`   ${icon} ${categoryLabels[item.key]}: *${eur(item.spent + item.estimated)}*`);
+    if (item.estimated > 0) {
+      lines.push(`      ✅ Definitief: ${eur(item.spent)}`, `      🔮 Raming: ${eur(item.estimated)}`);
+    }
   });
 
   if (include("pot")) lines.push(`🏦 Nu in de pot: *${eur(s.remaining)}*`);
@@ -469,8 +471,10 @@ function openShareModal() {
   document.querySelector("#share-category-options").innerHTML = categories
     .map((item) => {
       const icon = categoryEmoji[item.key] || categoryEmoji.overig;
-      const estimatePart = item.estimated > 0 ? ` + ${currencyFormatter.format(item.estimated)} raming` : "";
-      return shareOptionHtml(`categorie:${item.key}`, `${icon} ${categoryLabels[item.key]} (${currencyFormatter.format(item.spent)}${estimatePart})`, excluded);
+      const split = item.estimated > 0
+        ? `<small class="share-option__split">definitief ${currencyFormatter.format(item.spent)} · raming ${currencyFormatter.format(item.estimated)}</small>`
+        : "";
+      return shareOptionHtml(`categorie:${item.key}`, `${icon} ${categoryLabels[item.key]} — totaal ${currencyFormatter.format(item.spent + item.estimated)}${split}`, excluded);
     })
     .join("");
 

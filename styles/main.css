@@ -874,6 +874,13 @@ h3 {
   cursor: pointer;
 }
 
+.share-option__split {
+  display: block;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
 .share-option input[type="checkbox"] {
   width: 18px;
   height: 18px;
