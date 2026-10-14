@@ -419,6 +419,14 @@ export function renderTimeline(dom) {
       const aIsEstimate = a.kind === "estimate" || a.kind === "topup-estimate" || a.kind === "contribution-estimate";
       const bIsEstimate = b.kind === "estimate" || b.kind === "topup-estimate" || b.kind === "contribution-estimate";
       if (aIsEstimate !== bIsEstimate) return aIsEstimate ? -1 : 1;
+
+      // Uitgaven (en ramingen) groeperen op categorie; inleg heeft geen
+      // categorie en blijft daarbinnen gewoon op datum gesorteerd.
+      const categoryOrder = Object.keys(categoryLabels);
+      const aCategoryIndex = a.category ? categoryOrder.indexOf(a.category) : -1;
+      const bCategoryIndex = b.category ? categoryOrder.indexOf(b.category) : -1;
+      if (aCategoryIndex !== bCategoryIndex) return aCategoryIndex - bCategoryIndex;
+
       return new Date(b.date) - new Date(a.date);
     });
 
