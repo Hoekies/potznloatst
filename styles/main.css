@@ -976,6 +976,49 @@ h3 {
   background: #FFFDF8;
 }
 
+.groups-people-panel {
+  margin-top: 0;
+}
+
+.groups-people {
+  display: grid;
+  gap: 8px;
+  padding: 0 12px 12px;
+}
+
+.groups-person {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto minmax(0, 1.4fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.groups-person__gender {
+  display: flex;
+  gap: 6px;
+}
+
+.groups-person .category-chip {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+
+.groups-result__mix {
+  display: block;
+  margin: -4px 0 6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+@media (max-width: 680px) {
+  .groups-person {
+    grid-template-columns: 1fr auto;
+  }
+  .groups-person select {
+    grid-column: 1 / -1;
+  }
+}
+
 .groups-result__group strong {
   display: block;
   margin-bottom: 6px;

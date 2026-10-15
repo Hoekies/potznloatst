@@ -507,11 +507,159 @@ function shuffled(items) {
   return result;
 }
 
-// Om en om delen na schudden: groepen verschillen hooguit één persoon.
-function splitIntoGroups(items, groupCount) {
-  const groups = Array.from({ length: groupCount }, () => []);
-  shuffled(items).forEach((item, index) => groups[index % groupCount].push(item));
-  return groups;
+// Man/vrouw en koppels staan alleen op dit toestel (eigen opslag), los van de
+// cloud-sync: zo kan het de synchronisatie van de deelnemers niet verstoren.
+const GROUP_PROFILE_KEY = "potzloats-group-profiles-v1";
+
+function readGroupProfiles() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(GROUP_PROFILE_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeGroupProfiles(profiles) {
+  try {
+    localStorage.setItem(GROUP_PROFILE_KEY, JSON.stringify(profiles));
+  } catch {
+    // Opslag niet beschikbaar: instellingen gelden dan alleen tot sluiten.
+  }
+}
+
+function getGroupProfile(profiles, id) {
+  const profile = profiles[id] || {};
+  const partnerExists = profile.partnerId && state.participants.some((person) => person.id === profile.partnerId);
+  return { gender: profile.gender === "m" || profile.gender === "v" ? profile.gender : "", partnerId: partnerExists ? profile.partnerId : "" };
+}
+
+// Een koppel is altijd wederzijds: wie je kiest, kiest jou terug.
+function setPartner(profiles, id, partnerId) {
+  const mine = profiles[id] || {};
+  if (mine.partnerId && profiles[mine.partnerId]) profiles[mine.partnerId].partnerId = "";
+  profiles[id] = { ...mine, partnerId: partnerId || "" };
+  if (partnerId) {
+    const other = profiles[partnerId] || {};
+    if (other.partnerId && other.partnerId !== id && profiles[other.partnerId]) profiles[other.partnerId].partnerId = "";
+    profiles[partnerId] = { ...other, partnerId: id };
+  }
+}
+
+function randomInt(max) {
+  const random = new Uint32Array(1);
+  crypto.getRandomValues(random);
+  return random[0] % max;
+}
+
+// Willekeurige verdeling die de volgorde van belang houdt:
+// 1) koppels nooit in dezelfde groep (zwaarste straf), 2) mannen, vrouwen en
+// onbekend zo gelijk mogelijk over de groepen. Groepsgrootte verschilt hooguit 1.
+function splitIntoGroups(items, groupCount, profiles) {
+  const info = new Map(items.map((person) => [person.id, getGroupProfile(profiles, person.id)]));
+  const genders = ["m", "v", ""];
+  const totals = Object.fromEntries(genders.map((gender) => [gender, items.filter((person) => info.get(person.id).gender === gender).length]));
+  const sizes = Array.from({ length: groupCount }, (_, index) => Math.floor(items.length / groupCount) + (index < items.length % groupCount ? 1 : 0));
+
+  const cost = (groups) => {
+    let total = 0;
+    groups.forEach((members, index) => {
+      const ids = new Set(members.map((person) => person.id));
+      members.forEach((person) => {
+        const partnerId = info.get(person.id).partnerId;
+        if (partnerId && ids.has(partnerId)) total += 500;
+      });
+      genders.forEach((gender) => {
+        const count = members.filter((person) => info.get(person.id).gender === gender).length;
+        const ideal = (sizes[index] * totals[gender]) / items.length;
+        total += (count - ideal) ** 2;
+      });
+    });
+    return total;
+  };
+
+  let best = null;
+  let bestCost = Infinity;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const order = shuffled(items);
+    let offset = 0;
+    const groups = sizes.map((size) => { const members = order.slice(offset, offset + size); offset += size; return members; });
+    let current = cost(groups);
+    let improved = true;
+    while (improved && current > 0) {
+      improved = false;
+      for (let a = 0; a < groupCount && !improved; a++) {
+        for (let b = a + 1; b < groupCount && !improved; b++) {
+          for (let i = 0; i < groups[a].length && !improved; i++) {
+            for (let j = 0; j < groups[b].length && !improved; j++) {
+              [groups[a][i], groups[b][j]] = [groups[b][j], groups[a][i]];
+              const next = cost(groups);
+              if (next < current - 1e-9) { current = next; improved = true; }
+              else [groups[a][i], groups[b][j]] = [groups[b][j], groups[a][i]];
+            }
+          }
+        }
+      }
+    }
+    if (current < bestCost - 1e-9) { best = groups.map((members) => members.slice()); bestCost = current; }
+    if (bestCost === 0) break;
+  }
+  return shuffled(best).map((members) => shuffled(members));
+}
+
+function renderGroupPeople() {
+  const container = document.querySelector("#groups-people");
+  const stateLabel = document.querySelector("#groups-people-state");
+  if (!container) return;
+  const profiles = readGroupProfiles();
+  const people = getSortedParticipants(state);
+  const known = people.filter((person) => getGroupProfile(profiles, person.id).gender).length;
+  if (stateLabel) stateLabel.textContent = `${known}/${people.length} ingesteld`;
+
+  container.replaceChildren(...people.map((person) => {
+    const profile = getGroupProfile(profiles, person.id);
+    const row = document.createElement("div");
+    row.className = "groups-person";
+    row.dataset.personId = person.id;
+    const name = document.createElement("strong");
+    name.textContent = person.name;
+    const genderBox = document.createElement("div");
+    genderBox.className = "groups-person__gender";
+    [["m", "Man"], ["v", "Vrouw"]].forEach(([value, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `category-chip${profile.gender === value ? " is-active" : ""}`;
+      button.dataset.gender = value;
+      button.textContent = label;
+      genderBox.append(button);
+    });
+    const partner = document.createElement("select");
+    partner.dataset.partner = "true";
+    partner.setAttribute("aria-label", `Koppel van ${person.name}`);
+    partner.append(new Option("Alleen", ""));
+    people.filter((other) => other.id !== person.id).forEach((other) => partner.append(new Option(`Koppel met ${other.name}`, other.id)));
+    partner.value = profile.partnerId;
+    row.append(name, genderBox, partner);
+    return row;
+  }));
+}
+
+function handleGroupPeopleInteraction(event) {
+  const row = event.target.closest("[data-person-id]");
+  if (!row) return;
+  const id = row.dataset.personId;
+  const profiles = readGroupProfiles();
+  const genderButton = event.target.closest("[data-gender]");
+  if (genderButton && event.type === "click") {
+    const mine = profiles[id] || {};
+    profiles[id] = { ...mine, gender: mine.gender === genderButton.dataset.gender ? "" : genderButton.dataset.gender };
+  } else if (event.target.matches("[data-partner]") && event.type === "change") {
+    setPartner(profiles, id, event.target.value);
+  } else {
+    return;
+  }
+  writeGroupProfiles(profiles);
+  renderGroupPeople();
 }
 
 function renderGroups() {
@@ -530,13 +678,19 @@ function renderGroups() {
   const groupCount = Math.min(participants.length, Math.max(2, Math.round(Number(countInput.value) || 2)));
   countInput.value = groupCount;
   countInput.max = participants.length;
-  help.textContent = `${participants.length} deelnemers verdeeld over ${groupCount} groepen. Druk opnieuw op Verdeel voor een nieuwe indeling.`;
+  help.textContent = `${participants.length} deelnemers verdeeld over ${groupCount} groepen: koppels gescheiden en mannen/vrouwen zo gelijk mogelijk. Druk opnieuw op Verdeel voor een nieuwe indeling.`;
 
-  splitIntoGroups(participants, groupCount).forEach((members, index) => {
+  const profiles = readGroupProfiles();
+  splitIntoGroups(participants, groupCount, profiles).forEach((members, index) => {
     const card = document.createElement("section");
     card.className = "groups-result__group";
+    const men = members.filter((person) => getGroupProfile(profiles, person.id).gender === "m").length;
+    const women = members.filter((person) => getGroupProfile(profiles, person.id).gender === "v").length;
     const title = document.createElement("strong");
     title.textContent = `Groep ${index + 1} (${members.length})`;
+    const mix = document.createElement("small");
+    mix.className = "groups-result__mix";
+    mix.textContent = men || women ? `${men} man · ${women} vrouw` : "";
     const list = document.createElement("ul");
     members.forEach((person) => {
       const item = document.createElement("li");
@@ -546,7 +700,7 @@ function renderGroups() {
       item.append(dot, document.createTextNode(person.name));
       list.append(item);
     });
-    card.append(title, list);
+    card.append(title, mix, list);
     result.append(card);
   });
 }
@@ -555,6 +709,7 @@ function openGroupsModal() {
   const modal = document.querySelector("#groups-modal");
   if (!modal) return;
   modal.hidden = false;
+  renderGroupPeople();
   renderGroups();
 }
 
@@ -765,6 +920,9 @@ function setupEventListeners() {
     renderGroups();
   });
   document.querySelector("#groups-count")?.addEventListener("change", renderGroups);
+  const groupPeople = document.querySelector("#groups-people");
+  groupPeople?.addEventListener("click", handleGroupPeopleInteraction);
+  groupPeople?.addEventListener("change", handleGroupPeopleInteraction);
   document.querySelector("#close-groups")?.addEventListener("click", closeGroupsModal);
   document.querySelector("#groups-modal")?.addEventListener("click", (event) => {
     if (event.target.dataset?.closeGroups === "true") closeGroupsModal();
